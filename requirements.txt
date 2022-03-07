@@ -1,0 +1,4 @@
+cairo-nile
+cairo-lang
+starknet-devnet
+openzeppelin-cairo-contracts=0.1.0

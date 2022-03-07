@@ -1,0 +1,6 @@
+/tests/__pycache__/
+artifacts/
+.env
+venv/
+localhost.accounts.json
+localhost.deployments.txt
