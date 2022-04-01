@@ -288,7 +288,8 @@ func mint{
         range_check_ptr
     }(to: felt) -> (tokenId: Uint256):
     let (access_contract) = Farmer_access_contract.read()
-    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_FARMER_MINTER)
+    let (caller) = get_caller_address()
+    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_FARMER_MINTER, account=caller)
     let (tokenId) = _mint(to)
     return (tokenId)
 end
@@ -306,7 +307,7 @@ func getToWork{
     # todo: assert the caller own the farmer and land token
     let (access_contract) = Farmer_access_contract.read()
     let (farmer_contract) = IAccessControl.farmerContract(contract_address=access_contract)
-    IERC721.transferFrom(contract_address=self, _from=caller, to=farmer_contract, tokenId=farmerTokenId)
+    IERC721.transferFrom(contract_address=self, from_=caller, to=farmer_contract, tokenId=farmerTokenId)
     return ()
 end
 

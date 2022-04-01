@@ -6,7 +6,7 @@ namespace IAccessControl:
     func hasRole(role: felt, account: felt) -> (res: felt):
     end
 
-    func onlyRole(role: felt):
+    func onlyRole(role: felt, account: felt):
     end
 
     func coinContract() -> (contract: felt):

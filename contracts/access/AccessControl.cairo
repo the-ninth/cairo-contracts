@@ -8,9 +8,7 @@ from contracts.access.library import (
     AccessControl_hasRole,
     AccessControl_grantRole,
     AccessControl_only_super_admin,
-    ROLE_SUPER_ADMIN,
-    ROLE_noah_MINTER,
-    ROLE_FARMER_MINTER
+    ROLE_SUPER_ADMIN
 )
 
 #
@@ -194,9 +192,8 @@ func onlyRole{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(role: felt):
-    let (caller) = get_caller_address()
-    let (res) = AccessControl_hasRole(role, caller)
+    }(role: felt, account: felt):
+    let (res) = AccessControl_hasRole(role, account)
     assert res = 1
     return ()
 end

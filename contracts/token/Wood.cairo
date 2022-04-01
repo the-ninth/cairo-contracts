@@ -3,6 +3,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import Uint256
+from starkware.starknet.common.syscalls import get_caller_address
 
 from openzeppelin.token.erc20.library import (
     ERC20_name,
@@ -176,7 +177,8 @@ func mint{
         range_check_ptr
     }(to: felt, amount: Uint256):
     let (access_contract) = Wood_access_contract.read()
-    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_WOOD_MINTER)
+    let (caller) = get_caller_address()
+    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_WOOD_MINTER, account=caller)
     ERC20_mint(to, amount)
     return ()
 end

@@ -41,7 +41,7 @@ from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 from contracts.token.interfaces.IFarmer import IFarmer
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
-from contracts.access.library import ROLE_ADMIN
+from contracts.access.library import ROLE_ADMIN, ROLE_LAND_MINTER
 
 # from contracts.ERC721_Enumerable_AutoId.library import (
 #     ERC721_Enumerable_AutoId_mint
@@ -281,7 +281,8 @@ func setTokenURI{
         range_check_ptr
     }(tokenId: Uint256, tokenURI: felt):
     let (access_contract) = Land_access_contract.read()
-    IAccessControl.onlyRole(contract_address=access_contract,role=ROLE_ADMIN)
+    let (caller) = get_caller_address()
+    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_ADMIN, account=caller)
     ERC721_setTokenURI(tokenId, tokenURI)
     return ()
 end
@@ -294,7 +295,8 @@ func mint{
         range_check_ptr
     }(to: felt, tokenId: Uint256):
     let (access_contract) = Land_access_contract.read()
-    IAccessControl.onlyRole(contract_address=access_contract,role=ROLE)
+    let (caller) = get_caller_address()
+    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_LAND_MINTER, account=caller)
     _mint(to, tokenId)
     return ()
 end
