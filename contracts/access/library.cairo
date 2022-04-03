@@ -26,6 +26,12 @@ const ROLE_WOOD_MINTER = 0x87896d86891f0735a9a4c3fd07b50f5c9341eb265c1ae11de1f09
 # permission to mint tuaoi, keccak224('ROLE_TUAOI_MINTER')
 const ROLE_TUAOI_MINTER = 0x52e9771b847a049399cb49c8c9feec800beb5e7fd5ff91043f1cf1f0
 
+# permission to mint Carriage, keccak224('ROLE_CARRIAGE_MINTER')
+const ROLE_CARRIAGE_MINTER = 0x2a1039a289ff8a169e7311419cb8d250dcd0693c0c5f039b5976d3bc
+
+# permission to mint Soldier, keccak224('ROLE_SOLDIER_MINTER')
+const ROLE_SOLDIER_MINTER = 0xc323dda993e8030ae375d46c7b2d197a8fc0ef7e247e5034f623d9e2
+
 
 @storage_var
 func AccessControl_role_accounts(role: felt, account: felt) -> (res: felt):

@@ -62,8 +62,3 @@ async def test_mint():
     assert execution_info.result.owner == account_contract.contract_address
     execution_info = await farmer_contract.ownerOf((1,0)).call()
     assert execution_info.result.owner == land_contract.contract_address
-    # await contract.increase_balance(amount=20).invoke()
-
-    # Check the result of get_balance().
-    # execution_info = await contract.get_balance().call()
-    # assert execution_info.result == (30,)

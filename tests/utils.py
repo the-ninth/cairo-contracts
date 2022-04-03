@@ -214,3 +214,10 @@ def hash_multicall(sender, calls, nonce, max_fee):
         TRANSACTION_VERSION
     ]
     return compute_hash_on_elements(message)
+
+def uint_list_to_felt_list(uint_list):
+    felt_list = []
+    for num in uint_list:
+        felt_list.append(num[0])
+        felt_list.append(num[1])
+    return felt_list
