@@ -1,4 +1,4 @@
-# Land contract of The Ninth Game, based on openzepplin
+# Soldier contract of The Ninth Game
 
 %lang starknet
 
