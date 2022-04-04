@@ -24,6 +24,9 @@ namespace IAccessControl:
     func landContract() -> (contract: felt):
     end
 
+    func carriageContract() -> (contract: felt):
+    end
+
     func soldierContract() -> (contract: felt):
     end
 

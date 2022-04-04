@@ -1,4 +1,4 @@
-# Land contract of The Ninth Game, based on openzepplin
+# Farmer contract of The Ninth Game, based on openzepplin
 
 %lang starknet
 
