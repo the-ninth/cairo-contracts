@@ -23,7 +23,7 @@ PLAYER2_SOLDIERS_COUNT = 5
 # The testing library uses python's asyncio. So the following
 # decorator and the ``async`` keyword are needed.
 @pytest.mark.asyncio
-async def test_aboard():
+async def test_combat():
     """Test land mint."""
     starknet = await Starknet.empty()
     account_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
@@ -76,7 +76,7 @@ async def prepare_carriage(account_contract, carriage_contract, soldier_contract
     execution_info = await signer.send_transaction(
         account_contract, carriage_contract.contract_address, 'mint', [player_contract.contract_address]
     )
-    carriage_id = execution_info.result.response
+    carriage_id = tuple(execution_info.result.response)
 
     # mint soldier to player
     execution_info = await soldier_contract.totalSupply().call()
