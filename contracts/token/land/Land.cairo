@@ -38,7 +38,7 @@ from openzeppelin.introspection.ERC165 import ERC165_supports_interface
 
 from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 
-from contracts.token.land.libray_building import Land_build, Land, Land_getLand
+from contracts.token.land.library_building import Land_build, Land, Land_getLand
 
 from contracts.token.interfaces.IFarmer import IFarmer
 
