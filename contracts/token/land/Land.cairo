@@ -38,29 +38,16 @@ from openzeppelin.introspection.ERC165 import ERC165_supports_interface
 
 from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
 
+from contracts.token.land.libray_building import Land_build, Land, Land_getLand
+
 from contracts.token.interfaces.IFarmer import IFarmer
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_ADMIN, ROLE_LAND_MINTER
 
-# from contracts.ERC721_Enumerable_AutoId.library import (
-#     ERC721_Enumerable_AutoId_mint
-# )
-
-const BUILDING_TYPE_MINE = 1
-const BUILDING_TYPE_LUMBER_CAMPS = 2
-
-struct Land:
-    member building_type : felt
-end
-
 #
 # Storage
 #
-
-@storage_var
-func Land_lands(tokenId: Uint256) -> (land: Land):
-end
 
 @storage_var
 func Land_access_contract() -> (access_contract: felt):
@@ -203,9 +190,8 @@ func getLand{
         syscall_ptr: felt*,
         pedersen_ptr: HashBuiltin*,
         range_check_ptr
-}(tokenId: Uint256) -> (land: Land):
-    ERC721_ownerOf(tokenId)
-    let (land) = Land_lands.read(tokenId)
+    }(tokenId: Uint256) -> (land: Land):
+    let (land) = Land_getLand(tokenId)
     return (land)
 end
 
@@ -301,7 +287,7 @@ func mint{
     return ()
 end
 
-# pay diamond to buy land
+# pay NINTH to buy land
 @external
 func buyLand{
         pedersen_ptr: HashBuiltin*, 
@@ -334,7 +320,8 @@ func build{
     let (coin_contract) = IAccessControl.coinContract(contract_address=access_contract)
     let (res) = IERC20.transferFrom(contract_address=coin_contract, sender=caller, recipient=self, amount=Uint256(low=1000000000000000000000, high=0))
     assert res = 1
-    _build(tokenId, buildingType)
+
+    Land_build(tokenId, buildingType)
     return ()
 end
 
@@ -354,17 +341,5 @@ func _mint{
     let (farmer_contract) = IAccessControl.farmerContract(contract_address=access_contract)
     let (land_contract) = IAccessControl.landContract(contract_address=access_contract)
     let (farmer_token_id) = IFarmer.mint(contract_address=farmer_contract, to=land_contract)
-    return ()
-end
-
-func _build{
-        pedersen_ptr: HashBuiltin*, 
-        syscall_ptr: felt*, 
-        range_check_ptr
-    }(tokenId: Uint256, buildingType: felt):
-    let (land: Land) = getLand(tokenId)
-    assert land.building_type = 0
-    land.building_type = buildingType
-    Land_lands.write(tokenId, land)
     return ()
 end
