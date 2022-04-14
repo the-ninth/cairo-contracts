@@ -39,7 +39,7 @@ end
 
 struct Node:
     member carriage_id: Uint256
-    member carriage_soldier_index: Uint256
+    member carriage_soldier_index: felt
     member is_head: felt
 end
 
