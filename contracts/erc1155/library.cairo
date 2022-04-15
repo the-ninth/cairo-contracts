@@ -50,6 +50,7 @@ func ERC1155_balanceOfBatch{
     ) -> (amounts_len: felt, amounts: Uint256*):
     let (amounts: Uint256*) = alloc()
     # todo: implements
+    assert 1=0
     return (0, amounts)
 end
 
@@ -135,6 +136,7 @@ func ERC1155_safeBatchTransferFrom{
         data: felt
     ):
     # todo: implements
+    assert 1=0
     return ()
 end
 

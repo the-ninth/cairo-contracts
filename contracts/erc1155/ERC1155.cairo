@@ -66,8 +66,9 @@ func setApprovalForAll{
         syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(account: felt, operator: felt, approved: felt):
-    ERC1155_setApprovalForAll(account, operator, approved)
+    }(operator: felt, approved: felt):
+    let (caller) = get_caller_address()
+    ERC1155_setApprovalForAll(caller, operator, approved)
     return ()
 end
 
