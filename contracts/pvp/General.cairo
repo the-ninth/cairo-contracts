@@ -1,4 +1,4 @@
-# Soldier contract of The Ninth Game
+# General contract of The Ninth Game
 
 %lang starknet
 
@@ -19,14 +19,14 @@ from contracts.erc1155.library import (
 )
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
-from contracts.access.library import ROLE_SOLDIER_MINTER, ROLE_TRANSFER
+from contracts.access.library import ROLE_GENERAL_MINTER
 
 #
 # Storage
 #
 
 @storage_var
-func Soldier_access_contract() -> (access_contract: felt):
+func General_access_contract() -> (access_contract: felt):
 end
 
 @constructor
@@ -35,7 +35,7 @@ func constructor{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(access_contract: felt):
-    Soldier_access_contract.write(access_contract)
+    General_access_contract.write(access_contract)
     return ()
 end
 
@@ -85,7 +85,6 @@ func setApprovalForAll{
     return ()
 end
 
-# non transferable, only contract could transfer
 @external
 func safeTransferFrom{
         syscall_ptr : felt*,
@@ -100,10 +99,11 @@ func safeTransferFrom{
     ):
     alloc_locals
 
-    let (access_contract) = Soldier_access_contract.read()
     let (caller) = get_caller_address()
-    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_TRANSFER, account=caller)
-
+    let (is_approved) = ERC1155_isApprovedForAll(from_, caller)
+    with_attr error_message("ERC1155: either is not approved or the caller is the zero address"):
+        assert_not_zero(caller * is_approved)
+    end
     ERC1155_safeTransferFrom(from_, to, id, amount, data)
     return ()
 end
@@ -124,10 +124,11 @@ func safeBatchTransferFrom{
     ):
     alloc_locals
 
-    let (access_contract) = Soldier_access_contract.read()
     let (caller) = get_caller_address()
-    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_TRANSFER, account=caller)
-
+    let (is_approved) = ERC1155_isApprovedForAll(from_, caller)
+    with_attr error_message("ERC1155: either is not approved or the caller is the zero address"):
+        assert_not_zero(caller * is_approved)
+    end
     ERC1155_safeBatchTransferFrom(from_, to, ids_len, ids, amounts_len, amounts, data)
     return ()
 end
@@ -139,9 +140,9 @@ syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(to: felt, id: felt, amount: Uint256, data: felt):
-    let (access_contract) = Soldier_access_contract.read()
+    let (access_contract) = General_access_contract.read()
     let (caller) = get_caller_address()
-    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_SOLDIER_MINTER, account=caller)
+    IAccessControl.onlyRole(contract_address=access_contract, role=ROLE_GENERAL_MINTER, account=caller)
 
     ERC1155_mint(to, id, amount, data)
     return ()

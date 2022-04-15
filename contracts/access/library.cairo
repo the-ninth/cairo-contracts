@@ -35,6 +35,9 @@ const ROLE_SOLDIER_MINTER = 0xc323dda993e8030ae375d46c7b2d197a8fc0ef7e247e5034f6
 # permission to transfer NON-TRANSFERABLE, keccak224('ROLE_TRANSFER')
 const ROLE_TRANSFER = 0x6e7f1940aad4855351f462bbac7ccc3a69967035520bab0590cb2a12
 
+# permission to mint General, keccak224('ROLE_GENERAL_MINTER')
+const ROLE_GENERAL_MINTER = 0x2b8d8eaf78cefc17da76091e673995889aab0d5ddafb90241e1b5df5
+
 
 @storage_var
 func AccessControl_role_accounts(role: felt, account: felt) -> (res: felt):
