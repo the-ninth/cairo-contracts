@@ -54,6 +54,12 @@ namespace IFirstRelicCombat:
     func useItem(combat_id: felt, account: felt, item_id: felt):
     end
 
+    func produceWorkers(combat_id: felt, account: felt, quantity: felt):
+    end
+
+    func produceDrones(combat_id: felt, account: felt, quantity: felt):
+    end
+
     func getAccountActualCoordinate(account: felt) -> (coordinate: Coordinate):
     end
 
