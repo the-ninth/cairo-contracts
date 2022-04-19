@@ -33,8 +33,8 @@ struct Koma:
     member max_health: felt
     member agility: felt
     member move_speed: felt
-    member items_weight: felt
-    member items_max_weight: felt
+    member props_weight: felt
+    member props_max_weight: felt
     member workers_count: felt
     member working_workers_count: felt
     member drones_count: felt
@@ -54,11 +54,11 @@ struct Chest:
     member chest_type: felt
 end
 
-struct Item:
-    member item_id: felt
-    member item_category: felt
-    member item_creature_id: felt
-    member item_weight: felt
+struct Prop:
+    member prop_id: felt
+    member prop_category: felt
+    member prop_creature_id: felt
+    member prop_weight: felt
 end
 
 struct Ore:

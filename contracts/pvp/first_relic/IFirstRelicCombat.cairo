@@ -51,7 +51,7 @@ namespace IFirstRelicCombat:
     func attack(combat_id: felt, account: felt, target_account: felt):
     end
 
-    func useItem(combat_id: felt, account: felt, item_id: felt):
+    func useProp(combat_id: felt, account: felt, prop_id: felt):
     end
 
     func produceWorkers(combat_id: felt, account: felt, quantity: felt):
