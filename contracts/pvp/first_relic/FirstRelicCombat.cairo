@@ -2,7 +2,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 
-from contracts.pvp.first_relic.IFirstRelicCombat import Combat, PlayerInfo
+from contracts.pvp.first_relic.IFirstRelicCombat import Combat, Koma
 
 @storage_var
 func access_contract() -> (access_contract: felt):

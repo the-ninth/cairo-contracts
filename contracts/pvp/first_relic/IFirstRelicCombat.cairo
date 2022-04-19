@@ -2,7 +2,7 @@
 
 # combat for first relic
 
-from contracts.pvp.first_relic.structs import Combat, PlayerInfo, Coordinate, ThirdStageAction
+from contracts.pvp.first_relic.structs import Combat, Koma, Coordinate, ThirdStageAction
 
 @contract_interface
 namespace IFirstRelicCombat:
@@ -16,16 +16,22 @@ namespace IFirstRelicCombat:
     func getCombat(combat_id: felt) -> (combat: Combat):
     end
 
-    func getPlayerInfo(combat_id: felt, account: felt) -> (player_info: PlayerInfo):
+    func getKoma(combat_id: felt, account: felt) -> (koma: Koma):
     end
 
-    func initPlayer(combat_id: felt, account: felt) -> (player_info: PlayerInfo):
+    func initPlayer(combat_id: felt, account: felt) -> (koma: Koma):
     end
 
     func getPlayersCount() -> (combat_id: felt, count: felt):
     end
 
-    func getPlayers(combat_id: felt, fromIndex: felt, len: felt) -> (players_len: felt, players: PlayerInfo*):
+    func getKomas(combat_id: felt, offset: felt, len: felt) -> (komas_len: felt, komas: Koma*):
+    end
+
+    func getPlayerScore(combat_id: felt, account: felt) -> (score: felt):
+    end
+
+    func getPlayersScore(combat_id: felt, offset: felt, len: felt) -> (players_score_len: felt, players_score: felt*):
     end
 
     # first stage
@@ -114,7 +120,7 @@ func PlayerEnterRelicGate(combat_id: felt, account: felt, gate_id: felt):
 end
 
 @event
-func PlayerAction(combat_id: felt, account: felt, action_id: action: ThirdStageAction):
+func PlayerAction(combat_id: felt, account: felt, action_id: felt, action: ThirdStageAction):
 end
 
 @event
