@@ -26,17 +26,11 @@ const ROLE_WOOD_MINTER = 0x87896d86891f0735a9a4c3fd07b50f5c9341eb265c1ae11de1f09
 # permission to mint tuaoi, keccak224('ROLE_TUAOI_MINTER')
 const ROLE_TUAOI_MINTER = 0x52e9771b847a049399cb49c8c9feec800beb5e7fd5ff91043f1cf1f0
 
-# permission to mint Carriage, keccak224('ROLE_CARRIAGE_MINTER')
-const ROLE_CARRIAGE_MINTER = 0x2a1039a289ff8a169e7311419cb8d250dcd0693c0c5f039b5976d3bc
-
-# permission to mint Soldier, keccak224('ROLE_SOLDIER_MINTER')
-const ROLE_SOLDIER_MINTER = 0xc323dda993e8030ae375d46c7b2d197a8fc0ef7e247e5034f623d9e2
-
 # permission to transfer NON-TRANSFERABLE, keccak224('ROLE_TRANSFER')
 const ROLE_TRANSFER = 0x6e7f1940aad4855351f462bbac7ccc3a69967035520bab0590cb2a12
 
-# permission to mint General, keccak224('ROLE_GENERAL_MINTER')
-const ROLE_GENERAL_MINTER = 0x2b8d8eaf78cefc17da76091e673995889aab0d5ddafb90241e1b5df5
+# permission to mint General, keccak224('ROLE_KOMA_MINTER')
+const ROLE_KOMA_MINTER = 0x17a1d03badb9194b7cd7c85e4c945d8ec414a6831c6eb4fe03fd0a1a
 
 
 @storage_var
