@@ -15,7 +15,7 @@ namespace IDelegateAccountRegistry:
     func removeDelegateAccount():
     end
 
-    func authorized(account: felt, delegate_account: felt, action: felt) -> felt:
+    func authorized(account: felt, delegate_account: felt, action: felt) -> (res: felt):
     end
 
 end
