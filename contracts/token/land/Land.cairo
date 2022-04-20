@@ -298,14 +298,14 @@ func buyLand{
     let (caller) = get_caller_address()
     let (self) = get_contract_address()
     let (access_contract) = Land_access_contract.read()
-    let (diamond_contract) = IAccessControl.diamondContract(contract_address=access_contract)
-    let (res) = IERC20.transferFrom(contract_address=diamond_contract, sender=caller, recipient=self, amount=Uint256(low=1000000000000000000000, high=0))
+    let (ninth_contract) = IAccessControl.ninthContract(contract_address=access_contract)
+    let (res) = IERC20.transferFrom(contract_address=ninth_contract, sender=caller, recipient=self, amount=Uint256(low=1000000000000000000000, high=0))
     assert res = 1
     _mint(caller, tokenId)
     return ()
 end
 
-# pay coin to build
+# pay noah to build
 @external
 func build{
         pedersen_ptr: HashBuiltin*, 
@@ -317,8 +317,8 @@ func build{
     let (caller) = get_caller_address()
     let (self) = get_contract_address()
     let (access_contract) = Land_access_contract.read()
-    let (coin_contract) = IAccessControl.coinContract(contract_address=access_contract)
-    let (res) = IERC20.transferFrom(contract_address=coin_contract, sender=caller, recipient=self, amount=Uint256(low=1000000000000000000000, high=0))
+    let (noah_contract) = IAccessControl.noahContract(contract_address=access_contract)
+    let (res) = IERC20.transferFrom(contract_address=noah_contract, sender=caller, recipient=self, amount=Uint256(low=1000000000000000000000, high=0))
     assert res = 1
 
     Land_build(tokenId, buildingType)

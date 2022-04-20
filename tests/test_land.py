@@ -8,7 +8,7 @@ import pytest
 from starkware.starknet.testing.starknet import Starknet
 
 # The path to the contract source code.
-LAND_CONTRACT_FILE = contract_path('contracts/token/Land.cairo')
+LAND_CONTRACT_FILE = contract_path('contracts/token/land/Land.cairo')
 FARMER_CONTRACT_FILE = contract_path('contracts/token/Farmer.cairo')
 ACCESS_CONTROL_CONTRACT_FILE = contract_path('contracts/access/AccessControl.cairo')
 ACCOUNT_CONTRACT_FILE = contract_path('openzeppelin/account/Account.cairo')

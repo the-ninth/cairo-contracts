@@ -9,25 +9,19 @@ namespace IAccessControl:
     func onlyRole(role: felt, account: felt):
     end
 
-    func coinContract() -> (contract: felt):
+    func ninthContract() -> (contract: felt):
     end
 
-    func diamondContract() -> (contract: felt):
+    func noahContract() -> (contract: felt):
     end
 
-    func oreContract() -> (contract: felt):
+    func stoneContract() -> (contract: felt):
     end
 
     func farmerContract() -> (contract: felt):
     end
 
     func landContract() -> (contract: felt):
-    end
-
-    func carriageContract() -> (contract: felt):
-    end
-
-    func soldierContract() -> (contract: felt):
     end
 
 end
