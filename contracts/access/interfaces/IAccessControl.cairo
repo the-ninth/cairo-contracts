@@ -24,4 +24,7 @@ namespace IAccessControl:
     func landContract() -> (contract: felt):
     end
 
+    func randomProducerContract() -> (contract: felt):
+    end
+
 end

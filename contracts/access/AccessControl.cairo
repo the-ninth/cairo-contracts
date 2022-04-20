@@ -52,6 +52,10 @@ end
 func AccessControl_land_contract() -> (res: felt):
 end
 
+@storage_var
+func AccessControl_random_producer_contract() -> (res: felt):
+end
+
 #
 # View
 #
@@ -116,6 +120,16 @@ func landContract{
     return (addr)
 end
 
+@view
+func randomProducerContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (contract: felt):
+    let (addr) = AccessControl_random_producer_contract.read()
+    return (addr)
+end
+
 
 #
 # external
@@ -173,6 +187,17 @@ func setLandContract{
     }(contract: felt):
     AccessControl_only_super_admin()
     AccessControl_land_contract.write(contract)
+    return ()
+end
+
+@external
+func setRandomProducerContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(contract: felt):
+    AccessControl_only_super_admin()
+    AccessControl_random_producer_contract.write(contract)
     return ()
 end
 

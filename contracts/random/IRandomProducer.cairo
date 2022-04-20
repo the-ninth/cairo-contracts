@@ -1,7 +1,7 @@
 %lang starknet
 
 @contract_interface
-namespace IRandoomProducer:
+namespace IRandomProducer:
 
     func requestRandom() -> (request_id: felt):
     end

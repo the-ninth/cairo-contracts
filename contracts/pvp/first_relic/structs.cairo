@@ -17,7 +17,6 @@ struct Combat:
     member start_time: felt
     member end_time: felt
     member expire_time: felt
-    member rect_size: felt
     member status: felt
 end
 

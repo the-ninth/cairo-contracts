@@ -32,6 +32,9 @@ const ROLE_TRANSFER = 0x6e7f1940aad4855351f462bbac7ccc3a69967035520bab0590cb2a12
 # permission to mint General, keccak224('ROLE_KOMA_MINTER')
 const ROLE_KOMA_MINTER = 0x17a1d03badb9194b7cd7c85e4c945d8ec414a6831c6eb4fe03fd0a1a
 
+# permission to create first relic combat, keccak224('ROLE_FRCOMBAT_CREATOR')
+const ROLE_FRCOMBAT_CREATOR = 0xf0845edbfd13ab09e214c98fdbf5ae36408448178802e82e04d85d98
+
 
 @storage_var
 func AccessControl_role_accounts(role: felt, account: felt) -> (res: felt):
