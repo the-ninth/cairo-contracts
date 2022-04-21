@@ -6,7 +6,7 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.hash_state import (
     hash_init, hash_finalize, hash_update, hash_update_single
 )
-from starkware.cairo.common.math import unsigned_div_rem
+from starkware.cairo.common.math import unsigned_div_rem, split_felt
 
 func get_random_number{
         pedersen_ptr : HashBuiltin*,
@@ -19,7 +19,8 @@ func get_random_number{
         let (hash_state_ptr) = hash_update_single(hash_state_ptr, step)
         let (res) = hash_finalize(hash_state_ptr)
         let pedersen_ptr = hash_ptr
-        let (_, r) = unsigned_div_rem(res, mod)
+        let (low, _) = split_felt(res)
+        let (_, r) = unsigned_div_rem(low, mod)
         return (res = r)
     end
 end
@@ -34,7 +35,8 @@ func get_random_number_and_seed{
         let (hash_state_ptr) = hash_update_single(hash_state_ptr, seed)
         let (res) = hash_finalize(hash_state_ptr)
         let pedersen_ptr = hash_ptr
-        let (_, r) = unsigned_div_rem(res, mod)
+        let (low, _) = split_felt(res)
+        let (_, r) = unsigned_div_rem(low, mod)
         let next_seed = seed + r
         return (res = r, next_seed = next_seed)
     end
