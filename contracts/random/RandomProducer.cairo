@@ -47,6 +47,8 @@ func requestRandom{
         let (hash_state_ptr) = hash_update_single(hash_state_ptr, block_number)
         let (res) = hash_finalize(hash_state_ptr)
     end
+    let pedersen_ptr = hash_ptr
+    
     request_id_counter.write(request_id)
     request_random_res.write(request_id, (res, caller, block_number))
     return (request_id)
@@ -72,3 +74,12 @@ func triggerFulfill{
     return ()
 end
 
+@view
+func getRandomRequestRes{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(request_id: felt) -> (random: felt, caller: felt, block_number: felt):
+    let (res) = request_random_res.read(request_id)
+    return (random=res[0], caller=res[1], block_number=res[2])
+end

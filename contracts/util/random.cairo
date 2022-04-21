@@ -11,7 +11,7 @@ from starkware.cairo.common.math import unsigned_div_rem
 func get_random_number{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(seed: felt, step: felt, mod: felt) -> (res):
+    }(seed: felt, step: felt, mod: felt) -> (res: felt):
     let hash_ptr = pedersen_ptr
     with hash_ptr:
         let (hash_state_ptr) = hash_init()
@@ -21,5 +21,21 @@ func get_random_number{
         let pedersen_ptr = hash_ptr
         let (_, r) = unsigned_div_rem(res, mod)
         return (res = r)
+    end
+end
+
+func get_random_number_and_seed{
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(seed: felt, mod: felt) -> (res: felt, next_seed: felt):
+    let hash_ptr = pedersen_ptr
+    with hash_ptr:
+        let (hash_state_ptr) = hash_init()
+        let (hash_state_ptr) = hash_update_single(hash_state_ptr, seed)
+        let (res) = hash_finalize(hash_state_ptr)
+        let pedersen_ptr = hash_ptr
+        let (_, r) = unsigned_div_rem(res, mod)
+        let next_seed = seed + r
+        return (res = r, next_seed = next_seed)
     end
 end
