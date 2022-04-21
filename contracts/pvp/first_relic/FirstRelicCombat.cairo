@@ -8,8 +8,14 @@ from starkware.starknet.common.syscalls import get_caller_address
 from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_FRCOMBAT_CREATOR
 from contracts.random.IRandomProducer import IRandomProducer
-from contracts.pvp.first_relic.structs import Combat, Koma
-from contracts.pvp.first_relic.FRCombatLibrary import _new_combat, _init_combat_by_random
+from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate
+from contracts.pvp.first_relic.FRCombatLibrary import (
+    FirstRelicCombat_new_combat,
+    FirstRelicCombat_init_combat_by_random,
+    FirstRelicCombat_get_chest_count,
+    FirstRelicCombat_get_chests,
+    FirstRelicCombat_get_chest_by_coordinate
+)
 
 
 const RANDOM_TYPE_COMBAT_INIT = 1
@@ -26,8 +32,6 @@ end
 func random_request_combat_init(request_id: felt) -> (combat_id: felt):
 end
 
-
-
 @constructor
 func constructor{
         syscall_ptr : felt*, 
@@ -40,6 +44,36 @@ func constructor{
     return ()
 end
 
+@view
+func getChestCount{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (len: felt):
+    let (count) = FirstRelicCombat_get_chest_count(combat_id)
+    return (count)
+end
+
+@view
+func getChests{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, offset: felt, length: felt) -> (data_len: felt, data: Chest*):
+    let (data_len, data) = FirstRelicCombat_get_chests(combat_id, offset, length)
+    return (data_len, data)
+end
+
+@view
+func getChestByCoordinate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, coordinate: Coordinate) -> (chest: Chest):
+    let (chest) = FirstRelicCombat_get_chest_by_coordinate(combat_id, coordinate)
+    return (chest)
+end
+
 @external
 func newCombat{
         syscall_ptr : felt*, 
@@ -49,7 +83,7 @@ func newCombat{
     let (access_contract_address) = access_contract.read()
     let (caller) = get_caller_address()
     IAccessControl.onlyRole(access_contract_address, ROLE_FRCOMBAT_CREATOR, caller)
-    let (combat_id) = _new_combat()
+    let (combat_id) = FirstRelicCombat_new_combat()
     
     let (producer_address) = IAccessControl.randomProducerContract(contract_address=access_contract_address)
     let (request_id) = IRandomProducer.requestRandom(contract_address=producer_address)
@@ -82,7 +116,7 @@ func fulfillRandom{
 
     if type==RANDOM_TYPE_COMBAT_INIT:
         let (combat_id) = random_request_combat_init.read(request_id)
-        _init_combat_by_random(combat_id, random)
+        FirstRelicCombat_init_combat_by_random(combat_id, random)
         return ()
     end
 

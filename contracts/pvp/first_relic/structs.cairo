@@ -50,6 +50,7 @@ struct KomaEquip:
 end
 
 struct Chest:
+    member coordinate: Coordinate
     member chest_type: felt
 end
 

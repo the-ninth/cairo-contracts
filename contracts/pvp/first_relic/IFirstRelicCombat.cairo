@@ -2,7 +2,7 @@
 
 # combat for first relic
 
-from contracts.pvp.first_relic.structs import Combat, Koma, Coordinate, ThirdStageAction
+from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, ThirdStageAction
 
 @contract_interface
 namespace IFirstRelicCombat:
@@ -35,6 +35,15 @@ namespace IFirstRelicCombat:
     end
 
     # first stage
+
+    func getChestCount(combat_id: felt) -> (len: felt):
+    end
+
+    func getChests(combat_id: felt, offset: felt, length: felt) -> (data_len: felt, data: Chest*):
+    end
+
+    func getChestByCoordinate(combat_id, coordinate: Coordinate) -> (chest: Chest):
+    end
 
     func move(combat_id: felt, account: felt, to: Coordinate):
     end
