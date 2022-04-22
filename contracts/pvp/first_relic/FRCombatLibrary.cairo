@@ -54,11 +54,29 @@ end
 func ore_coordinate_by_index(index: felt) -> (coordinate: Coordinate):
 end
 
+func FirstRelicCombat_get_combat_count{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (count: felt):
+    let (count) = combat_counter.read()
+    return (count)
+end
+
+func FirstRelicCombat_get_combat{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (combat: Combat):
+    let (combat) = combats.read(combat_id)
+    return (combat)
+end
+
 func FirstRelicCombat_get_chest_count{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(combat_id: felt) -> (len: felt):
+    }(combat_id: felt) -> (count: felt):
     let (count) = chest_coordinates_len.read(combat_id)
     return (count)
 end
@@ -94,7 +112,7 @@ func FirstRelicCombat_new_combat{
     }() -> (combat_id: felt):
     let (count) = combat_counter.read()
     let combat_id = count + 1
-    let combat = Combat(max_players=MAX_PLAYERS, start_time=0, end_time=0, expire_time=0, status=0)
+    let combat = Combat(start_time=0, end_time=0, expire_time=0, status=COMBAT_STATUS_REGISTERING)
     combats.write(combat_id, combat)
     return (combat_id)
 end

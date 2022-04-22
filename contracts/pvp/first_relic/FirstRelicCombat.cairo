@@ -11,6 +11,8 @@ from contracts.random.IRandomProducer import IRandomProducer
 from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_new_combat,
+    FirstRelicCombat_get_combat,
+    FirstRelicCombat_get_combat_count,
     FirstRelicCombat_init_combat_by_random,
     FirstRelicCombat_get_chest_count,
     FirstRelicCombat_get_chests,
@@ -42,6 +44,26 @@ func constructor{
     ):
     access_contract.write(access_contract_)
     return ()
+end
+
+@view
+func getCombatCount{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (count: felt):
+    let (count) = FirstRelicCombat_get_combat_count()
+    return (count)
+end
+
+@view
+func getCombat{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (combat: Combat):
+    let (combat) = FirstRelicCombat_get_combat(combat_id)
+    return (combat)
 end
 
 @view
