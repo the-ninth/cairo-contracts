@@ -6,17 +6,17 @@ from starkware.cairo.common.math import assert_le_felt, assert_lt_felt
 
 from starkware.starknet.common.syscalls import get_caller_address, get_block_number
 
-from contracts.pvp.first_relic.structs import Combat, Chest, Ore, Coordinate
+from contracts.pvp.first_relic.structs import Combat, COMBAT_STATUS_REGISTERING, Chest, Ore, Coordinate
 from contracts.util.random import get_random_number_and_seed
 
 
-
-const MAX_PLAYERS = 10
 const MAP_WIDTH = 300
 const MAP_HEIGHT = 200
 const MAP_INNER_AREA_WIDTH = 150
 const MAP_INNER_AREA_HEIGHT = 100
-const MAP_MAX_CHESTS = 10
+const CHEST_PER_PLAYER = 3
+const ORE_PER_PLAYER = 3
+
 
 @storage_var
 func combat_counter() -> (count: felt):
@@ -117,29 +117,29 @@ func FirstRelicCombat_new_combat{
     return (combat_id)
 end
 
-func FirstRelicCombat_init_combat_by_random{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, random: felt):
-    let (combat) = combats.read(combat_id)
-    with_attr error_message("FirstRelicCombat: combat initialized"):
-        assert combat.status = 0
-    end
-    # todo: setup chests and ore randomly
-    let (block_number) = get_block_number()
-    let (caller) = get_caller_address()
-    _init_chests(combat_id, MAP_MAX_CHESTS, block_number + caller)
-    return ()
-end
+# func FirstRelicCombat_init_combat_by_random{
+#         syscall_ptr : felt*, 
+#         pedersen_ptr : HashBuiltin*,
+#         range_check_ptr
+#     }(combat_id: felt, random: felt):
+#     let (combat) = combats.read(combat_id)
+#     with_attr error_message("FirstRelicCombat: combat initialized"):
+#         assert combat.status = 0
+#     end
+#     # todo: setup chests and ore randomly
+#     let (block_number) = get_block_number()
+#     let (caller) = get_caller_address()
+#     _init_chests(combat_id, MAP_MAX_CHESTS, block_number + caller)
+#     return ()
+# end
 
 func _init_chests{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(combat_id: felt, chests_count: felt, seed: felt):
+    }(combat_id: felt, chests_count: felt, seed: felt) -> (next_seed: felt):
     if chests_count == 0:
-        return ()
+        return (seed)
     end
     let (coordinate, next_seed) = _fetch_outer_empty_coordinate(combat_id, seed)
     let chest = Chest(coordinate=coordinate, chest_type=1)
@@ -148,7 +148,27 @@ func _init_chests{
     chest_coordinate_by_index.write(combat_id, chest_len, coordinate)
     chest_coordinates_len.write(combat_id, chest_len + 1)
 
-    _init_chests(combat_id, chests_count - 1, next_seed)
+    let (next_seed) = _init_chests(combat_id, chests_count - 1, next_seed)
+
+    return (next_seed)
+end
+
+func _init_ores{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, ores_count: felt, seed: felt) -> (next_seed: felt):
+    if ores_count == 0:
+        return ()
+    end
+    let (coordinate, next_seed) = _fetch_outer_empty_coordinate(combat_id, seed)
+    let ore = Ore(total_supply=1000, mined_supply=0, mining_workers_count=0)
+    let (ore_len) = ore_coordinates_len.read(combat_id)
+    ores.write(combat_id, coordinate, ore)
+    ore_coordinate_by_index.write(combat_id, ore_len, coordinate)
+    ore_coordinates_len.write(combat_id, ore_len + 1)
+
+    _init_ores(combat_id, ores_count - 1, next_seed)
 
     return ()
 end
@@ -159,9 +179,10 @@ func _fetch_outer_empty_coordinate{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, seed: felt) -> (coordinate: Coordinate, next_seed: felt):
-    # todo: 
+    
     let (x, next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
     let (y, next_seed) = get_random_number_and_seed(next_seed, MAP_WIDTH)
+
     return (Coordinate(x,y), next_seed)
 end
 

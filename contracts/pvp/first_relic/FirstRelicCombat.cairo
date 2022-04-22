@@ -13,10 +13,13 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_new_combat,
     FirstRelicCombat_get_combat,
     FirstRelicCombat_get_combat_count,
-    FirstRelicCombat_init_combat_by_random,
     FirstRelicCombat_get_chest_count,
     FirstRelicCombat_get_chests,
-    FirstRelicCombat_get_chest_by_coordinate
+    FirstRelicCombat_get_chest_by_coordinate,
+)
+from contracts.pvp.first_relic.FRPlayerLibrary import(
+    FirstRelicCombat_init_player,
+    FirstRelicCombat_get_players_count
 )
 
 
@@ -96,6 +99,33 @@ func getChestByCoordinate{
     return (chest)
 end
 
+@view
+func getPlayersCount{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (count: felt):
+    let (count) = FirstRelicCombat_get_players_count(combat_id)
+    return (count)
+end
+
+@external
+func initPlayer{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt):
+    # only register contract could call
+    let (access_contract_address) = access_contract.read()
+    let (caller) = get_caller_address()
+    let (register_contract_address) = IAccessControl.frCombatRegisterContract(contract_address=access_contract_address)
+    assert_not_zero(caller)
+    assert caller = register_contract_address
+
+    FirstRelicCombat_init_player(combat_id, account)
+    return()
+end
+
 @external
 func newCombat{
         syscall_ptr : felt*, 
@@ -107,13 +137,13 @@ func newCombat{
     IAccessControl.onlyRole(access_contract_address, ROLE_FRCOMBAT_CREATOR, caller)
     let (combat_id) = FirstRelicCombat_new_combat()
     
-    let (producer_address) = IAccessControl.randomProducerContract(contract_address=access_contract_address)
-    let (request_id) = IRandomProducer.requestRandom(contract_address=producer_address)
-    random_request_type.write(request_id, RANDOM_TYPE_COMBAT_INIT)
-    random_request_combat_init.write(request_id, combat_id)
-
-    # trigger random fulfill, this should be removed after switch to random oracle
-    IRandomProducer.triggerFulfill(producer_address, request_id)
+    # random request deprecated
+    # let (producer_address) = IAccessControl.randomProducerContract(contract_address=access_contract_address)
+    # let (request_id) = IRandomProducer.requestRandom(contract_address=producer_address)
+    # random_request_type.write(request_id, RANDOM_TYPE_COMBAT_INIT)
+    # random_request_combat_init.write(request_id, combat_id)
+    # # trigger random fulfill, this should be removed after switch to random oracle
+    # IRandomProducer.triggerFulfill(producer_address, request_id)
 
     return (combat_id)
 end
@@ -134,12 +164,6 @@ func fulfillRandom{
     let (type) = random_request_type.read(request_id)
     with_attr error_message("FirstRelicCombat: random request type missed"):
         assert_not_zero(type)
-    end
-
-    if type==RANDOM_TYPE_COMBAT_INIT:
-        let (combat_id) = random_request_combat_init.read(request_id)
-        FirstRelicCombat_init_combat_by_random(combat_id, random)
-        return ()
     end
 
     return ()

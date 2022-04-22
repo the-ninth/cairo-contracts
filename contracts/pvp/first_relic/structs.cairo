@@ -13,7 +13,6 @@ const CHEST_TYPE_EQUIP = 2
 const CHEST_TYPE_CRYSTAL = 3
 
 struct Combat:
-    member max_players: felt
     member start_time: felt
     member end_time: felt
     member expire_time: felt
@@ -64,7 +63,6 @@ end
 struct Ore:
     member total_supply: felt
     member mined_supply: felt
-    member mining_account: felt
     member mining_workers_count: felt
 end
 

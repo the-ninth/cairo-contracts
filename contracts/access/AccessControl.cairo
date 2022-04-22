@@ -56,6 +56,14 @@ end
 func AccessControl_random_producer_contract() -> (res: felt):
 end
 
+@storage_var
+func AccessControl_fr_combat_register_contract() -> (res: felt):
+end
+
+@storage_var
+func AccessControl_fr_combat_contract() -> (res: felt):
+end
+
 #
 # View
 #
@@ -130,6 +138,25 @@ func randomProducerContract{
     return (addr)
 end
 
+@view
+func frCombatRegisterContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (contract: felt):
+    let (addr) = AccessControl_fr_combat_register_contract.read()
+    return (addr)
+end
+
+@view
+func frCombatContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (contract: felt):
+    let (addr) = AccessControl_fr_combat_contract.read()
+    return (addr)
+end
 
 #
 # external
@@ -198,6 +225,28 @@ func setRandomProducerContract{
     }(contract: felt):
     AccessControl_only_super_admin()
     AccessControl_random_producer_contract.write(contract)
+    return ()
+end
+
+@external
+func setFrCombatRegisterContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(contract: felt):
+    AccessControl_only_super_admin()
+    AccessControl_fr_combat_register_contract.write(contract)
+    return ()
+end
+
+@external
+func setFrCombatContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(contract: felt):
+    AccessControl_only_super_admin()
+    AccessControl_fr_combat_contract.write(contract)
     return ()
 end
 

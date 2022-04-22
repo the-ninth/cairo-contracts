@@ -19,7 +19,7 @@ namespace IFirstRelicCombat:
     func getKoma(combat_id: felt, account: felt) -> (koma: Koma):
     end
 
-    func initPlayer(combat_id: felt, account: felt) -> (koma: Koma):
+    func initPlayer(combat_id: felt, account: felt):
     end
 
     func getPlayersCount() -> (combat_id: felt, count: felt):
