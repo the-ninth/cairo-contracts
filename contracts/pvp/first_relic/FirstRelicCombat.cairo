@@ -49,7 +49,7 @@ func getChestCount{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(combat_id: felt) -> (len: felt):
+    }(combat_id: felt) -> (count: felt):
     let (count) = FirstRelicCombat_get_chest_count(combat_id)
     return (count)
 end

@@ -13,6 +13,8 @@ ACCOUNT_CONTRACT_FILE = contract_path('openzeppelin/account/Account.cairo')
 RANDOM_PRODUCER_CONTRACT_FILE = contract_path('contracts/random/RandomProducer.cairo')
 signer = Signer(123456789)
 
+# testing var
+
 
 
 # The testing library uses python's asyncio. So the following
@@ -35,6 +37,11 @@ async def test_combat_init():
     )
 
     await signer.send_transaction(account_contract, fr_combat_contract.contract_address, "newCombat", [])
+    execution_info = await fr_combat_contract.getChestCount(1).call()
+    assert execution_info.result.count == 10
+
+    execution_info = await fr_combat_contract.getChests(1, 0, 5).call()
+    print(execution_info)
 
 
 

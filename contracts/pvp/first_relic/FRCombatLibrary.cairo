@@ -2,6 +2,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.math import assert_le_felt, assert_lt_felt
 
 from starkware.starknet.common.syscalls import get_caller_address, get_block_number
 
@@ -15,7 +16,7 @@ const MAP_WIDTH = 300
 const MAP_HEIGHT = 200
 const MAP_INNER_AREA_WIDTH = 150
 const MAP_INNER_AREA_HEIGHT = 100
-const MAP_MAX_CHESTS = 50
+const MAP_MAX_CHESTS = 10
 
 @storage_var
 func combat_counter() -> (count: felt):
@@ -66,9 +67,15 @@ func FirstRelicCombat_get_chests{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(combat_id: felt, offset: felt, length: felt) -> (data_len: felt, data: Chest*):
-    let (data: Chest*) = alloc()
-    return (0, data)
+    }(combat_id: felt, index: felt, length: felt) -> (data_len: felt, data: Chest*):
+    alloc_locals
+
+    assert_le_felt(0, index)
+    assert_lt_felt(0, length)
+
+    let (local data: Chest*) = alloc()
+    let (data_len, data) = _get_chests(combat_id, index, length, 0, data)
+    return (data_len, data)
 end
 
 func FirstRelicCombat_get_chest_by_coordinate{
@@ -138,4 +145,25 @@ func _fetch_outer_empty_coordinate{
     let (x, next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
     let (y, next_seed) = get_random_number_and_seed(next_seed, MAP_WIDTH)
     return (Coordinate(x,y), next_seed)
+end
+
+func _get_chests{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, index: felt, length: felt, data_len: felt, data: Chest*) -> (data_len: felt, data: Chest*):
+    if length == 0:
+        return (data_len, data)
+    end
+
+    let (chests_count) = chest_coordinates_len.read(combat_id)
+    if index == chests_count - 1:
+        return (data_len, data)
+    end
+
+    let (coordinate) = chest_coordinate_by_index.read(combat_id, index)
+    let (chest) = chests.read(combat_id, coordinate)
+    assert data[data_len] = chest
+
+    return _get_chests(combat_id, index+1, length-1, data_len+1, data)
 end
