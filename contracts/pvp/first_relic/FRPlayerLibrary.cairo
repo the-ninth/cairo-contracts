@@ -4,17 +4,19 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.starknet.common.syscalls import get_block_number, get_block_timestamp
 from starkware.cairo.common.hash import hash2
 
-from contracts.pvp.first_relic.structs import Koma, Combat, COMBAT_STATUS_REGISTERING
+from contracts.pvp.first_relic.structs import Koma, Combat, Coordinate, COMBAT_STATUS_REGISTERING
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_combat,
     _init_chests,
-    _init_ores,
-    _fetch_outer_empty_coordinate,
-    CHEST_PER_PLAYER,
-    ORE_PER_PLAYER
+    _init_ores
 )
-
-const MAX_PLAYERS = 10
+from contracts.pvp.first_relic.constants import (
+    CHEST_PER_PLAYER,
+    ORE_PER_PLAYER,
+    MAP_WIDTH,
+    MAP_HEIGHT
+)
+from contracts.util.random import get_random_number_and_seed
 
 @storage_var
 func players_count(combat_id: felt) -> (count: felt):
@@ -59,7 +61,7 @@ func FirstRelicCombat_init_player{
         let (seed) = hash2(block_number, block_timestamp)
     end
     let pedersen_ptr = hash_ptr
-    let (coordinate, next_seed) = _fetch_outer_empty_coordinate(combat_id, seed)
+    let (coordinate, next_seed) = _fetch_outer_non_player_coordinate(combat_id, seed)
     let koma = Koma(
         coordinate=coordinate, status=0, health=100, max_health=100, agility=7, move_speed=2, 
         props_weight=0, props_max_weight=1000, workers_count=3, working_workers_count=0,
@@ -73,6 +75,20 @@ func FirstRelicCombat_init_player{
     komas.write(combat_id, account, koma)
 
     # generate chests and ores
-    _init_chests(combat_id, CHEST_PER_PLAYER, next_seed)
+    let (next_seed) = _init_chests(combat_id, CHEST_PER_PLAYER, next_seed)
+    _init_ores(combat_id, ORE_PER_PLAYER, next_seed)
     return ()
+end
+
+func _fetch_outer_non_player_coordinate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, seed: felt) -> (coordinate: Coordinate, next_seed: felt):
+    
+    let (x, next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
+    let (y, next_seed) = get_random_number_and_seed(next_seed, MAP_HEIGHT)
+    let coordinate = Coordinate(x=x, y=y)
+
+    return (coordinate, next_seed)
 end

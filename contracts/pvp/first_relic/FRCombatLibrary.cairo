@@ -7,15 +7,13 @@ from starkware.cairo.common.math import assert_le_felt, assert_lt_felt
 from starkware.starknet.common.syscalls import get_caller_address, get_block_number
 
 from contracts.pvp.first_relic.structs import Combat, COMBAT_STATUS_REGISTERING, Chest, Ore, Coordinate
+from contracts.pvp.first_relic.constants import (
+    MAP_WIDTH,
+    MAP_HEIGHT,
+    MAP_INNER_AREA_WIDTH,
+    MAP_INNER_AREA_HEIGHT
+)
 from contracts.util.random import get_random_number_and_seed
-
-
-const MAP_WIDTH = 300
-const MAP_HEIGHT = 200
-const MAP_INNER_AREA_WIDTH = 150
-const MAP_INNER_AREA_HEIGHT = 100
-const CHEST_PER_PLAYER = 3
-const ORE_PER_PLAYER = 3
 
 
 @storage_var
@@ -43,15 +41,15 @@ end
 # ore storages
 
 @storage_var
-func ores(coordinate: Coordinate) -> (ore: Ore):
+func ores(combat_id: felt, coordinate: Coordinate) -> (ore: Ore):
 end
 
 @storage_var
-func ore_coordinates_len() -> (len: felt):
+func ore_coordinates_len(combat_id: felt) -> (len: felt):
 end
 
 @storage_var
-func ore_coordinate_by_index(index: felt) -> (coordinate: Coordinate):
+func ore_coordinate_by_index(combat_id:felt, index: felt) -> (coordinate: Coordinate):
 end
 
 func FirstRelicCombat_get_combat_count{
@@ -113,6 +111,7 @@ func FirstRelicCombat_new_combat{
     let (count) = combat_counter.read()
     let combat_id = count + 1
     let combat = Combat(start_time=0, end_time=0, expire_time=0, status=COMBAT_STATUS_REGISTERING)
+    combat_counter.write(combat_id)
     combats.write(combat_id, combat)
     return (combat_id)
 end
@@ -159,7 +158,7 @@ func _init_ores{
         range_check_ptr
     }(combat_id: felt, ores_count: felt, seed: felt) -> (next_seed: felt):
     if ores_count == 0:
-        return ()
+        return (seed)
     end
     let (coordinate, next_seed) = _fetch_outer_empty_coordinate(combat_id, seed)
     let ore = Ore(total_supply=1000, mined_supply=0, mining_workers_count=0)
@@ -167,10 +166,9 @@ func _init_ores{
     ores.write(combat_id, coordinate, ore)
     ore_coordinate_by_index.write(combat_id, ore_len, coordinate)
     ore_coordinates_len.write(combat_id, ore_len + 1)
+    let (next_seed) = _init_ores(combat_id, ores_count - 1, next_seed)
 
-    _init_ores(combat_id, ores_count - 1, next_seed)
-
-    return ()
+    return (next_seed)
 end
 
 # fetch a empty coordinate randomly
@@ -179,13 +177,23 @@ func _fetch_outer_empty_coordinate{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, seed: felt) -> (coordinate: Coordinate, next_seed: felt):
+    alloc_locals
     
-    let (x, next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
-    let (y, next_seed) = get_random_number_and_seed(next_seed, MAP_WIDTH)
+    let (local x, local next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
+    let (local y, local next_seed) = get_random_number_and_seed(next_seed, MAP_HEIGHT)
+    local coordinate: Coordinate = Coordinate(x=x, y=y)
+    let (chest) = chests.read(combat_id, coordinate)
+    let (ore) = ores.read(combat_id, coordinate)
+    let exist = chest.chest_type * ore.total_supply
+    if exist != 0:
+        let (local coordinate, local next_seed) = _fetch_outer_empty_coordinate(combat_id, next_seed)
+        return (coordinate, next_seed)
+    end
 
-    return (Coordinate(x,y), next_seed)
+    return (coordinate, next_seed)
 end
 
+# recursively get chest struct array 
 func _get_chests{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,

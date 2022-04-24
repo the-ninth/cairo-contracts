@@ -39,6 +39,7 @@ func constructor{
     return ()
 end
 
+@external
 func register{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -61,6 +62,7 @@ func register{
     return ()
 end
 
+@view
 func getTotalNinthRewards{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -70,6 +72,7 @@ func getTotalNinthRewards{
     return (Uint256(0, 0))
 end
 
+@external
 func distributeNinthRewards{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
