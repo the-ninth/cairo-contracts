@@ -204,7 +204,7 @@ func _get_chests{
     end
 
     let (chests_count) = chest_coordinates_len.read(combat_id)
-    if index == chests_count - 1:
+    if index == chests_count:
         return (data_len, data)
     end
 

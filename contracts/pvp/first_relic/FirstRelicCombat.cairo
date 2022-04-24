@@ -19,7 +19,10 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
-    FirstRelicCombat_get_players_count
+    FirstRelicCombat_get_players_count,
+    FirstRelicCombat_get_players,
+    FirstRelicCombat_get_koma,
+    FirstRelicCombat_get_komas
 )
 
 
@@ -109,6 +112,36 @@ func getPlayersCount{
     return (count)
 end
 
+@view
+func getPlayers{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, offset: felt, length: felt) -> (players_len: felt, players: felt*):
+    let (players_len, players) = FirstRelicCombat_get_players(combat_id, offset, length)
+    return (players_len, players)
+end
+
+@view
+func getKoma{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (koma: Koma):
+    let (koma) = FirstRelicCombat_get_koma(combat_id, account)
+    return (koma)
+end
+
+@view
+func getKomas{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, accounts_len: felt, accounts: felt*) -> (komas_len: felt, komas: Koma*):
+    let (komas_len, komas) = FirstRelicCombat_get_komas(combat_id, accounts_len, accounts)
+    return (komas_len, komas)
+end
+
 @external
 func initPlayer{
         syscall_ptr : felt*, 
@@ -123,6 +156,8 @@ func initPlayer{
     assert caller = register_contract_address
 
     FirstRelicCombat_init_player(combat_id, account)
+
+    # if exceed max
     return()
 end
 

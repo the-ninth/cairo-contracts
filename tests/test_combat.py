@@ -17,6 +17,7 @@ signer = Signer(123456789)
 
 # testing var
 COMBAT_STATUS_REGISTERING = 1
+KOMA_STATUS_STATIC = 1
 
 
 # The testing library uses python's asyncio. So the following
@@ -53,7 +54,22 @@ async def test_combat_register(contract_factory):
     execution_info = await fr_combat_contract.getPlayersCount(1).call()
     assert execution_info.result.count == 2
 
-    
+    execution_info = await fr_combat_contract.getPlayers(1, 0, 10).call()
+    assert execution_info.result.players[0] == player1.contract_address
+    assert execution_info.result.players[1] == player2.contract_address
+
+    execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
+    player1_koma = execution_info.result.koma
+    assert player1_koma.status == KOMA_STATUS_STATIC
+
+    execution_info = await fr_combat_contract.getKoma(1, player2.contract_address).call()
+    player2_koma = execution_info.result.koma
+    assert player2_koma.status == KOMA_STATUS_STATIC
+
+    assert player1_koma.coordinate != player2_koma.coordinate
+
+    execution_info = await fr_combat_contract.getKomas(1, [player1.contract_address, player2.contract_address]).call()
+    assert len(execution_info.result.komas) == 2
     
 
 @pytest.fixture
