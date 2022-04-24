@@ -19,6 +19,7 @@ from contracts.market.library import (
     Market_sell,
     Market_buy,
     Market_add_token,
+    Market_cancel,
 )
 
 #
@@ -100,6 +101,14 @@ func buy{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
     order_index : Uint256, amount : Uint256
 ):
     Market_buy(order_index, amount)
+    return ()
+end
+
+@external
+func cancel{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    order_index : Uint256
+):
+    Market_cancel(order_index)
     return ()
 end
 
