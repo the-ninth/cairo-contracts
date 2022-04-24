@@ -99,7 +99,7 @@ func FirstRelicCombat_init_player{
 
     let (koma) = komas.read(combat_id, account)
     with_attr error_message("FirstRelicCombat: account registered"):
-        assert combat.status = COMBAT_STATUS_REGISTERING
+        assert koma.status = 0
     end
 
     let (tx_info) = get_tx_info()
