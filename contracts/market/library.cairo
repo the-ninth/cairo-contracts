@@ -140,6 +140,7 @@ end
 # Externals
 #
 
+# sell
 func Market_sell{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     base_token_no : Uint256,
     token_no : Uint256,
@@ -217,6 +218,7 @@ func Market_sell{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     return ()
 end
 
+# buy
 func Market_buy{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     order_index : Uint256, amount : Uint256
 ):
@@ -263,39 +265,78 @@ func Market_buy{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_pt
             data=data,
         )
         _discard_order(order_index)
+    else:
+        let (id : felt) = _uint_to_felt(order.id)
+        IERC1155.safeTransferFrom(
+            contract_address=token_info.address, from_=self, to=sender, id=id, amount=amount, data=0
+        )
+        let (is_eq) = uint256_eq(amount, order.amount)
+        if is_eq == TRUE:
+            _discard_order(order_index)
+        else:
+            # check order amount
+            with_attr error_message("Market_buy: new_amount error"):
+                let (left_amount : Uint256) = uint256_checked_sub_lt(order.amount, amount)
+            end
+            _update_order_amount(order_index, order, left_amount)
+        end
+    end
+
+    return ()
+end
+
+# cancel
+func Market_cancel{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    order_index : Uint256
+):
+    alloc_locals
+    let (order : Order) = Market_getOrder(order_index)
+
+    # check sender is seller
+    let (sender) = get_caller_address()
+    with_attr error_message("calcel: sender error"):
+        assert sender = order.seller
+    end
+
+    let (token_info : Token) = Market_getToken(order.token_no)
+
+    # get contract address
+    let (self) = get_contract_address()
+
+    # transfer tokens to caller
+    let (data : felt*) = alloc()
+    assert [data] = 0
+    if token_info.type == ERC721_TOKEN:
+        IERC721.safeTransferFrom(
+            contract_address=token_info.address,
+            from_=self,
+            to=order.seller,
+            tokenId=order.id,
+            data_len=1,
+            data=data,
+        )
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
     else:
         let (id : felt) = _uint_to_felt(order.id)
         IERC1155.safeTransferFrom(
-            contract_address=token_info.address, from_=self, to=self, id=id, amount=amount, data=0
+            contract_address=token_info.address,
+            from_=self,
+            to=order.seller,
+            id=id,
+            amount=order.amount,
+            data=0,
         )
-        let (is_eq) = uint256_eq(amount, order.amount)
-        if is_eq == TRUE:
-            _discard_order(order_index)
-            tempvar syscall_ptr = syscall_ptr
-            tempvar pedersen_ptr = pedersen_ptr
-            tempvar range_check_ptr = range_check_ptr
-        else:
-            # check order amount
-            with_attr error_message("Market_buy: new_amount error"):
-                let (left_amount : Uint256) = uint256_checked_sub_lt(order.amount, amount)
-            end
-            assert order.amount = left_amount
-            Market_orders.write(order_index, order)
-            tempvar syscall_ptr = syscall_ptr
-            tempvar pedersen_ptr = pedersen_ptr
-            tempvar range_check_ptr = range_check_ptr
-        end
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
     end
-
+    _discard_order(order_index)
     return ()
 end
 
+# add config token
 func Market_add_token{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     address : felt, type : felt
 ):
@@ -363,6 +404,22 @@ func _discard_order{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
     end
 
     # todo add op history
+    return ()
+end
+
+func _update_order_amount{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    order_index : Uint256, order : Order, left_amount : Uint256
+) -> ():
+    alloc_locals
+    local new_order : Order
+    assert new_order.base_token_no = order.base_token_no
+    assert new_order.token_no = order.token_no
+    assert new_order.id = order.id
+    assert new_order.amount = left_amount
+    assert new_order.seller = order.seller
+    assert new_order.unit_price = order.unit_price
+    assert new_order.startTime = order.startTime
+    Market_orders.write(order_index, new_order)
     return ()
 end
 

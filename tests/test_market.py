@@ -7,7 +7,7 @@ from utils import (Signer, contract_path)
 
 import pytest
 from starkware.starknet.testing.starknet import Starknet
-from utils import (Signer, contract_path, to_uint,from_uint, uint_list_to_felt_list,str_to_felt)
+from utils import (Signer, contract_path, to_uint,from_uint, uint_list_to_felt_list,str_to_felt,MAX_UINT256)
 
 # The path to the contract source code.
 MARKET_CONTRACT_FILE = contract_path('contracts/market/Market.cairo')
@@ -19,39 +19,44 @@ signer = Signer(123456789)
 # The testing library uses python's asyncio. So the following
 # decorator and the ``async`` keyword are needed.
 @pytest.mark.asyncio
-async def test_sell():
+async def test_market():
     """Test market."""
     starknet = await Starknet.empty()
-    op_account_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
-    account1_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
-    account2_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    owner_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    seller_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    buyer_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
 
     erc1155_contract = await starknet.deploy(ERC1155_CONTRACT_FILE, constructor_calldata=[])
-    erc20_contract = await starknet.deploy(ERC20_CONTRACT_FILE, constructor_calldata=[str_to_felt('TEST'),str_to_felt('TEST'),18,*to_uint(1000000000),op_account_contract.contract_address,signer.public_key])
-    market_contract = await starknet.deploy(MARKET_CONTRACT_FILE, constructor_calldata=[op_account_contract.contract_address])
+    erc20_contract = await starknet.deploy(ERC20_CONTRACT_FILE, constructor_calldata=[str_to_felt('TEST'),str_to_felt('TEST'),18,*to_uint(1000000000),owner_contract.contract_address,owner_contract.contract_address])
+    market_contract = await starknet.deploy(MARKET_CONTRACT_FILE, constructor_calldata=[owner_contract.contract_address])
 
     # set market config
     await signer.send_transaction(
-        op_account_contract, market_contract.contract_address, 'addToken', [erc20_contract.contract_address, 20]
+        owner_contract, market_contract.contract_address, 'addToken', [erc20_contract.contract_address, 20]
     )
     await signer.send_transaction(
-        op_account_contract, market_contract.contract_address, 'addToken', [erc1155_contract.contract_address, 1155]
+        owner_contract, market_contract.contract_address, 'addToken', [erc1155_contract.contract_address, 1155]
+    )
+
+    # mint erc20 to buyer
+    await signer.send_transaction(
+        owner_contract, erc20_contract.contract_address, 'mint', [buyer_contract.contract_address,*to_uint(10000) ]
     )
     
     # mint 1155 
     await signer.send_transaction(
-        op_account_contract, erc1155_contract.contract_address, 'mint', [account1_contract.contract_address, 1, *to_uint(100), 0]
+        owner_contract, erc1155_contract.contract_address, 'mint', [seller_contract.contract_address, 1, *to_uint(100), 0]
     )
 
     # set approve
     await signer.send_transaction(
-        account1_contract, erc1155_contract.contract_address, 'setApprovalForAll', [market_contract.contract_address, 1]
+        seller_contract, erc1155_contract.contract_address, 'setApprovalForAll', [market_contract.contract_address, 1]
     )
 
     # sell
     # base_coin_no,coin_no,id,amount,unit_price
     await signer.send_transaction(
-        account1_contract, market_contract.contract_address, 'sell', [*to_uint(0),*to_uint(1),*to_uint(1),*to_uint(3),*to_uint(100)]
+        seller_contract, market_contract.contract_address, 'sell', [*to_uint(0),*to_uint(1),*to_uint(1),*to_uint(3),*to_uint(100)]
     )
 
     # check market order len
@@ -66,53 +71,42 @@ async def test_sell():
     execution_info = await erc1155_contract.balanceOf(market_contract.contract_address,1).call()
     assert from_uint(execution_info.result.balance) == 3
 
-    
-@pytest.mark.asyncio
-async def test_sell_buy():
-    """Test market."""
-    starknet = await Starknet.empty()
-    op_account_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
-    account1_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
-    account2_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
-
-    erc1155_contract = await starknet.deploy(ERC1155_CONTRACT_FILE, constructor_calldata=[])
-    erc20_contract = await starknet.deploy(ERC20_CONTRACT_FILE, constructor_calldata=[str_to_felt('TEST'),str_to_felt('TEST'),18,*to_uint(1000000000),op_account_contract.contract_address,signer.public_key])
-    market_contract = await starknet.deploy(MARKET_CONTRACT_FILE, constructor_calldata=[op_account_contract.contract_address])
-
-    # set market config
+    # buy
+    # approve market of transferring erc20 
     await signer.send_transaction(
-        op_account_contract, market_contract.contract_address, 'addToken', [erc20_contract.contract_address, 20]
-    )
-    await signer.send_transaction(
-        op_account_contract, market_contract.contract_address, 'addToken', [erc1155_contract.contract_address, 1155]
-    )
-    
-    # mint 1155 
-    await signer.send_transaction(
-        op_account_contract, erc1155_contract.contract_address, 'mint', [account1_contract.contract_address, 1, *to_uint(100), 0]
+        buyer_contract, erc20_contract.contract_address, 'approve', [market_contract.contract_address,*MAX_UINT256]
     )
 
-    # set approve
     await signer.send_transaction(
-        account1_contract, erc1155_contract.contract_address, 'setApprovalForAll', [market_contract.contract_address, 1]
+        buyer_contract, market_contract.contract_address, 'buy', [*to_uint(0),*to_uint(1)]
     )
-
-    # sell
-    # base_coin_no,coin_no,id,amount,unit_price
-    await signer.send_transaction(
-        account1_contract, market_contract.contract_address, 'sell', [*to_uint(0),*to_uint(1),*to_uint(1),*to_uint(3),*to_uint(100)]
-    )
-
-    # check market order len
-    execution_info = await market_contract.orderLen().call()
-    assert from_uint(execution_info.result.len) == 1
-
-    # check token len
-    execution_info = await market_contract.tokenLen().call()
-    assert from_uint(execution_info.result.len) == 2
 
     # check market balance
     execution_info = await erc1155_contract.balanceOf(market_contract.contract_address,1).call()
-    assert from_uint(execution_info.result.balance) == 3
+    assert from_uint(execution_info.result.balance) == 2
 
-    
+    # check buyer erc1155 balance
+    execution_info = await erc1155_contract.balanceOf(buyer_contract.contract_address,1).call()
+    assert from_uint(execution_info.result.balance) == 1
+
+    # check seller erc20 balance
+    execution_info = await erc20_contract.balanceOf(seller_contract.contract_address).call()
+    assert from_uint(execution_info.result.balance) == 100
+
+    # cancel
+    await signer.send_transaction(
+        seller_contract, market_contract.contract_address, 'cancel', [*to_uint(0)]
+    )
+
+    # check market balance
+    execution_info = await erc1155_contract.balanceOf(market_contract.contract_address,1).call()
+    assert from_uint(execution_info.result.balance) == 0
+
+    # check buyer erc1155 balance
+    execution_info = await erc1155_contract.balanceOf(buyer_contract.contract_address,1).call()
+    assert from_uint(execution_info.result.balance) == 1
+
+    # check seller erc1155 balance
+    execution_info = await erc1155_contract.balanceOf(seller_contract.contract_address,1).call()
+    assert from_uint(execution_info.result.balance) == 99
+   
