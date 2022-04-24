@@ -2,8 +2,11 @@
 
 const COMBAT_STATUS_NON_EXIST = 0
 const COMBAT_STATUS_REGISTERING = 1
-const COMBAT_STATUS_STARTED = 2
-const COMBAT_STATUS_ENDED = 3
+const COMBAT_STATUS_PREPARING = 2
+const COMBAT_STATUS_FIRST_STAGE = 3
+const COMBAT_STATUS_SECOND_STAGE = 4
+const COMBAT_STATUS_THIRD_STAGE = 5
+const COMBAT_STATUS_END = 6
 
 const KOMA_STATUS_STATIC = 1
 const KOMA_STATUS_MOVING = 2
@@ -13,7 +16,10 @@ const CHEST_TYPE_EQUIP = 2
 const CHEST_TYPE_CRYSTAL = 3
 
 struct Combat:
-    member start_time: felt
+    member prepare_time: felt
+    member first_stage_time: felt
+    member second_stage_time: felt
+    member third_stage_time: felt
     member end_time: felt
     member expire_time: felt
     member status: felt

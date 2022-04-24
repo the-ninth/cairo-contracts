@@ -102,11 +102,23 @@ func CombatCreated(combat_id: felt, timestamp: felt):
 end
 
 @event
-func CombatStarted(combat_id: felt, timestamp: felt):
+func CombatPreparing(combat_id: felt, timestamp: felt):
 end
 
 @event
-func CombatEnded(combat_id: felt, timestamp: felt):
+func CombatFirstStageStart(combat_id: felt, timestamp: felt):
+end
+
+@event
+func CombatSecondStageStart(combat_id: felt, timestamp: felt):
+end
+
+@event
+func CombatThirdStageStart(combat_id: felt, timestamp: felt):
+end
+
+@event
+func CombatEnd(combat_id: felt, timestamp: felt):
 end
 
 @event

@@ -4,14 +4,22 @@ from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.math import assert_le_felt, assert_lt_felt
 
-from starkware.starknet.common.syscalls import get_caller_address, get_block_number
+from starkware.starknet.common.syscalls import get_caller_address, get_block_number, get_block_timestamp
 
-from contracts.pvp.first_relic.structs import Combat, COMBAT_STATUS_REGISTERING, Chest, Ore, Coordinate
+from contracts.pvp.first_relic.structs import (
+    Combat,
+    Chest,
+    Ore,
+    Coordinate,
+    COMBAT_STATUS_REGISTERING,
+    COMBAT_STATUS_PREPARING
+)
 from contracts.pvp.first_relic.constants import (
     MAP_WIDTH,
     MAP_HEIGHT,
     MAP_INNER_AREA_WIDTH,
-    MAP_INNER_AREA_HEIGHT
+    MAP_INNER_AREA_HEIGHT,
+    PREPARE_TIME
 )
 from contracts.util.random import get_random_number_and_seed
 
@@ -110,10 +118,31 @@ func FirstRelicCombat_new_combat{
     }() -> (combat_id: felt):
     let (count) = combat_counter.read()
     let combat_id = count + 1
-    let combat = Combat(start_time=0, end_time=0, expire_time=0, status=COMBAT_STATUS_REGISTERING)
+    let combat = Combat(0, 0, 0, 0, 0, 0, status=COMBAT_STATUS_REGISTERING)
     combat_counter.write(combat_id)
     combats.write(combat_id, combat)
     return (combat_id)
+end
+
+func FirstRelicCombat_prepare_combat{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt):
+    let (combat) = combats.read(combat_id)
+    with_attr error_message("FirstRelicCombat: not registering"):
+        assert combat.status = COMBAT_STATUS_REGISTERING
+    end
+    let (block_timestamp) = get_block_timestamp()
+    let combat_updated: Combat = Combat(block_timestamp, block_timestamp + PREPARE_TIME, 0, 0, 0, 0, COMBAT_STATUS_PREPARING)
+    # combat_updated.status = COMBAT_STATUS_PREPARING
+    # combat_updated.prepare_time = block_timestamp
+    # combat_updated.first_stage_time = block_timestamp + PREPARE_TIME
+    # combat.status = COMBAT_STATUS_PREPARING
+    # combat.prepare_time = block_timestamp
+    # combat.first_stage_time = block_timestamp + PREPARE_TIME
+    combats.write(combat_id, combat_updated)
+    return ()
 end
 
 # func FirstRelicCombat_init_combat_by_random{

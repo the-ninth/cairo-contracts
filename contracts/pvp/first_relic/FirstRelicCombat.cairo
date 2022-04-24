@@ -9,6 +9,7 @@ from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_FRCOMBAT_CREATOR
 from contracts.random.IRandomProducer import IRandomProducer
 from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate
+from contracts.pvp.first_relic.constants import MAX_PLAYERS
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_new_combat,
     FirstRelicCombat_get_combat,
@@ -16,6 +17,7 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_chest_count,
     FirstRelicCombat_get_chests,
     FirstRelicCombat_get_chest_by_coordinate,
+    FirstRelicCombat_prepare_combat
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -148,6 +150,8 @@ func initPlayer{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt):
+    alloc_locals
+
     # only register contract could call
     let (access_contract_address) = access_contract.read()
     let (caller) = get_caller_address()
@@ -157,8 +161,20 @@ func initPlayer{
 
     FirstRelicCombat_init_player(combat_id, account)
 
-    # if exceed max
-    return()
+    # ready to launch
+    let (count) = FirstRelicCombat_get_players_count(combat_id)
+    if count == MAX_PLAYERS:
+        FirstRelicCombat_prepare_combat(combat_id)
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    else:
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    end
+
+    return ()
 end
 
 @external
