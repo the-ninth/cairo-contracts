@@ -7,7 +7,12 @@ const IERC721_RECEIVER_ID = 0x150b7a02
 
 from openzeppelin.introspection.ERC165 import ERC165_supports_interface, ERC165_register_interface
 
-from openzeppelin.access.ownable import Ownable_initializer, Ownable_only_owner
+from openzeppelin.access.ownable import (
+    Ownable_initializer,
+    Ownable_only_owner,
+    Ownable_get_owner,
+    Ownable_transfer_ownership,
+)
 
 from contracts.market.library import (
     Order,
@@ -84,6 +89,12 @@ func supportsInterface{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     return (success)
 end
 
+@view
+func owner{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}() -> (owner : felt):
+    let (owner) = Ownable_get_owner()
+    return (owner=owner)
+end
+
 #
 # Externals
 #
@@ -119,4 +130,12 @@ func addToken{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}
     Ownable_only_owner()
     Market_add_token(address, type)
     return ()
+end
+
+@external
+func transferOwnership{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    new_owner : felt
+) -> (new_owner : felt):
+    Ownable_transfer_ownership(new_owner)
+    return (new_owner=new_owner)
 end

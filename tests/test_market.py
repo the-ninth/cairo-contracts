@@ -3,8 +3,6 @@ from curses.ascii import SO
 import os
 from itsdangerous import Signer
 from numpy import sign
-from utils import (Signer, contract_path)
-
 import pytest
 from starkware.starknet.testing.starknet import Starknet
 from utils import (Signer, contract_path, to_uint,from_uint, uint_list_to_felt_list,str_to_felt,MAX_UINT256)
