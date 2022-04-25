@@ -19,6 +19,7 @@ from contracts.market.library import (
     Token,
     Market_ordersLen,
     Market_getOrder,
+    Market_getBatchOrder,
     Market_tokensLen,
     Market_getToken,
     Market_sell,
@@ -64,6 +65,14 @@ func getOrder{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}
 ) -> (order : Order):
     let (order : Order) = Market_getOrder(index)
     return (order)
+end
+
+@view
+func getBatchOrders{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    start : Uint256, last : Uint256
+) -> (orders_len : felt, orders : Order*):
+    let (orders_len : felt, orders : Order*) = Market_getBatchOrder(start, last)
+    return (orders_len=orders_len, orders=orders)
 end
 
 @view

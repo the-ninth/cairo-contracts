@@ -114,6 +114,26 @@ func Market_getOrder{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_che
     return (order)
 end
 
+func Market_getBatchOrder{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    start : Uint256, last : Uint256
+) -> (orders_len : felt, orders : Order*):
+    alloc_locals
+    uint256_check(start)
+    uint256_check(last)
+    let (len : Uint256) = Market_ordersLen()
+    let (is_le1) = uint256_le(start, last)
+    let (is_le2) = uint256_lt(last, len)
+    with_attr error_message("Market: getBatchOrder index error"):
+        assert is_le1 * is_le2 = TRUE
+    end
+    let (diff : Uint256) = uint256_checked_sub_le(last, start)
+    let (diff : Uint256) = uint256_checked_add(diff, Uint256(1, 0))
+    let (left : felt) = _uint_to_felt(diff)
+    let (local orders : Order*) = alloc()
+    Market_getOrder_loop(start=start, orders=orders, left=left)
+    return (orders_len=left, orders=orders)
+end
+
 func Market_tokensLen{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     len : Uint256
 ):
@@ -369,6 +389,20 @@ end
 #
 # Internals
 #
+
+func Market_getOrder_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    start : Uint256, orders : Order*, left
+) -> ():
+    alloc_locals
+    if left == 0:
+        return ()
+    end
+    let (local order) = Market_orders.read(start)
+    assert [orders] = order
+    let (new_start) = uint256_checked_add(start, Uint256(1, 0))
+    Market_getOrder_loop(start=new_start, orders=orders + Order.SIZE, left=left - 1)
+    return ()
+end
 
 func _add_order{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(order : Order):
     alloc_locals
