@@ -10,6 +10,8 @@ const COMBAT_STATUS_END = 6
 
 const KOMA_STATUS_STATIC = 1
 const KOMA_STATUS_MOVING = 2
+const KOMA_STATUS_MINING = 3
+const KOMA_STATUS_DEAD = 4
 
 const CHEST_TYPE_LIVE = 1
 const CHEST_TYPE_EQUIP = 2
@@ -43,7 +45,6 @@ struct Koma:
     member working_workers_count: felt
     member drones_count: felt
     member action_radius: felt
-    member ore_amount: felt
     member element: felt
 end
 
@@ -85,4 +86,10 @@ struct ThirdStageAction:
     member target: felt # 0 for boss, others for players
     member round: felt
     member salt: felt
+end
+
+struct Movment:
+    member to: Coordinate
+    member start_time: felt # timestamp starting to move
+    member reach_time: felt # timestamp reaching the target location
 end

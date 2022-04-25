@@ -8,3 +8,5 @@ const CHEST_PER_PLAYER = 3
 const ORE_PER_PLAYER = 3
 const MAX_PLAYERS = 2
 const PREPARE_TIME = 300 # how much time for preparation time
+
+const KOMA_MOVING_SPEED = 20

@@ -1,5 +1,6 @@
 %lang starknet
 
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.math import assert_not_zero
 
@@ -7,9 +8,14 @@ from starkware.starknet.common.syscalls import get_caller_address
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_FRCOMBAT_CREATOR
+
+from contracts.delegate_account.interfaces.IDelegateAccountRegistry import IDelegateAccountRegistry
+from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE
+
 from contracts.random.IRandomProducer import IRandomProducer
-from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate
+
 from contracts.pvp.first_relic.constants import MAX_PLAYERS
+from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_new_combat,
     FirstRelicCombat_get_combat,
@@ -24,7 +30,8 @@ from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_get_players_count,
     FirstRelicCombat_get_players,
     FirstRelicCombat_get_koma,
-    FirstRelicCombat_get_komas
+    FirstRelicCombat_get_komas,
+    FirstRelicCombat_move
 )
 
 
@@ -200,6 +207,17 @@ func newCombat{
 end
 
 @external
+func move{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, to: Coordinate):
+    authorized_call(account, ACTION_FR_COMBAT_MOVE)
+    FirstRelicCombat_move(combat_id, account, to)
+    return ()
+end
+
+@external
 func fulfillRandom{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -219,4 +237,28 @@ func fulfillRandom{
 
     return ()
 
+end
+
+#
+# Modifiers
+#
+
+func authorized_call{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(account: felt, action: felt):
+    let (caller) = get_caller_address()
+    if caller == account:
+        return ()
+    end
+
+    let (access_contract_address) = access_contract.read()
+    let (delegate_registry_contract_address) = IAccessControl.delegateAccountRegistryContract(contract_address=access_contract_address)
+    let (res) = IDelegateAccountRegistry.authorized(contract_address=delegate_registry_contract_address, account=account, delegate_account=caller, action=action)
+    with_attr error_message("FirstRelicCombat: unauthorized call"):
+        assert res = TRUE
+    end
+
+    return()
 end

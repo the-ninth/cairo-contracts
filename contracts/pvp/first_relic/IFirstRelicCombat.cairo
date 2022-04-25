@@ -126,11 +126,11 @@ func PlayerInit(combat_id: felt, account: felt, coordinate: Coordinate):
 end
 
 @event
-func PlayerMove(combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, timestamp: felt):
+func PlayerMove(combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, start_timestamp: felt):
 end
 
 @event
-func PlayerArrival(combat_id: felt, account: felt, from_: Coordinate):
+func PlayerArrival(combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, timestamp: felt):
 end
 
 @event

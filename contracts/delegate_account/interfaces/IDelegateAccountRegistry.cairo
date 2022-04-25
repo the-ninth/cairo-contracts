@@ -3,7 +3,7 @@
 @contract_interface
 namespace IDelegateAccountRegistry:
 
-    func setDelegateAccount(delegate_account: felt):
+    func setDelegateAccount(delegate_account: felt, actions_len: felt, actions: felt*):
     end
 
     func getDelegateAccount(account: felt) -> (delegate_account: felt):

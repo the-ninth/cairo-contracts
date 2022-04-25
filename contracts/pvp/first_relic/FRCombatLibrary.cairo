@@ -2,6 +2,7 @@
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.math import assert_le_felt, assert_lt_felt
 
 from starkware.starknet.common.syscalls import get_caller_address, get_block_number, get_block_timestamp
@@ -12,7 +13,9 @@ from contracts.pvp.first_relic.structs import (
     Ore,
     Coordinate,
     COMBAT_STATUS_REGISTERING,
-    COMBAT_STATUS_PREPARING
+    COMBAT_STATUS_PREPARING,
+    COMBAT_STATUS_FIRST_STAGE,
+    COMBAT_STATUS_SECOND_STAGE
 )
 from contracts.pvp.first_relic.constants import (
     MAP_WIDTH,
@@ -143,6 +146,21 @@ func FirstRelicCombat_prepare_combat{
     # combat.first_stage_time = block_timestamp + PREPARE_TIME
     combats.write(combat_id, combat_updated)
     return ()
+end
+
+func FirstRelicCombat_in_moving_stage{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (in_moving_stage: felt):
+    let (combat) = combats.read(combat_id)
+    if combat.status == COMBAT_STATUS_FIRST_STAGE:
+        return (TRUE)
+    end
+    if combat.status == COMBAT_STATUS_SECOND_STAGE:
+        return (TRUE)
+    end
+    return (FALSE)
 end
 
 # func FirstRelicCombat_init_combat_by_random{
