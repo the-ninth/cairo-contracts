@@ -40,8 +40,8 @@ async def test_market():
     await signer.send_transaction(
         owner_contract, erc20_contract.contract_address, 'mint', [buyer_contract.contract_address,*to_uint(10000) ]
     )
-    
-    # mint 1155 
+
+    # mint 1155
     await signer.send_transaction(
         owner_contract, erc1155_contract.contract_address, 'mint', [seller_contract.contract_address, 1, *to_uint(100), 0]
     )
@@ -70,7 +70,7 @@ async def test_market():
     assert from_uint(execution_info.result.balance) == 3
 
     # buy
-    # approve market of transferring erc20 
+    # approve market of transferring erc20
     await signer.send_transaction(
         buyer_contract, erc20_contract.contract_address, 'approve', [market_contract.contract_address,*MAX_UINT256]
     )
@@ -172,5 +172,5 @@ async def test_market_getBatchOrders():
     print(execution_info.result)
 
      # get order
-    execution_info = await market_contract.getBatchOrders(to_uint(0),to_uint(2)).call()
+    execution_info = await market_contract.getBatchOrders(to_uint(0),to_uint(5)).call()
     print(execution_info.result.orders)
