@@ -118,14 +118,6 @@ func Market_getBatchOrder{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, rang
     start : Uint256, last : Uint256
 ) -> (orders_len : felt, orders : Order*):
     alloc_locals
-    uint256_check(start)
-    uint256_check(last)
-    let (len : Uint256) = Market_ordersLen()
-    let (is_le1) = uint256_le(start, last)
-    let (is_le2) = uint256_lt(last, len)
-    with_attr error_message("Market: getBatchOrder index error"):
-        assert is_le1 * is_le2 = TRUE
-    end
     let (diff : Uint256) = uint256_checked_sub_le(last, start)
     let (diff : Uint256) = uint256_checked_add(diff, Uint256(1, 0))
     let (left : felt) = _uint_to_felt(diff)
@@ -436,7 +428,6 @@ func _discard_order{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_chec
         let (last_order : Order) = Market_orders.read(new_len)
         Market_orders.write(order_index, last_order)
     end
-
     # todo add op history
     return ()
 end
