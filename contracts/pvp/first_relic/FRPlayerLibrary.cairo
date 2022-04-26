@@ -160,9 +160,7 @@ func FirstRelicCombat_move{
         range_check_ptr
     }(combat_id: felt, account: felt, to: Coordinate):
     alloc_locals
-    
     let (koma) = FirstRelicCombat_get_koma(combat_id, account)
-    # todo: lazy update death
     FirstRelicCombat_player_can_move(combat_id, account, koma)
     let (actual_status, actual_at) = _get_koma_actual_coordinate(combat_id, account, koma)
     let (block_timestamp) = get_block_timestamp()
@@ -174,8 +172,6 @@ func FirstRelicCombat_move{
         assert_le_felt(to.y, MAP_HEIGHT)
         # todo: first stage can not enter the second stage area
     end
-
-    # todo:
     
     let new_koma = Koma(actual_at, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.working_workers_count, koma.drones_count, koma.action_radius, koma.element)
     komas.write(combat_id, account, new_koma)

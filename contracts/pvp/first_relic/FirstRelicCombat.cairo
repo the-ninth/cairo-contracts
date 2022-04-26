@@ -15,7 +15,7 @@ from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE
 from contracts.random.IRandomProducer import IRandomProducer
 
 from contracts.pvp.first_relic.constants import MAX_PLAYERS
-from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate
+from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate, Ore
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_new_combat,
     FirstRelicCombat_get_combat,
@@ -23,6 +23,9 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_chest_count,
     FirstRelicCombat_get_chests,
     FirstRelicCombat_get_chest_by_coordinate,
+    FirstRelicCombat_get_ore_count,
+    FirstRelicCombat_get_ores,
+    FirstRelicCombat_get_ore_by_coordinate,
     FirstRelicCombat_prepare_combat
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
@@ -109,6 +112,36 @@ func getChestByCoordinate{
     }(combat_id: felt, coordinate: Coordinate) -> (chest: Chest):
     let (chest) = FirstRelicCombat_get_chest_by_coordinate(combat_id, coordinate)
     return (chest)
+end
+
+@view
+func getOreCount{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (count: felt):
+    let (count) = FirstRelicCombat_get_ore_count(combat_id)
+    return (count)
+end
+
+@view
+func getOres{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, offset: felt, length: felt) -> (ores_len: felt, ores: Ore*):
+    let (ores_len, ores) = FirstRelicCombat_get_ores(combat_id, offset, length)
+    return (ores_len, ores)
+end
+
+@view
+func getOreByCoordinate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, coordinate: Coordinate) -> (ore: Ore):
+    let (ore) = FirstRelicCombat_get_ore_by_coordinate(combat_id, coordinate)
+    return (ore)
 end
 
 @view

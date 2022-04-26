@@ -114,6 +114,39 @@ func FirstRelicCombat_get_chest_by_coordinate{
     return (chest)
 end
 
+func FirstRelicCombat_get_ore_count{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (count: felt):
+    let (count) = ore_coordinates_len.read(combat_id)
+    return (count)
+end
+
+func FirstRelicCombat_get_ores{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, index: felt, length: felt) -> (ores_len: felt, ores: Ore*):
+    alloc_locals
+
+    assert_le_felt(0, index)
+    assert_lt_felt(0, length)
+
+    let (local data: Ore*) = alloc()
+    let (data_len, data) = _get_ores(combat_id, index, length, 0, data)
+    return (data_len, data)
+end
+
+func FirstRelicCombat_get_ore_by_coordinate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, coordinate: Coordinate) -> (ore: Ore):
+    let (ore) = ores.read(combat_id, coordinate)
+    return (ore)
+end
+
 func FirstRelicCombat_new_combat{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -260,4 +293,26 @@ func _get_chests{
     assert data[data_len] = chest
 
     return _get_chests(combat_id, index+1, length-1, data_len+1, data)
+end
+
+# recursively get ore struct array 
+func _get_ores{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, index: felt, length: felt, data_len: felt, data: Ore*) -> (data_len: felt, data: Ore*):
+    if length == 0:
+        return (data_len, data)
+    end
+
+    let (ores_count) = ore_coordinates_len.read(combat_id)
+    if index == ores_count:
+        return (data_len, data)
+    end
+
+    let (coordinate) = ore_coordinate_by_index.read(combat_id, index)
+    let (chest) = ores.read(combat_id, coordinate)
+    assert data[data_len] = chest
+
+    return _get_ores(combat_id, index+1, length-1, data_len+1, data)
 end
