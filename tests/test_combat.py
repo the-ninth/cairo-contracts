@@ -5,6 +5,7 @@ from utils import (Signer, contract_path, to_uint, uint_list_to_felt_list, add_u
 
 import pytest
 from starkware.starknet.testing.starknet import Starknet
+from starkware.starknet.business_logic.state.state import BlockInfo
 
 # The path to the contract source code.
 COMBAT_CONTRACT_FILE = contract_path('contracts/pvp/first_relic/FirstRelicCombat.cairo')
@@ -18,8 +19,11 @@ signer = Signer(123456789)
 # testing var
 COMBAT_STATUS_REGISTERING = 1
 COMBAT_STATUS_PREPARING = 2
+COMBAT_STATUS_FIRST_STAGE = 3
 KOMA_STATUS_STATIC = 1
+KOMA_STATUS_MOVING = 2
 PREPARE_TIME = 300
+MOVE_TO = {"x": 50, "y": 60}
 
 
 # The testing library uses python's asyncio. So the following
@@ -76,7 +80,37 @@ async def test_combat_register(contract_factory):
     execution_info = await fr_combat_contract.getCombat(1).call()
     assert execution_info.result.combat.status == COMBAT_STATUS_PREPARING
     assert execution_info.result.combat.first_stage_time - execution_info.result.combat.prepare_time == PREPARE_TIME
+
+@pytest.mark.asyncio
+async def test_player_move(contract_factory):
+    """test player move"""
+    starknet, account_contract, _, fr_combat_contract, fr_combat_register_contract, _, ninth_contract = contract_factory
+    await signer.send_transaction(account_contract, fr_combat_contract.contract_address, "newCombat", [])
+    player1 = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    player2 = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    await signer.send_transaction(account_contract, ninth_contract.contract_address, "transfer", [player1.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(account_contract, ninth_contract.contract_address, "transfer", [player2.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player1, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player2, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player1, fr_combat_register_contract.contract_address, "register", [1])
+    await signer.send_transaction(player2, fr_combat_register_contract.contract_address, "register", [1])
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + PREPARE_TIME + 1)
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "move", [1, player1.contract_address, MOVE_TO["x"], MOVE_TO["y"]])
     
+    execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
+    assert execution_info.result.koma.status == KOMA_STATUS_MOVING
+    print(execution_info.result.koma)
+
+    execution_info = await fr_combat_contract.getCombat(1).call()
+    assert execution_info.result.combat.status == COMBAT_STATUS_FIRST_STAGE
+
+    execution_info = await fr_combat_contract.getKomasMovments(1, [player1.contract_address]).call()
+    movment = execution_info.result.movments[0]
+    assert movment.to.x == MOVE_TO["x"]
+    assert movment.to.y == MOVE_TO["y"]
+    print(movment)
+
+
 
 @pytest.fixture
 async def contract_factory():

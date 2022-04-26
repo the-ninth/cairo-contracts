@@ -22,7 +22,9 @@ from contracts.pvp.first_relic.constants import (
     MAP_HEIGHT,
     MAP_INNER_AREA_WIDTH,
     MAP_INNER_AREA_HEIGHT,
-    PREPARE_TIME
+    PREPARE_TIME,
+    FIRST_STAGE_DURATION,
+    SECOND_STAGE_DURATION
 )
 from contracts.util.random import get_random_number_and_seed
 
@@ -171,13 +173,30 @@ func FirstRelicCombat_prepare_combat{
     end
     let (block_timestamp) = get_block_timestamp()
     let combat_updated: Combat = Combat(block_timestamp, block_timestamp + PREPARE_TIME, 0, 0, 0, 0, COMBAT_STATUS_PREPARING)
-    # combat_updated.status = COMBAT_STATUS_PREPARING
-    # combat_updated.prepare_time = block_timestamp
-    # combat_updated.first_stage_time = block_timestamp + PREPARE_TIME
-    # combat.status = COMBAT_STATUS_PREPARING
-    # combat.prepare_time = block_timestamp
-    # combat.first_stage_time = block_timestamp + PREPARE_TIME
     combats.write(combat_id, combat_updated)
+    return ()
+end
+
+func FirstRelicCombat_change_to_first_stage{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt):
+    let (combat) = combats.read(combat_id)
+    with_attr error_message("FirstRelicCombat: not preparing"):
+        assert combat.status = COMBAT_STATUS_PREPARING
+    end
+    let new_combat = Combat(
+        prepare_time=combat.prepare_time,
+        first_stage_time=combat.first_stage_time,
+        second_stage_time=combat.first_stage_time + FIRST_STAGE_DURATION,
+        third_stage_time=combat.third_stage_time,
+        end_time=combat.end_time,
+        expire_time=combat.expire_time,
+        status=COMBAT_STATUS_FIRST_STAGE
+    )
+    combats.write(combat_id, new_combat)
+
     return ()
 end
 

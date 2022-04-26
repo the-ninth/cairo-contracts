@@ -56,7 +56,7 @@ func komas(combat_id: felt, account: felt) -> (koma: Koma):
 end
 
 @storage_var
-func player_movments(combat_id: felt, account: felt) -> (movment: Movment):
+func komas_movments(combat_id: felt, account: felt) -> (movment: Movment):
 end
 
 
@@ -109,6 +109,19 @@ func FirstRelicCombat_get_komas{
     assert_lt_felt(0, accounts_len)
     let (local data: Koma*) = alloc()
     let (data_len, data) = _get_komas(combat_id, accounts_len, accounts, 0, data)
+    return (data_len, data)
+end
+
+func FirstRelicCombat_get_komas_movments{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, accounts_len: felt, accounts: felt*) -> (movments_len: felt, movments: Movment*):
+    alloc_locals
+
+    assert_lt_felt(0, accounts_len)
+    let (local data: Movment*) = alloc()
+    let (data_len, data) = _get_komas_movments(combat_id, accounts_len, accounts, 0, data)
     return (data_len, data)
 end
 
@@ -173,12 +186,12 @@ func FirstRelicCombat_move{
         # todo: first stage can not enter the second stage area
     end
     
-    let new_koma = Koma(actual_at, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.working_workers_count, koma.drones_count, koma.action_radius, koma.element)
+    let new_koma = Koma(actual_at, KOMA_STATUS_MOVING, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.working_workers_count, koma.drones_count, koma.action_radius, koma.element)
     komas.write(combat_id, account, new_koma)
-    let (distance) = _get_distance(koma.coordinate, actual_at)
+    let (distance) = _get_distance(actual_at, to)
     let (time_need, _) = unsigned_div_rem(distance, koma.move_speed)
     let movement = Movment(to, block_timestamp, block_timestamp + time_need + 1)
-    player_movments.write(combat_id, account, movement)
+    komas_movments.write(combat_id, account, movement)
 
     return ()
 end
@@ -238,6 +251,23 @@ func _get_komas{
     return _get_komas(combat_id, accounts_len - 1, accounts + 1, data_len + 1, data)
 end
 
+# recursively get komas movment struct array 
+func _get_komas_movments{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, accounts_len: felt, accounts: felt*, data_len: felt, data: Movment*) -> (data_len: felt, data: Movment*):
+    if accounts_len == 0:
+        return (data_len, data)
+    end
+    
+    let account = accounts[0]
+    let (movment) = komas_movments.read(combat_id, account)
+
+    assert data[data_len] = movment
+    return _get_komas_movments(combat_id, accounts_len - 1, accounts + 1, data_len + 1, data)
+end
+
 func _get_koma_actual_coordinate{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -249,7 +279,7 @@ func _get_koma_actual_coordinate{
     tempvar pedersen_ptr = pedersen_ptr
     tempvar range_check_ptr = range_check_ptr
     if koma.status == KOMA_STATUS_MOVING:
-        let (movment) = player_movments.read(combat_id, account)
+        let (movment) = komas_movments.read(combat_id, account)
         let (block_timestamp) = get_block_timestamp()
         let (reached) = sign(block_timestamp - movment.reach_time)
         tempvar syscall_ptr = syscall_ptr
@@ -276,7 +306,6 @@ func _get_koma_actual_coordinate{
         let new_x = koma.coordinate.x + x_distance * x_sign
         let new_y = koma.coordinate.y + y_distance * y_sign
         return (KOMA_STATUS_MOVING, Coordinate(new_x, new_y))
-
     end
     
     return (koma.status, koma.coordinate)

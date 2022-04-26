@@ -2,7 +2,7 @@
 
 # combat for first relic
 
-from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, Ore, ThirdStageAction
+from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, Ore, ThirdStageAction, Movment
 
 @contract_interface
 namespace IFirstRelicCombat:
@@ -58,6 +58,9 @@ namespace IFirstRelicCombat:
     end
 
     func move(combat_id: felt, account: felt, to: Coordinate):
+    end
+
+    func getKomasMovments(combat_id: felt, accounts_len: felt, accounts: felt*) -> (movments_len: felt, movments: Movment*):
     end
 
     func openChest(combat_id: felt, account: felt, target: Coordinate):

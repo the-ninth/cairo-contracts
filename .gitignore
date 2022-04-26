@@ -1,4 +1,4 @@
-/tests/__pycache__/
+__pycache__/
 artifacts/
 .env
 venv/

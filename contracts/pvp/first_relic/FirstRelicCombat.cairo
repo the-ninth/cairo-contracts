@@ -15,7 +15,7 @@ from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE
 from contracts.random.IRandomProducer import IRandomProducer
 
 from contracts.pvp.first_relic.constants import MAX_PLAYERS
-from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate, Ore
+from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate, Movment, Ore
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_new_combat,
     FirstRelicCombat_get_combat,
@@ -34,8 +34,10 @@ from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_get_players,
     FirstRelicCombat_get_koma,
     FirstRelicCombat_get_komas,
+    FirstRelicCombat_get_komas_movments,
     FirstRelicCombat_move
 )
+from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status
 
 
 const RANDOM_TYPE_COMBAT_INIT = 1
@@ -184,6 +186,16 @@ func getKomas{
     return (komas_len, komas)
 end
 
+@view
+func getKomasMovments{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, accounts_len: felt, accounts: felt*) -> (movments_len: felt, movments: Movment*):
+    let (movments_len, movments) = FirstRelicCombat_get_komas_movments(combat_id, accounts_len, accounts)
+    return (movments_len, movments)
+end
+
 @external
 func initPlayer{
         syscall_ptr : felt*, 
@@ -246,6 +258,7 @@ func move{
         range_check_ptr
     }(combat_id: felt, account: felt, to: Coordinate):
     authorized_call(account, ACTION_FR_COMBAT_MOVE)
+    LazyUpdate_update_combat_status(combat_id)
     FirstRelicCombat_move(combat_id, account, to)
     return ()
 end
