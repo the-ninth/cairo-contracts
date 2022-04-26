@@ -2,7 +2,7 @@
 
 # combat for first relic
 
-from contracts.pvp.first_relic.structs import Combat, Koma, Coordinate, ThirdStageAction
+from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, Ore, ThirdStageAction, Movment
 
 @contract_interface
 namespace IFirstRelicCombat:
@@ -16,16 +16,19 @@ namespace IFirstRelicCombat:
     func getCombat(combat_id: felt) -> (combat: Combat):
     end
 
-    func getKoma(combat_id: felt, account: felt) -> (koma: Koma):
-    end
-
-    func initPlayer(combat_id: felt, account: felt) -> (koma: Koma):
+    func initPlayer(combat_id: felt, account: felt):
     end
 
     func getPlayersCount() -> (combat_id: felt, count: felt):
     end
 
-    func getKomas(combat_id: felt, offset: felt, len: felt) -> (komas_len: felt, komas: Koma*):
+    func getPlayers(combat_id: felt, offset: felt, length: felt) -> (players_len: felt, players: felt*):
+    end
+
+    func getKoma(combat_id: felt, account: felt) -> (koma: Koma):
+    end
+
+    func getKomas(combat_id: felt, accounts_len: felt, accounts: felt*) -> (komas_len: felt, komas: Koma*):
     end
 
     func getPlayerScore(combat_id: felt, account: felt) -> (score: felt):
@@ -36,7 +39,28 @@ namespace IFirstRelicCombat:
 
     # first stage
 
+    func getChestCount(combat_id: felt) -> (len: felt):
+    end
+
+    func getChests(combat_id: felt, offset: felt, length: felt) -> (data_len: felt, data: Chest*):
+    end
+
+    func getChestByCoordinate(combat_id, coordinate: Coordinate) -> (chest: Chest):
+    end
+
+    func getOreCount(combat_id: felt) -> (len: felt):
+    end
+
+    func getOres(combat_id: felt, offset: felt, length: felt) -> (ores_len: felt, ores: Ore*):
+    end
+
+    func getOreByCoordinate(combat_id, coordinate: Coordinate) -> (ore: Ore):
+    end
+
     func move(combat_id: felt, account: felt, to: Coordinate):
+    end
+
+    func getKomasMovments(combat_id: felt, accounts_len: felt, accounts: felt*) -> (movments_len: felt, movments: Movment*):
     end
 
     func openChest(combat_id: felt, account: felt, target: Coordinate):
@@ -90,11 +114,23 @@ func CombatCreated(combat_id: felt, timestamp: felt):
 end
 
 @event
-func CombatStarted(combat_id: felt, timestamp: felt):
+func CombatPreparing(combat_id: felt, timestamp: felt):
 end
 
 @event
-func CombatEnded(combat_id: felt, timestamp: felt):
+func CombatFirstStageStart(combat_id: felt, timestamp: felt):
+end
+
+@event
+func CombatSecondStageStart(combat_id: felt, timestamp: felt):
+end
+
+@event
+func CombatThirdStageStart(combat_id: felt, timestamp: felt):
+end
+
+@event
+func CombatEnd(combat_id: felt, timestamp: felt):
 end
 
 @event
@@ -102,11 +138,11 @@ func PlayerInit(combat_id: felt, account: felt, coordinate: Coordinate):
 end
 
 @event
-func PlayerMove(combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, timestamp: felt):
+func PlayerMove(combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, start_timestamp: felt):
 end
 
 @event
-func PlayerArrival(combat_id: felt, account: felt, from_: Coordinate):
+func PlayerArrival(combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, timestamp: felt):
 end
 
 @event

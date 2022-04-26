@@ -27,4 +27,13 @@ namespace IAccessControl:
     func randomProducerContract() -> (contract: felt):
     end
 
+    func frCombatRegisterContract() -> (contract: felt):
+    end
+
+    func frCombatContract() -> (contract: felt):
+    end
+
+    func delegateAccountRegistryContract() -> (contract: felt):
+    end
+
 end

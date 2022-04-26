@@ -2,19 +2,26 @@
 
 const COMBAT_STATUS_NON_EXIST = 0
 const COMBAT_STATUS_REGISTERING = 1
-const COMBAT_STATUS_STARTED = 2
-const COMBAT_STATUS_ENDED = 3
+const COMBAT_STATUS_PREPARING = 2
+const COMBAT_STATUS_FIRST_STAGE = 3
+const COMBAT_STATUS_SECOND_STAGE = 4
+const COMBAT_STATUS_THIRD_STAGE = 5
+const COMBAT_STATUS_END = 6
 
-const PLAYER_STATUS_STATIC = 0
-const PLAYER_STATUS_MOVING = 1
+const KOMA_STATUS_STATIC = 1
+const KOMA_STATUS_MOVING = 2
+const KOMA_STATUS_MINING = 3
+const KOMA_STATUS_DEAD = 4
 
 const CHEST_TYPE_LIVE = 1
 const CHEST_TYPE_EQUIP = 2
 const CHEST_TYPE_CRYSTAL = 3
 
 struct Combat:
-    member max_players: felt
-    member start_time: felt
+    member prepare_time: felt
+    member first_stage_time: felt
+    member second_stage_time: felt
+    member third_stage_time: felt
     member end_time: felt
     member expire_time: felt
     member status: felt
@@ -38,7 +45,6 @@ struct Koma:
     member working_workers_count: felt
     member drones_count: felt
     member action_radius: felt
-    member ore_amount: felt
     member element: felt
 end
 
@@ -50,6 +56,7 @@ struct KomaEquip:
 end
 
 struct Chest:
+    member coordinate: Coordinate
     member chest_type: felt
 end
 
@@ -63,7 +70,6 @@ end
 struct Ore:
     member total_supply: felt
     member mined_supply: felt
-    member mining_account: felt
     member mining_workers_count: felt
 end
 
@@ -80,4 +86,10 @@ struct ThirdStageAction:
     member target: felt # 0 for boss, others for players
     member round: felt
     member salt: felt
+end
+
+struct Movment:
+    member to: Coordinate
+    member start_time: felt # timestamp starting to move
+    member reach_time: felt # timestamp reaching the target location
 end

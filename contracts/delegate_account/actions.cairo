@@ -1,0 +1,3 @@
+%lang starknet
+
+const ACTION_FR_COMBAT_MOVE = 0x6bcd6b79539c02a7b866fe947c08d0efdf914032b1f016708b321fad
