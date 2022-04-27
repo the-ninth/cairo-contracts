@@ -73,7 +73,7 @@ func LazyUpdate_update_ore{
     let (block_timestamp) = get_block_timestamp()
     let (end_time) = min(block_timestamp, ore.empty_time)
     let mined_amount = (end_time - ore.start_time) * ore.mining_workers_count * WORKER_MINING_SPEED
-    let new_ore = Ore(ore.total_supply, ore.mined_supply + mined_amount, ore.mining_workers_count, block_timestamp, ore.empty_time)
+    let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply + mined_amount, ore.mining_workers_count, block_timestamp, ore.empty_time)
     ores.write(combat_id, ore_coordinate, new_ore)
 
     return ()

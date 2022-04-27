@@ -69,6 +69,7 @@ struct Prop:
 end
 
 struct Ore:
+    member coordinate: Coordinate
     member total_supply: felt
     member mined_supply: felt
     member mining_workers_count: felt

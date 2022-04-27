@@ -176,7 +176,7 @@ func FirstRelicCombat_mine_ore{
     let mining_workers_count = ore.mining_workers_count + workers_count
     let (empty_time_need, _) = unsigned_div_rem(remaining, mining_workers_count * WORKER_MINING_SPEED)
     let empty_time = block_timestamp + empty_time_need + 1
-    let new_ore = Ore(ore.total_supply, ore.mined_supply, mining_workers_count, block_timestamp, empty_time)
+    let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply, mining_workers_count, block_timestamp, empty_time)
 
     let new_koma = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
@@ -355,7 +355,7 @@ func _init_ores{
         return (seed)
     end
     let (coordinate, next_seed) = _fetch_outer_empty_coordinate(combat_id, seed)
-    let ore = Ore(total_supply=1000, mined_supply=0, mining_workers_count=0, start_time=0, empty_time=0)
+    let ore = Ore(coordinate=coordinate, total_supply=1000, mined_supply=0, mining_workers_count=0, start_time=0, empty_time=0)
     let (ore_len) = ore_coordinates_len.read(combat_id)
     ores.write(combat_id, coordinate, ore)
     ore_coordinate_by_index.write(combat_id, ore_len, coordinate)
