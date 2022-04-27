@@ -15,7 +15,17 @@ from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE
 from contracts.random.IRandomProducer import IRandomProducer
 
 from contracts.pvp.first_relic.constants import MAX_PLAYERS, CHEST_PER_PLAYER, ORE_PER_PLAYER
-from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate, Movment, Ore, KOMA_STATUS_DEAD, KOMA_STATUS_MINING
+from contracts.pvp.first_relic.structs import (
+    Combat,
+    Chest,
+    Coordinate,
+    Koma,
+    KomaMiningOre,
+    Movment,
+    Ore,
+    KOMA_STATUS_DEAD,
+    KOMA_STATUS_MINING
+)
 from contracts.pvp.first_relic.storages import komas
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_init_chests,
@@ -28,10 +38,11 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_chest_count,
     FirstRelicCombat_get_chests,
     FirstRelicCombat_get_chest_by_coordinate,
+    FirstRelicCombat_get_koma_mining_ores,
     FirstRelicCombat_get_ore_count,
     FirstRelicCombat_get_ores,
     FirstRelicCombat_get_ore_by_coordinate,
-    FirstRelicCombat_prepare_combat,
+    FirstRelicCombat_prepare_combat
     
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
@@ -202,6 +213,16 @@ func getKomasMovments{
     return (movments_len, movments)
 end
 
+@view
+func getKomaMiningOres{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (mining_ores_len: felt, mining_ores: KomaMiningOre*):
+    let (mining_ores_len, mining_ores) = FirstRelicCombat_get_koma_mining_ores(combat_id, account)
+    return (mining_ores_len, mining_ores)
+end
+
 @external
 func initPlayer{
         syscall_ptr : felt*, 
@@ -338,7 +359,7 @@ func player_can_move{
         range_check_ptr
     }(combat_id: felt, account: felt):
     alloc_locals
-    
+
     let (koma) = komas.read(combat_id, account)
     let (in_moving_stage) = FirstRelicCombat_in_moving_stage(combat_id)
     with_attr error_message("FirstRelicCombat: combat status invalid"):

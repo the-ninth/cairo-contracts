@@ -142,6 +142,19 @@ func FirstRelicCombat_get_ore_by_coordinate{
     return (ore)
 end
 
+func FirstRelicCombat_get_koma_mining_ores{syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (mining_ores_len: felt, mining_ores: KomaMiningOre*):
+    alloc_locals
+
+    let (local mining_ores: KomaMiningOre*) = alloc()
+    let (mining_ores_len) = koma_mining_ore_coordinates_len.read(combat_id, account)
+    _get_koma_mining_ores(combat_id, account, 0, mining_ores_len, mining_ores)
+
+    return (mining_ores_len, mining_ores)
+end
+
 func FirstRelicCombat_mine_ore{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -438,17 +451,28 @@ func _retreive_mining_ore{
     }(mining_ore: KomaMiningOre, ore_empty_time) -> (retreive_amount: felt):
     alloc_locals
     if mining_ore.mining_workers_count == 0:
-        # tempvar syscall_ptr = syscall_ptr
-        # tempvar pedersen_ptr = pedersen_ptr
-        # tempvar range_check_ptr = range_check_ptr
         return (0)
-    # else:
-    #     tempvar syscall_ptr = syscall_ptr
-    #     tempvar pedersen_ptr = pedersen_ptr
-    #     tempvar range_check_ptr = range_check_ptr
     end
     let (block_timestamp) = get_block_timestamp()
     let (end_time) = min(block_timestamp, ore_empty_time)
     let retreive_amount = (end_time - mining_ore.start_time) * WORKER_MINING_SPEED
     return (retreive_amount)
+end
+
+# recursively get ore struct array 
+func _get_koma_mining_ores{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, index: felt, data_len: felt, data: KomaMiningOre*):
+    if data_len == 0:
+        return ()
+    end
+
+    let (coordinate) = koma_mining_ore_coordinates_by_index.read(combat_id, account, index)
+    let (mining_ore) = koma_mining_ores.read(combat_id, account, coordinate)
+    assert data[index] = mining_ore
+    _get_koma_mining_ores(combat_id, account, index+1, data_len-1, data)
+
+    return ()
 end
