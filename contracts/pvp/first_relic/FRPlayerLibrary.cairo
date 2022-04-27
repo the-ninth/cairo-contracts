@@ -130,7 +130,7 @@ func FirstRelicCombat_init_player{
     let koma = Koma(
         account=account, coordinate=coordinate, status=KOMA_STATUS_STATIC, health=100, max_health=100, agility=7,
         move_speed=KOMA_MOVING_SPEED, props_weight=0, props_max_weight=1000, workers_count=3,
-        mining_workers_count=0, drones_count=3, action_radius=5, element=0
+        mining_workers_count=0, drones_count=3, action_radius=5, element=0, ore_amount=0
     )
 
 
@@ -160,7 +160,7 @@ func FirstRelicCombat_move{
         # todo: first stage can not enter the second stage area
     end
     
-    let new_koma = Koma(account, actual_at, KOMA_STATUS_MOVING, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element)
+    let new_koma = Koma(account, actual_at, KOMA_STATUS_MOVING, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element, koma.ore_amount)
     komas.write(combat_id, account, new_koma)
     let (distance) = _get_distance(actual_at, to)
     let (time_need, _) = unsigned_div_rem(distance, koma.move_speed)

@@ -69,7 +69,10 @@ namespace IFirstRelicCombat:
     func mineOre(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
     end
 
-    func recallWorks(commbat_id: felt, account: felt, target: Coordinate):
+    func recallWorkers(commbat_id: felt, account: felt, target: Coordinate):
+    end
+
+    func getKomaMiningOres(combat_id: felt, account: felt) -> (mining_ores_len: felt, mining_ores: KomaMiningOre*):
     end
 
     func attack(combat_id: felt, account: felt, target_account: felt):

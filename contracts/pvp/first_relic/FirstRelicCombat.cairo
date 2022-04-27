@@ -10,7 +10,7 @@ from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_FRCOMBAT_CREATOR
 
 from contracts.delegate_account.interfaces.IDelegateAccountRegistry import IDelegateAccountRegistry
-from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE
+from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE, ACTION_FR_COMBAT_MINE_ORE, ACTION_FR_COMBAT_RECALL_WORKERS
 
 from contracts.random.IRandomProducer import IRandomProducer
 
@@ -42,7 +42,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_ore_count,
     FirstRelicCombat_get_ores,
     FirstRelicCombat_get_ore_by_coordinate,
-    FirstRelicCombat_prepare_combat
+    FirstRelicCombat_prepare_combat,
+    FirstRelicCombat_recall_workers
     
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
@@ -302,9 +303,22 @@ func mineOre{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
+    authorized_call(account, ACTION_FR_COMBAT_MINE_ORE)
     LazyUpdate_update_ore(combat_id, target)
     FirstRelicCombat_mine_ore(combat_id, account, target, workers_count)
     return()
+end
+
+@external
+func recallWorkers{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
+    authorized_call(account, ACTION_FR_COMBAT_RECALL_WORKERS)
+    LazyUpdate_update_ore(combat_id, target)
+    FirstRelicCombat_recall_workers(combat_id, account, target, workers_count)
+    return ()
 end
 
 @external

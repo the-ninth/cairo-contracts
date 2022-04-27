@@ -47,6 +47,7 @@ struct Koma:
     member drones_count: felt
     member action_radius: felt
     member element: felt
+    member ore_amount: felt
 end
 
 struct KomaEquip:
