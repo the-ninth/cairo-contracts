@@ -28,12 +28,6 @@ from contracts.pvp.first_relic.structs import (
     KOMA_STATUS_MINING,
     KOMA_STATUS_MOVING
 )
-from contracts.pvp.first_relic.FRCombatLibrary import (
-    FirstRelicCombat_get_combat,
-    FirstRelicCombat_in_moving_stage,
-    _init_chests,
-    _init_ores
-)
 from contracts.pvp.first_relic.constants import (
     CHEST_PER_PLAYER,
     ORE_PER_PLAYER,
@@ -41,24 +35,8 @@ from contracts.pvp.first_relic.constants import (
     MAP_HEIGHT,
     KOMA_MOVING_SPEED
 )
+from contracts.pvp.first_relic.storages import combats, players_count, player_by_index, komas, komas_movments
 from contracts.util.random import get_random_number_and_seed
-
-@storage_var
-func players_count(combat_id: felt) -> (count: felt):
-end
-
-@storage_var
-func player_by_index(combat_id: felt, index: felt) -> (account: felt):
-end
-
-@storage_var
-func komas(combat_id: felt, account: felt) -> (koma: Koma):
-end
-
-@storage_var
-func komas_movments(combat_id: felt, account: felt) -> (movment: Movment):
-end
-
 
 func FirstRelicCombat_get_players_count{
         syscall_ptr : felt*, 
@@ -129,8 +107,8 @@ func FirstRelicCombat_init_player{
         syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(combat_id: felt, account: felt):
-    let (combat) = FirstRelicCombat_get_combat(combat_id)
+    }(combat_id: felt, account: felt) -> (next_seed: felt):
+    let (combat) = combats.read(combat_id)
     with_attr error_message("FirstRelicCombat: combat not registering"):
         assert combat.status = COMBAT_STATUS_REGISTERING
     end
@@ -150,9 +128,9 @@ func FirstRelicCombat_init_player{
     let pedersen_ptr = hash_ptr
     let (coordinate, next_seed) = _fetch_outer_non_player_coordinate(combat_id, seed)
     let koma = Koma(
-        coordinate=coordinate, status=KOMA_STATUS_STATIC, health=100, max_health=100, agility=7, move_speed=KOMA_MOVING_SPEED, 
-        props_weight=0, props_max_weight=1000, workers_count=3, working_workers_count=0,
-        drones_count=3, action_radius=5, element=0
+        account=account, coordinate=coordinate, status=KOMA_STATUS_STATIC, health=100, max_health=100, agility=7,
+        move_speed=KOMA_MOVING_SPEED, props_weight=0, props_max_weight=1000, workers_count=3,
+        mining_workers_count=0, drones_count=3, action_radius=5, element=0
     )
 
 
@@ -161,10 +139,7 @@ func FirstRelicCombat_init_player{
     player_by_index.write(combat_id, count, account)
     komas.write(combat_id, account, koma)
 
-    # generate chests and ores
-    let (next_seed) = _init_chests(combat_id, CHEST_PER_PLAYER, next_seed)
-    _init_ores(combat_id, ORE_PER_PLAYER, next_seed)
-    return ()
+    return (next_seed)
 end
 
 func FirstRelicCombat_move{
@@ -173,8 +148,7 @@ func FirstRelicCombat_move{
         range_check_ptr
     }(combat_id: felt, account: felt, to: Coordinate):
     alloc_locals
-    let (koma) = FirstRelicCombat_get_koma(combat_id, account)
-    FirstRelicCombat_player_can_move(combat_id, account, koma)
+    let (koma) = komas.read(combat_id, account)
     let (actual_status, actual_at) = _get_koma_actual_coordinate(combat_id, account, koma)
     let (block_timestamp) = get_block_timestamp()
     with_attr error_message("FirstRelicCombat: coordinate invalid"):
@@ -186,7 +160,7 @@ func FirstRelicCombat_move{
         # todo: first stage can not enter the second stage area
     end
     
-    let new_koma = Koma(actual_at, KOMA_STATUS_MOVING, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.working_workers_count, koma.drones_count, koma.action_radius, koma.element)
+    let new_koma = Koma(account, actual_at, KOMA_STATUS_MOVING, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element)
     komas.write(combat_id, account, new_koma)
     let (distance) = _get_distance(actual_at, to)
     let (time_need, _) = unsigned_div_rem(distance, koma.move_speed)
@@ -325,26 +299,3 @@ end
 #
 # Modifiers
 #
-
-func FirstRelicCombat_player_can_move{
-        syscall_ptr : felt*,
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt, koma: Koma):
-    let (in_moving_stage) = FirstRelicCombat_in_moving_stage(combat_id)
-    with_attr error_message("FirstRelicCombat: combat status invalid"):
-        assert in_moving_stage = TRUE
-    end
-
-    with_attr error_message("FirstRelicCombat: player not exist"):
-        assert_not_zero(koma.status)
-    end
-    with_attr error_message("FirstRelicCombat: player is dead"):
-        assert_not_equal(koma.status, KOMA_STATUS_DEAD)
-    end
-    with_attr error_message("FirstRelicCombat: player is mining"):
-        assert_not_equal(koma.status, KOMA_STATUS_MINING)
-    end
-
-    return ()
-end

@@ -2,7 +2,7 @@
 
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
-from starkware.cairo.common.math import assert_not_zero
+from starkware.cairo.common.math import assert_not_zero, assert_not_equal
 
 from starkware.starknet.common.syscalls import get_caller_address
 
@@ -14,9 +14,14 @@ from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE
 
 from contracts.random.IRandomProducer import IRandomProducer
 
-from contracts.pvp.first_relic.constants import MAX_PLAYERS
-from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate, Movment, Ore
+from contracts.pvp.first_relic.constants import MAX_PLAYERS, CHEST_PER_PLAYER, ORE_PER_PLAYER
+from contracts.pvp.first_relic.structs import Combat, Koma, Chest, Coordinate, Movment, Ore, KOMA_STATUS_DEAD, KOMA_STATUS_MINING
+from contracts.pvp.first_relic.storages import komas
 from contracts.pvp.first_relic.FRCombatLibrary import (
+    FirstRelicCombat_init_chests,
+    FirstRelicCombat_in_moving_stage,
+    FirstRelicCombat_init_ores,
+    FirstRelicCombat_mine_ore,
     FirstRelicCombat_new_combat,
     FirstRelicCombat_get_combat,
     FirstRelicCombat_get_combat_count,
@@ -26,7 +31,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_ore_count,
     FirstRelicCombat_get_ores,
     FirstRelicCombat_get_ore_by_coordinate,
-    FirstRelicCombat_prepare_combat
+    FirstRelicCombat_prepare_combat,
+    
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -37,7 +43,7 @@ from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_get_komas_movments,
     FirstRelicCombat_move
 )
-from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status
+from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore
 
 
 const RANDOM_TYPE_COMBAT_INIT = 1
@@ -211,7 +217,10 @@ func initPlayer{
     assert_not_zero(caller)
     assert caller = register_contract_address
 
-    FirstRelicCombat_init_player(combat_id, account)
+    let (next_seed) = FirstRelicCombat_init_player(combat_id, account)
+    # generate chests and ores
+    let (next_seed) = FirstRelicCombat_init_chests(combat_id, CHEST_PER_PLAYER, next_seed)
+    FirstRelicCombat_init_ores(combat_id, ORE_PER_PLAYER, next_seed)
 
     # ready to launch
     let (count) = FirstRelicCombat_get_players_count(combat_id)
@@ -258,9 +267,23 @@ func move{
         range_check_ptr
     }(combat_id: felt, account: felt, to: Coordinate):
     authorized_call(account, ACTION_FR_COMBAT_MOVE)
+
     LazyUpdate_update_combat_status(combat_id)
+    player_can_move(combat_id, account)
+
     FirstRelicCombat_move(combat_id, account, to)
     return ()
+end
+
+@external
+func mineOre{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
+    LazyUpdate_update_ore(combat_id, target)
+    FirstRelicCombat_mine_ore(combat_id, account, target, workers_count)
+    return()
 end
 
 @external
@@ -307,4 +330,30 @@ func authorized_call{
     end
 
     return()
+end
+
+func player_can_move{
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt):
+    alloc_locals
+    
+    let (koma) = komas.read(combat_id, account)
+    let (in_moving_stage) = FirstRelicCombat_in_moving_stage(combat_id)
+    with_attr error_message("FirstRelicCombat: combat status invalid"):
+        assert in_moving_stage = TRUE
+    end
+
+    with_attr error_message("FirstRelicCombat: player not exist"):
+        assert_not_zero(koma.status)
+    end
+    with_attr error_message("FirstRelicCombat: player is dead"):
+        assert_not_equal(koma.status, KOMA_STATUS_DEAD)
+    end
+    with_attr error_message("FirstRelicCombat: player is mining"):
+        assert_not_equal(koma.status, KOMA_STATUS_MINING)
+    end
+
+    return ()
 end

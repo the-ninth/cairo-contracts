@@ -33,6 +33,7 @@ struct Coordinate:
 end
 
 struct Koma:
+    member account: felt
     member coordinate: Coordinate
     member status: felt
     member health: felt
@@ -42,7 +43,7 @@ struct Koma:
     member props_weight: felt
     member props_max_weight: felt
     member workers_count: felt
-    member working_workers_count: felt
+    member mining_workers_count: felt
     member drones_count: felt
     member action_radius: felt
     member element: felt
@@ -71,6 +72,8 @@ struct Ore:
     member total_supply: felt
     member mined_supply: felt
     member mining_workers_count: felt
+    member start_time: felt
+    member empty_time: felt
 end
 
 struct Boss:
@@ -92,4 +95,10 @@ struct Movment:
     member to: Coordinate
     member start_time: felt # timestamp starting to move
     member reach_time: felt # timestamp reaching the target location
+end
+
+struct KomaMiningOre:
+    member coordinate: Coordinate
+    member mining_workers_count: felt
+    member start_time: felt
 end
