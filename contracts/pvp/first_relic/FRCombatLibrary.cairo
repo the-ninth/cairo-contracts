@@ -3,7 +3,7 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.bool import TRUE, FALSE
-from starkware.cairo.common.math import assert_not_zero, assert_le_felt, assert_lt_felt, unsigned_div_rem
+from starkware.cairo.common.math import assert_not_zero, assert_le_felt, assert_lt_felt, unsigned_div_rem, sign
 
 from starkware.starknet.common.syscalls import get_caller_address, get_block_number, get_block_timestamp
 
@@ -188,7 +188,7 @@ func FirstRelicCombat_mine_ore{
     let new_koma = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count+workers_count,
-        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount
+        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount, koma.atk, koma.defense
     )
 
     komas.write(combat_id, account, new_koma)
@@ -241,7 +241,7 @@ func FirstRelicCombat_recall_workers{
     let new_koma = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count - workers_count,
-        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount
+        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount, koma.atk, koma.defense
     )
 
     komas.write(combat_id, account, new_koma)
@@ -285,11 +285,55 @@ func FirstRelicCombat_produce_bot{
     let koma_updated = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility,
         koma.move_speed, koma.props_weight, koma.props_max_weight, workers_count, koma.mining_workers_count,
-        drones_count, koma.action_radius, koma.element, remaining_amount
+        drones_count, koma.action_radius, koma.element, remaining_amount, koma.atk, koma.defense
     )
     komas.write(combat_id, account, koma_updated)
 
     return ()
+end
+
+func FirstRelicCombat_attack{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, target_account: felt) -> (koma_attacked_status: felt):
+    alloc_locals
+
+    let (koma_attacker) = komas.read(combat_id, account)
+    let (koma_attacked) = komas.read(combat_id, target_account)
+    let atk = koma_attacker.atk * koma_attacker.drones_count
+    let (damage, _) = unsigned_div_rem(atk * atk, atk + koma_attacked.defense)
+    let remain_health = koma_attacked.health - damage
+    let (health_sign) = sign(remain_health)
+    local koma_attacked_status
+    if health_sign == 1:
+        # still alive
+        koma_attacked_status = koma_attacked.status
+    else:
+        koma_attacked_status = KOMA_STATUS_DEAD
+    end
+    let koma_attacked_updated = Koma(
+        account=koma_attacked.account,
+        coordinate=koma_attacked.coordinate,
+        status=koma_attacked_status,
+        health=remain_health,
+        max_health=koma_attacked.max_health,
+        agility=koma_attacked.agility,
+        move_speed=koma_attacked.move_speed,
+        props_weight=koma_attacked.props_weight,
+        props_max_weight=koma_attacked.props_max_weight,
+        workers_count=koma_attacked.workers_count,
+        mining_workers_count=koma_attacked.mining_workers_count,
+        drones_count=koma_attacked.drones_count,
+        action_radius=koma_attacked.action_radius,
+        element=koma_attacked.element,
+        ore_amount=koma_attacked.ore_amount,
+        atk=koma_attacked.atk,
+        defense=koma_attacked.defense
+    )
+    komas.write(combat_id, account, koma_attacked_updated)
+    return (koma_attacked_status)
+
 end
 
 func FirstRelicCombat_new_combat{
@@ -593,4 +637,20 @@ func _remove_mining_ore_from_list{
     let (removed) = _remove_mining_ore_from_list(combat_id, account, mining_ore, index + 1, len)
     
     return (removed)
+end
+
+func _clear_mining_ores{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, index: felt, mining_ore_coordinates_len: felt):
+    if index == ming_ore_coordinates_len:
+        return ()
+    end
+    let (mining_ore_coordinate) = koma_mining_ore_coordinates_by_index.read(combat_id, account, index)
+    let (mining_ore) = koma_mining_ores.read(combat_id, account, mining_ore_coordinate)
+    let (ore) = ores.read(combat_id, mining_ore_coordinate)
+
+
+    return ()
 end

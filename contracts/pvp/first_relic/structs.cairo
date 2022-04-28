@@ -48,6 +48,8 @@ struct Koma:
     member action_radius: felt
     member element: felt
     member ore_amount: felt
+    member atk: felt
+    member defense: felt
 end
 
 struct KomaEquip:

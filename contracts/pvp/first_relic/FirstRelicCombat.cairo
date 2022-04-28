@@ -10,7 +10,13 @@ from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_FRCOMBAT_CREATOR
 
 from contracts.delegate_account.interfaces.IDelegateAccountRegistry import IDelegateAccountRegistry
-from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE, ACTION_FR_COMBAT_MINE_ORE, ACTION_FR_COMBAT_RECALL_WORKERS, ACTION_FR_COMBAT_PRODUCE_BOT
+from contracts.delegate_account.actions import (
+    ACTION_FR_COMBAT_MOVE,
+    ACTION_FR_COMBAT_MINE_ORE,
+    ACTION_FR_COMBAT_RECALL_WORKERS,
+    ACTION_FR_COMBAT_PRODUCE_BOT,
+    ACTION_FR_COMBAT_ATTACK
+)
 
 from contracts.random.IRandomProducer import IRandomProducer
 
@@ -44,8 +50,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_ore_by_coordinate,
     FirstRelicCombat_prepare_combat,
     FirstRelicCombat_recall_workers,
-    FirstRelicCombat_produce_bot
-    
+    FirstRelicCombat_produce_bot,
+    FirstRelicCombat_attack
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -340,6 +346,19 @@ func produceBot{
 end
 
 @external
+func attack{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, target_account: felt):
+    player_can_move(combat_id, account)
+    authorized_call(account, ACTION_FR_COMBAT_ATTACK)
+    FirstRelicCombat_attack(combat_id, account, target_account)
+
+    return ()
+end
+
+@external
 func fulfillRandom{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -385,6 +404,7 @@ func authorized_call{
     return()
 end
 
+# actions include move, attack
 func player_can_move{
         syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,
@@ -411,6 +431,7 @@ func player_can_move{
     return ()
 end
 
+# actions include mine, recall, produce bot
 func player_can_action_ores{
         syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,
