@@ -2,7 +2,7 @@
 
 # combat for first relic
 
-from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, Ore, ThirdStageAction, Movment
+from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, KomaMiningOre, Ore, ThirdStageAction, Movment
 
 @contract_interface
 namespace IFirstRelicCombat:
@@ -70,6 +70,9 @@ namespace IFirstRelicCombat:
     end
 
     func recallWorkers(commbat_id: felt, account: felt, target: Coordinate):
+    end
+
+    func produceBot(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
     end
 
     func getKomaMiningOres(combat_id: felt, account: felt) -> (mining_ores_len: felt, mining_ores: KomaMiningOre*):

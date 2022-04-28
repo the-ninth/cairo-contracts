@@ -10,7 +10,7 @@ from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_FRCOMBAT_CREATOR
 
 from contracts.delegate_account.interfaces.IDelegateAccountRegistry import IDelegateAccountRegistry
-from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE, ACTION_FR_COMBAT_MINE_ORE, ACTION_FR_COMBAT_RECALL_WORKERS
+from contracts.delegate_account.actions import ACTION_FR_COMBAT_MOVE, ACTION_FR_COMBAT_MINE_ORE, ACTION_FR_COMBAT_RECALL_WORKERS, ACTION_FR_COMBAT_PRODUCE_BOT
 
 from contracts.random.IRandomProducer import IRandomProducer
 
@@ -43,7 +43,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_ores,
     FirstRelicCombat_get_ore_by_coordinate,
     FirstRelicCombat_prepare_combat,
-    FirstRelicCombat_recall_workers
+    FirstRelicCombat_recall_workers,
+    FirstRelicCombat_produce_bot
     
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
@@ -55,7 +56,7 @@ from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_get_komas_movments,
     FirstRelicCombat_move
 )
-from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore
+from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore, LazyUpdate_update_koma_mining
 
 
 const RANDOM_TYPE_COMBAT_INIT = 1
@@ -303,6 +304,8 @@ func mineOre{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
+    LazyUpdate_update_combat_status(combat_id)
+    player_can_action_ores(combat_id, account)
     authorized_call(account, ACTION_FR_COMBAT_MINE_ORE)
     LazyUpdate_update_ore(combat_id, target)
     FirstRelicCombat_mine_ore(combat_id, account, target, workers_count)
@@ -315,9 +318,24 @@ func recallWorkers{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
+    player_can_action_ores(combat_id, account)
     authorized_call(account, ACTION_FR_COMBAT_RECALL_WORKERS)
     LazyUpdate_update_ore(combat_id, target)
     FirstRelicCombat_recall_workers(combat_id, account, target, workers_count)
+    return ()
+end
+
+@external
+func produceBot{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
+    player_can_action_ores(combat_id, account)
+    authorized_call(account, ACTION_FR_COMBAT_PRODUCE_BOT)
+    LazyUpdate_update_koma_mining(combat_id, account)
+    FirstRelicCombat_produce_bot(combat_id, account, bot_type, quantity)
+
     return ()
 end
 
@@ -390,5 +408,28 @@ func player_can_move{
         assert_not_equal(koma.status, KOMA_STATUS_MINING)
     end
 
+    return ()
+end
+
+func player_can_action_ores{
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt):
+    alloc_locals
+
+    let (koma) = komas.read(combat_id, account)
+    let (in_moving_stage) = FirstRelicCombat_in_moving_stage(combat_id)
+    with_attr error_message("FirstRelicCombat: combat status invalid"):
+        assert in_moving_stage = TRUE
+    end
+
+    with_attr error_message("FirstRelicCombat: player not exist"):
+        assert_not_zero(koma.status)
+    end
+    with_attr error_message("FirstRelicCombat: player is dead"):
+        assert_not_equal(koma.status, KOMA_STATUS_DEAD)
+    end
+    
     return ()
 end

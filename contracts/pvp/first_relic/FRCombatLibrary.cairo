@@ -31,7 +31,8 @@ from contracts.pvp.first_relic.constants import (
     PREPARE_TIME,
     FIRST_STAGE_DURATION,
     SECOND_STAGE_DURATION,
-    WORKER_MINING_SPEED
+    WORKER_MINING_SPEED,
+    BOT_TYPE_WORKER
 )
 from contracts.pvp.first_relic.storages import (
     combat_counter,
@@ -234,13 +235,6 @@ func FirstRelicCombat_recall_workers{
 
     let mining_workers_count = ore.mining_workers_count - workers_count
     let (empty_timestamp) = _get_ore_empty_timestamp(mining_workers_count, remaining, block_timestamp)
-    # local empty_time
-    # if mining_workers_count == 0:
-    #     empty_time = 0
-    # else:
-    #     let (empty_time_need, _) = unsigned_div_rem(remaining, mining_workers_count * WORKER_MINING_SPEED)
-    #     empty_time = block_timestamp + empty_time_need + 1
-    # end
 
     let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply, mining_workers_count, block_timestamp, empty_timestamp)
 
@@ -256,13 +250,44 @@ func FirstRelicCombat_recall_workers{
     if mining_ore_mining_workers_count == 0:
         # remove from mining ores list
         let (len) = koma_mining_ore_coordinates_len.read(combat_id, account)
-        # koma_mining_ore_coordinates_by_index.write(combat_id, account, len, target)
-        # koma_mining_ore_coordinates_len.write(combat_id, account, len + 1)
         let (removed) = _remove_mining_ore_from_list(combat_id, account, new_mining_ore, 0, len)
         with_attr error_message("FirstRelicCombat: remove mining ore failed"):
             assert removed = TRUE
         end
     end
+
+    return ()
+end
+
+func FirstRelicCombat_produce_bot{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
+    alloc_locals
+
+    let (koma) = komas.read(combat_id, account)
+    let bots_count = koma.workers_count + koma.drones_count + quantity
+    let (ore_required, _) = unsigned_div_rem(bots_count * (bots_count + 1) * 1000, 2)
+    with_attr error_message("FirstRelicCombat: insufficient ores"):
+        assert_le_felt(ore_required, koma.ore_amount)
+    end
+    let remaining_amount = koma.ore_amount - ore_required
+    local workers_count
+    local drones_count
+    if bot_type == BOT_TYPE_WORKER:
+        workers_count = koma.workers_count + quantity
+        drones_count = koma.drones_count
+    else:
+        workers_count = koma.workers_count
+        drones_count = koma.drones_count + quantity
+    end
+    let koma_updated = Koma(
+        koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility,
+        koma.move_speed, koma.props_weight, koma.props_max_weight, workers_count, koma.mining_workers_count,
+        drones_count, koma.action_radius, koma.element, remaining_amount
+    )
+    komas.write(combat_id, account, koma_updated)
 
     return ()
 end
@@ -425,7 +450,7 @@ func _init_ores{
         return (seed)
     end
     let (coordinate, next_seed) = _fetch_outer_empty_coordinate(combat_id, seed)
-    let ore = Ore(coordinate=coordinate, total_supply=1000, mined_supply=0, mining_workers_count=0, start_time=0, empty_time=0)
+    let ore = Ore(coordinate=coordinate, total_supply=1000000, mined_supply=0, mining_workers_count=0, start_time=0, empty_time=0)
     let (ore_len) = ore_coordinates_len.read(combat_id)
     ores.write(combat_id, coordinate, ore)
     ore_coordinate_by_index.write(combat_id, ore_len, coordinate)
@@ -512,7 +537,7 @@ func _retreive_mining_ore{
     end
     let (block_timestamp) = get_block_timestamp()
     let (end_time) = min(block_timestamp, ore_empty_time)
-    let retreive_amount = (end_time - mining_ore.start_time) * WORKER_MINING_SPEED
+    let retreive_amount = (end_time - mining_ore.start_time) * mining_ore.mining_workers_count * WORKER_MINING_SPEED
     return (retreive_amount)
 end
 
