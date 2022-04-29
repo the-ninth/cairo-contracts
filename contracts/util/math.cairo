@@ -7,7 +7,7 @@ func min{
     }(a: felt, b: felt) -> (min: felt):
     let (res) = sign(a - b)
     if res == 1:
-        return (a)
+        return (b)
     end
-    return (b)
+    return (a)
 end
