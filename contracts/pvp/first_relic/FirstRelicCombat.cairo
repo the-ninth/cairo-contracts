@@ -29,6 +29,7 @@ from contracts.pvp.first_relic.structs import (
     KomaMiningOre,
     Movment,
     Ore,
+    Prop,
     KOMA_STATUS_DEAD,
     KOMA_STATUS_MINING
 )
@@ -52,7 +53,9 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_recall_workers,
     FirstRelicCombat_produce_bot,
     FirstRelicCombat_attack,
-    FirstRelicCombat_clear_mining_ores
+    FirstRelicCombat_clear_mining_ores,
+    FirstRelicCombat_open_chest,
+    FirstRelicCombat_select_chest_option
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -381,6 +384,36 @@ func attack{
 end
 
 @external
+func openChest{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, target: Coordinate):
+    authorized_call(account, ACTION_FR_COMBAT_ATTACK)
+    LazyUpdate_update_combat_status(combat_id)
+    player_can_move(combat_id, account)
+
+    FirstRelicCombat_open_chest(combat_id, account, target)
+
+    return ()
+end
+
+@external
+func selectChestOption{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, target: Coordinate, option: felt):
+    authorized_call(account, ACTION_FR_COMBAT_ATTACK)
+    LazyUpdate_update_combat_status(combat_id)
+    player_can_move(combat_id, account)
+
+    FirstRelicCombat_select_chest_option(combat_id, account, target, option)
+
+    return ()
+end
+
+@external
 func fulfillRandom{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -426,7 +459,7 @@ func authorized_call{
     return()
 end
 
-# actions include move, attack
+# actions include move, attack, open chest
 func player_can_move{
         syscall_ptr : felt*,
         pedersen_ptr : HashBuiltin*,

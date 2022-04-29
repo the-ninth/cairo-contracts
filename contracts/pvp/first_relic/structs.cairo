@@ -13,10 +13,6 @@ const KOMA_STATUS_MOVING = 2
 const KOMA_STATUS_MINING = 3
 const KOMA_STATUS_DEAD = 4
 
-const CHEST_TYPE_LIVE = 1
-const CHEST_TYPE_EQUIP = 2
-const CHEST_TYPE_CRYSTAL = 3
-
 struct Combat:
     member prepare_time: felt
     member first_stage_time: felt
@@ -61,14 +57,14 @@ end
 
 struct Chest:
     member coordinate: Coordinate
-    member chest_type: felt
+    member opener: felt
+    member option_selected: felt # based on 1
 end
 
 struct Prop:
     member prop_id: felt
-    member prop_category: felt
     member prop_creature_id: felt
-    member prop_weight: felt
+    member used_timetamp: felt
 end
 
 struct Ore:

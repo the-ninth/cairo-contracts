@@ -1,6 +1,6 @@
 %lang starknet
 
-from contracts.pvp.first_relic.structs import Chest, Combat, Coordinate, Koma, KomaMiningOre, Movment, Ore
+from contracts.pvp.first_relic.structs import Chest, Combat, Coordinate, Koma, KomaMiningOre, Movment, Ore, Prop
 
 # combat storages
 
@@ -24,6 +24,11 @@ end
 
 @storage_var
 func chest_coordinate_by_index(combat_id: felt, index: felt) -> (coordinate: Coordinate):
+end
+
+# option based on 1
+@storage_var
+func chest_options(combat_id: felt, coordinate: Coordinate, option: felt) -> (prop_creature_id: felt):
 end
 
 # player and koma storages
@@ -68,4 +73,30 @@ end
 
 @storage_var
 func koma_mining_ores(combat_id: felt, account: felt, coordinate: Coordinate) -> (minging_ore: KomaMiningOre):
+end
+
+# prop storages
+
+@storage_var
+func props_counter(combat_id: felt) -> (count: felt):
+end
+
+@storage_var
+func props(combat_id: felt, prop_id: felt) -> (prop: Prop):
+end
+
+@storage_var
+func props_owner(combat_id: felt, prop_id: felt) -> (owner: felt):
+end
+
+@storage_var
+func koma_props_len(combat_id: felt, account: felt) -> (len: felt):
+end
+
+@storage_var
+func koma_props_id_by_index(combat_id: felt, account: felt, index: felt) -> (prop_id: felt):
+end
+
+@storage_var
+func koma_equipments(combat_id: felt, account: felt, part: felt) -> (prop_id: felt):
 end

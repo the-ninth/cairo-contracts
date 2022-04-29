@@ -2,7 +2,7 @@
 
 # combat for first relic
 
-from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, KomaMiningOre, Ore, ThirdStageAction, Movment
+from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, KomaMiningOre, Ore, ThirdStageAction, Movment, Prop
 
 @contract_interface
 namespace IFirstRelicCombat:
@@ -66,6 +66,9 @@ namespace IFirstRelicCombat:
     func openChest(combat_id: felt, account: felt, target: Coordinate):
     end
 
+    func selectChestOption(combat_id: felt, account: felt, target: Coordinate, option: felt):
+    end
+
     func mineOre(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
     end
 
@@ -81,10 +84,10 @@ namespace IFirstRelicCombat:
     func attack(combat_id: felt, account: felt, target_account: felt):
     end
 
-    func useProp(combat_id: felt, account: felt, prop_id: felt):
+    func getKomaProps(combat_id: felt, account: felt) -> (props_len: felt, props: Prop*):
     end
 
-    func produceBot(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
+    func useProp(combat_id: felt, account: felt, prop_id: felt):
     end
 
     func getAccountActualCoordinate(account: felt) -> (coordinate: Coordinate):
