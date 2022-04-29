@@ -84,10 +84,7 @@ namespace IFirstRelicCombat:
     func useProp(combat_id: felt, account: felt, prop_id: felt):
     end
 
-    func produceWorkers(combat_id: felt, account: felt, quantity: felt):
-    end
-
-    func produceDrones(combat_id: felt, account: felt, quantity: felt):
+    func produceBot(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
     end
 
     func getAccountActualCoordinate(account: felt) -> (coordinate: Coordinate):

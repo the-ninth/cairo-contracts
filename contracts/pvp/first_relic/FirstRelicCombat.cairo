@@ -51,7 +51,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_prepare_combat,
     FirstRelicCombat_recall_workers,
     FirstRelicCombat_produce_bot,
-    FirstRelicCombat_attack
+    FirstRelicCombat_attack,
+    FirstRelicCombat_clear_mining_ores
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -296,11 +297,11 @@ func move{
         range_check_ptr
     }(combat_id: felt, account: felt, to: Coordinate):
     authorized_call(account, ACTION_FR_COMBAT_MOVE)
-
     LazyUpdate_update_combat_status(combat_id)
     player_can_move(combat_id, account)
 
     FirstRelicCombat_move(combat_id, account, to)
+
     return ()
 end
 
@@ -310,11 +311,13 @@ func mineOre{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
+    authorized_call(account, ACTION_FR_COMBAT_MINE_ORE)
     LazyUpdate_update_combat_status(combat_id)
     player_can_action_ores(combat_id, account)
-    authorized_call(account, ACTION_FR_COMBAT_MINE_ORE)
     LazyUpdate_update_ore(combat_id, target)
+
     FirstRelicCombat_mine_ore(combat_id, account, target, workers_count)
+
     return()
 end
 
@@ -324,10 +327,13 @@ func recallWorkers{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
-    player_can_action_ores(combat_id, account)
     authorized_call(account, ACTION_FR_COMBAT_RECALL_WORKERS)
+    LazyUpdate_update_combat_status(combat_id)
+    player_can_action_ores(combat_id, account)
     LazyUpdate_update_ore(combat_id, target)
+
     FirstRelicCombat_recall_workers(combat_id, account, target, workers_count)
+
     return ()
 end
 
@@ -337,9 +343,11 @@ func produceBot{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
-    player_can_action_ores(combat_id, account)
     authorized_call(account, ACTION_FR_COMBAT_PRODUCE_BOT)
+    LazyUpdate_update_combat_status(combat_id)
+    player_can_action_ores(combat_id, account)
     LazyUpdate_update_koma_mining(combat_id, account)
+
     FirstRelicCombat_produce_bot(combat_id, account, bot_type, quantity)
 
     return ()
@@ -351,9 +359,23 @@ func attack{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target_account: felt):
-    player_can_move(combat_id, account)
+    alloc_locals
+
     authorized_call(account, ACTION_FR_COMBAT_ATTACK)
-    FirstRelicCombat_attack(combat_id, account, target_account)
+    LazyUpdate_update_combat_status(combat_id)
+    player_can_move(combat_id, account)
+
+    let (koma_attacked_status) = FirstRelicCombat_attack(combat_id, account, target_account)
+    if koma_attacked_status == KOMA_STATUS_DEAD:
+        FirstRelicCombat_clear_mining_ores(combat_id, target_account)
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    else:
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    end
 
     return ()
 end

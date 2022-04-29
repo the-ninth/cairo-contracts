@@ -332,8 +332,20 @@ func FirstRelicCombat_attack{
         defense=koma_attacked.defense
     )
     komas.write(combat_id, account, koma_attacked_updated)
+    
     return (koma_attacked_status)
+end
 
+func FirstRelicCombat_clear_mining_ores{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt):
+    let (mining_ores_len) = koma_mining_ore_coordinates_len.read(combat_id, account)
+    _clear_mining_ores(combat_id, account, 0, mining_ores_len)
+    koma_mining_ore_coordinates_len.write(combat_id, account, 0)
+
+    return ()
 end
 
 func FirstRelicCombat_new_combat{
@@ -639,18 +651,41 @@ func _remove_mining_ore_from_list{
     return (removed)
 end
 
+# remove all mining_ores of a dead player and recalculate ore storage
 func _clear_mining_ores{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, index: felt, mining_ore_coordinates_len: felt):
-    if index == ming_ore_coordinates_len:
+    alloc_locals
+
+    if index == mining_ore_coordinates_len:
         return ()
     end
     let (mining_ore_coordinate) = koma_mining_ore_coordinates_by_index.read(combat_id, account, index)
     let (mining_ore) = koma_mining_ores.read(combat_id, account, mining_ore_coordinate)
     let (ore) = ores.read(combat_id, mining_ore_coordinate)
+    let (block_timestamp) = get_block_timestamp()
+    let (end_time) = min(block_timestamp, ore.empty_time)
 
+    let ore_mined_amount = ore.mining_workers_count * (end_time - ore.start_time) * WORKER_MINING_SPEED + ore.mined_supply
+    let remaining_amount = ore.total_supply - ore_mined_amount
+    let mining_workers_count = ore.mining_workers_count - mining_ore.mining_workers_count
+    let (empty_time_need, _) = unsigned_div_rem(remaining_amount, mining_workers_count * WORKER_MINING_SPEED)
+    let empty_time = block_timestamp + empty_time_need + 1
+    let ore_updated = Ore(
+        coordinate=ore.coordinate,
+        total_supply=ore.total_supply,
+        mined_supply=ore.mined_supply,
+        mining_workers_count=mining_workers_count,
+        start_time=block_timestamp,
+        empty_time=empty_time
+    )
+    ores.write(combat_id, ore.coordinate, ore_updated)
+
+    # ignore modifying mining ore storage becuase it's not necessary
+
+    _clear_mining_ores(combat_id, account, index + 1, mining_ore_coordinates_len)
 
     return ()
 end
