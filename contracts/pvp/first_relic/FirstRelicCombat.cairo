@@ -28,6 +28,7 @@ from contracts.pvp.first_relic.structs import (
     Chest,
     Coordinate,
     Koma,
+    KomaEquipments,
     KomaMiningOre,
     Movment,
     Ore,
@@ -55,7 +56,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_recall_workers,
     FirstRelicCombat_produce_bot,
     FirstRelicCombat_attack,
-    FirstRelicCombat_clear_mining_ores
+    FirstRelicCombat_clear_mining_ores,
+    
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -69,6 +71,7 @@ from contracts.pvp.first_relic.FRPlayerLibrary import(
 from contracts.pvp.first_relic.FRPropLibrary import (
     FirstRelicCombat_open_chest,
     FirstRelicCombat_select_chest_option,
+    FirstRelicCombat_get_koma_equipments,
     FirstRelicCombat_get_koma_props,
     FirstRelicCombat_use_prop,
     FirstRelicCombat_equip_prop
@@ -250,6 +253,15 @@ func getKomaProps{
     }(combat_id: felt, account: felt) -> (koma_props_len: felt, koma_props: Prop*):
     let (koma_props_len, koma_props) = FirstRelicCombat_get_koma_props(combat_id, account)
     return (koma_props_len, koma_props)
+end
+
+@view
+func getKomaEquipments{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (equipments: KomaEquipments):
+    return FirstRelicCombat_get_koma_equipments(combat_id, account)
 end
 
 @external

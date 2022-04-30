@@ -109,3 +109,11 @@ struct KomaMiningOre:
     member mining_workers_count: felt
     member start_time: felt
 end
+
+struct KomaEquipments:
+    member account: felt
+    member engine: Prop
+    member shoe: Prop
+    member weapon: Prop
+    member armor: Prop
+end

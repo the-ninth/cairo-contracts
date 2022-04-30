@@ -9,13 +9,19 @@ from starkware.starknet.common.syscalls import get_block_timestamp
 from contracts.pvp.first_relic.constants import (
     get_props_pool,
     PROP_CREATURE_SHIELD,
-    PROP_TYPE_EQUIPMENT
+    PROP_TYPE_EQUIPMENT,
+    PROP_EQUIPMENT_PART_ENGINE,
+    PROP_EQUIPMENT_PART_SHOE,
+    PROP_EQUIPMENT_PART_WEAPON,
+    PROP_EQUIPMENT_PART_ARMOR,
+    PROP_CREATURE_HEALTH_KIT
 )
 from contracts.pvp.first_relic.structs import (
     Chest,
     Coordinate,
     Prop,
-    PropEffect
+    PropEffect,
+    KomaEquipments
 )
 from contracts.pvp.first_relic.storages import (
     chests,
@@ -165,7 +171,7 @@ func FirstRelicCombat_use_prop{
     end
 
     if prop.prop_creature_id == PROP_CREATURE_HEALTH_KIT:
-        
+
     end
 
     with_attr error_message("FirstRelicCombat: prop is unuseable"):
@@ -174,33 +180,6 @@ func FirstRelicCombat_use_prop{
 
     return ()
 end
-
-# func _use_prop_shield{
-#         syscall_ptr : felt*, 
-#         pedersen_ptr : HashBuiltin*,
-#         range_check_ptr
-#     }(combat_id: felt, account: felt):
-#     alloc_locals
-
-#     let (prop_effect) = FirstRelicCombat_koma_props_effect.read(combat_id, account, PROP_CREATURE_SHIELD)
-#     let (len) = FirstRelicCombat_koma_props_effect_creature_id_len.read(combat_id, account)
-#     let (index) = max(prop_effect.index_in_koma_effects, len)
-#     let (block_timestamp) = get_block_timestamp()
-#     local new_len
-#     if prop_effect.prop_creature_id == 0:
-#         new_len = len + 1
-#     else:
-#         new_len = len
-#     end
-#     let prop_effect_updated = PropEffect(
-#         prop_creature_id=PROP_CREATURE_SHIELD,
-#         index_in_koma_effects=index,
-#         used_timetamp=block_timestamp
-#     )
-#     FirstRelicCombat_koma_props_effect.write(combat_id, account, PROP_CREATURE_SHIELD, )
-#     FirstRelicCombat_koma_props_effect_creature_id_len.write(combat_id, account, new_len)
-#     FirstRelicCombat_koma_props_effect_creature_id_by_index(combat_id, account, index, PROP_CREATURE_SHIELD)
-# end
 
 # for useable and have consistent effect props
 func _prop_effect_use{
@@ -279,9 +258,29 @@ func FirstRelicCombat_equip_prop{
     return ()
 end
 
+func FirstRelicCombat_get_koma_equipments{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (equipments: KomaEquipments):
+    let (engine_prop_id) = FirstRelicCombat_koma_equipments.read(combat_id, account, PROP_EQUIPMENT_PART_ENGINE)
+    let (engine) = FirstRelicCombat_props.read(combat_id, engine_prop_id)
+
+    let (shoe_prop_id) = FirstRelicCombat_koma_equipments.read(combat_id, account, PROP_EQUIPMENT_PART_SHOE)
+    let (shoe) = FirstRelicCombat_props.read(combat_id, shoe_prop_id)
+
+    let (weapon_prop_id) = FirstRelicCombat_koma_equipments.read(combat_id, account, PROP_EQUIPMENT_PART_WEAPON)
+    let (weapon) = FirstRelicCombat_props.read(combat_id, weapon_prop_id)
+    
+    let (armor_prop_id) = FirstRelicCombat_koma_equipments.read(combat_id, account, PROP_EQUIPMENT_PART_ARMOR)
+    let (armor) = FirstRelicCombat_props.read(combat_id, armor_prop_id)
+
+    let equipments = KomaEquipments(account, engine, shoe, weapon, armor)
+
+    return (equipments)
+end
+
 func _get_equip_part{
-        # syscall_ptr : felt*, 
-        # pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(prop_creature_id: felt) -> (equip_part: felt):
     let (prop_type, r) = unsigned_div_rem(prop_creature_id, 10**8)
