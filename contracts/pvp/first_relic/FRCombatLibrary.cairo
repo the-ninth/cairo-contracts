@@ -430,6 +430,20 @@ func FirstRelicCombat_select_chest_option{
     return ()
 end
 
+func FirstRelicCombat_get_koma_props{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (data_len: felt, data: Prop*):
+    alloc_locals
+
+    let (len) = koma_props_len.read(combat_id, account)
+    let (local data: Prop*) = alloc()
+    _get_koma_props(combat_id, account, 0, len, data)
+
+    return (len, data)
+end
+
 func FirstRelicCombat_new_combat{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -768,6 +782,24 @@ func _clear_mining_ores{
     # ignore modifying mining ore storage becuase it's not necessary
 
     _clear_mining_ores(combat_id, account, index + 1, mining_ore_coordinates_len)
+
+    return ()
+end
+
+# recursively get props array 
+func _get_koma_props{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, index: felt, data_len: felt, data: Prop*):
+    if data_len == 0:
+        return ()
+    end
+
+    let (prop_id) = koma_props_id_by_index.read(combat_id, account, index)
+    let (prop) = props.read(combat_id, prop_id)
+    assert data[index] = prop
+    _get_koma_props(combat_id, account, index+1, data_len-1, data)
 
     return ()
 end

@@ -55,7 +55,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_attack,
     FirstRelicCombat_clear_mining_ores,
     FirstRelicCombat_open_chest,
-    FirstRelicCombat_select_chest_option
+    FirstRelicCombat_select_chest_option,
+    FirstRelicCombat_get_koma_props
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -233,6 +234,16 @@ func getKomaMiningOres{
     }(combat_id: felt, account: felt) -> (mining_ores_len: felt, mining_ores: KomaMiningOre*):
     let (mining_ores_len, mining_ores) = FirstRelicCombat_get_koma_mining_ores(combat_id, account)
     return (mining_ores_len, mining_ores)
+end
+
+@view
+func getKomaProps{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (koma_props_len: felt, koma_props: Prop*):
+    let (koma_props_len, koma_props) = FirstRelicCombat_get_koma_props(combat_id, account)
+    return (koma_props_len, koma_props)
 end
 
 @external
