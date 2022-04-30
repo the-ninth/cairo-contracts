@@ -1,6 +1,16 @@
 %lang starknet
 
-from contracts.pvp.first_relic.structs import Chest, Combat, Coordinate, Koma, KomaMiningOre, Movment, Ore, Prop
+from contracts.pvp.first_relic.structs import (
+    Chest,
+    Combat,
+    Coordinate,
+    Koma,
+    KomaMiningOre, 
+    Movment,
+    Ore,
+    Prop,
+    PropEffect
+)
 
 # combat storages
 
@@ -78,25 +88,37 @@ end
 # prop storages
 
 @storage_var
-func props_counter(combat_id: felt) -> (count: felt):
+func FirstRelicCombat_props_counter(combat_id: felt) -> (count: felt):
 end
 
 @storage_var
-func props(combat_id: felt, prop_id: felt) -> (prop: Prop):
+func FirstRelicCombat_props(combat_id: felt, prop_id: felt) -> (prop: Prop):
 end
 
 @storage_var
-func props_owner(combat_id: felt, prop_id: felt) -> (owner: felt):
+func FirstRelicCombat_props_owner(combat_id: felt, prop_id: felt) -> (owner: felt):
 end
 
 @storage_var
-func koma_props_len(combat_id: felt, account: felt) -> (len: felt):
+func FirstRelicCombat_koma_props_len(combat_id: felt, account: felt) -> (len: felt):
 end
 
 @storage_var
-func koma_props_id_by_index(combat_id: felt, account: felt, index: felt) -> (prop_id: felt):
+func FirstRelicCombat_koma_props_id_by_index(combat_id: felt, account: felt, index: felt) -> (prop_id: felt):
 end
 
 @storage_var
-func koma_equipments(combat_id: felt, account: felt, part: felt) -> (prop_id: felt):
+func FirstRelicCombat_koma_props_effect(combat_id: felt, account: felt, prop_creature_id: felt) -> (prop_effect: PropEffect):
+end
+
+@storage_var
+func FirstRelicCombat_koma_props_effect_creature_id_len(combat_id: felt, account: felt) -> (len: felt):
+end
+
+@storage_var
+func FirstRelicCombat_koma_props_effect_creature_id_by_index(combat_id: felt, account: felt, index: felt) -> (prop_creature_id: felt):
+end
+
+@storage_var
+func FirstRelicCombat_koma_equipments(combat_id: felt, account: felt, equip_part: felt) -> (prop_id: felt):
 end

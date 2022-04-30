@@ -23,6 +23,10 @@ const BOT_TYPE_DRONE = 2
 
 const CHEST_SELECTION = 3
 
+const PROP_TYPE_USEABLE = 1
+const PROP_TYPE_UNUSEABLE = 2
+const PROP_TYPE_EQUIPMENT = 3
+
 # useable props
 const PROP_CREATURE_SHIELD           = 100000001
 const PROP_CREATURE_ATTACK_UP_30P    = 100000002
@@ -48,6 +52,11 @@ const PROP_CREATURE_LASER_GUN = 330000001
 const PROP_CREATURE_DRILL     = 330000002
 const PROP_CREATURE_ARMOR     = 340000001
 
+const PROP_EQUIPMENT_PART_ENGINE = 1
+const PROP_EQUIPMENT_PART_SHOE   = 2
+const PROP_EQUIPMENT_PART_WEAPON = 3
+const PROP_EQUIPMENT_PART_ARMOR  = 4
+
 func get_props_pool() -> (props_pool_len: felt, props_pool: felt*):
 
     let (pool_address) = get_label_location(props_pool)
@@ -69,6 +78,19 @@ func get_props_pool() -> (props_pool_len: felt, props_pool: felt*):
     dw PROP_CREATURE_STAGE2_KEY7
     dw PROP_CREATURE_STAGE2_KEY8
     dw PROP_CREATURE_STAGE2_KEY9
+    dw PROP_CREATURE_ENGINE
+    dw PROP_CREATURE_SHOE
+    dw PROP_CREATURE_LASER_GUN
+    dw PROP_CREATURE_DRILL
+    dw PROP_CREATURE_ARMOR
+end
+
+func get_equipments() -> (equipments_len: felt, equipments: felt*):
+    let (equipments_address) = get_label_location(equipments)
+
+    return (5, cast(equipments_address, felt*))
+
+    equipments:
     dw PROP_CREATURE_ENGINE
     dw PROP_CREATURE_SHOE
     dw PROP_CREATURE_LASER_GUN

@@ -34,18 +34,7 @@ from contracts.pvp.first_relic.constants import (
     SECOND_STAGE_DURATION,
     WORKER_MINING_SPEED,
     BOT_TYPE_WORKER,
-    PROP_CREATURE_SHIELD,
-    get_props_pool
-    # PROP_CREATURE_ATTACK_UP_30P,
-    # PROP_CREATURE_DAMAGE_DOWN_30P,
-    # PROP_CREATURE_HEALTH_KIT,
-    # PROP_CREATURE_MAX_HEALTH_UP_10,
-    # PROP_CREATURE_STAGE2_KEY,
-    # PROP_CREATURE_ENGINE,
-    # PROP_CREATURE_SHOE,
-    # PROP_CREATURE_LASER_GUN,
-    # PROP_CREATURE_DRILL,
-    # PROP_CREATURE_ARMOR
+    PROP_CREATURE_SHIELD
 )
 from contracts.pvp.first_relic.storages import (
     combat_counter,
@@ -60,13 +49,7 @@ from contracts.pvp.first_relic.storages import (
     ores,
     ore_coordinates_len,
     ore_coordinate_by_index,
-    chest_options,
-    props_counter,
-    props,
-    props_owner,
-    koma_props_len,
-    koma_props_id_by_index
-
+    chest_options
 )
 # from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma
 from contracts.util.random import get_random_number_and_seed
@@ -366,82 +349,6 @@ func FirstRelicCombat_clear_mining_ores{
     koma_mining_ore_coordinates_len.write(combat_id, account, 0)
 
     return ()
-end
-
-func FirstRelicCombat_open_chest{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt, target: Coordinate):
-    let (chest) = chests.read(combat_id, target)
-    with_attr error_message("FirstRelicCombat: invalid chest"):
-        assert_not_zero(chest.coordinate.x * chest.coordinate.y)
-    end
-    with_attr error_message("FirstRelicCombat: chest opened"):
-        assert chest.opener = 0
-    end
-
-    # write options to storage
-    let (props_pool_len, props_pool) = get_props_pool()
-    let (block_timestamp) = get_block_timestamp()
-    let (index1, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
-    let (index2, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
-    let (index3, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
-    chest_options.write(combat_id, target, 1, props_pool[index1])
-    chest_options.write(combat_id, target, 2, props_pool[index2])
-    chest_options.write(combat_id, target, 3, props_pool[index3])
-    let chest_updated = Chest(coordinate=target, opener=account, option_selected=0)
-    chests.write(combat_id, target, chest_updated)
-
-    return ()
-end
-
-func FirstRelicCombat_select_chest_option{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt, target: Coordinate, option: felt):
-    let (chest) = chests.read(combat_id, target)
-    with_attr error_message("FirstRelicCombat: invalid chest"):
-        assert_not_zero(chest.coordinate.x * chest.coordinate.y)
-    end
-    with_attr error_message("FirstRelicCombat: not your chest"):
-        assert chest.opener = account
-    end
-    with_attr error_message("FirstRelicCombat: chest option selected"):
-        assert chest.option_selected = 0
-    end
-
-    let chest_updated = Chest(chest.coordinate, chest.opener, option)
-    let (selected_prop_creature_id) = chest_options.read(combat_id, target, option)
-    with_attr error_message("FirstRelicCombat: invalid chest option"):
-        assert_lt_felt(0, selected_prop_creature_id)
-    end
-    let (props_count) = props_counter.read(combat_id)
-    let prop_id = props_count + 1
-    let prop = Prop(prop_id=prop_id, prop_creature_id=selected_prop_creature_id, used_timetamp=0)
-    props.write(combat_id, prop_id, prop)
-    props_owner.write(combat_id, prop_id, account)
-    props_counter.write(combat_id, prop_id)
-    let (len) = koma_props_len.read(combat_id, account)
-    koma_props_id_by_index.write(combat_id, account, len, prop_id)
-    koma_props_len.write(combat_id, account, len + 1)
-    
-    return ()
-end
-
-func FirstRelicCombat_get_koma_props{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt) -> (data_len: felt, data: Prop*):
-    alloc_locals
-
-    let (len) = koma_props_len.read(combat_id, account)
-    let (local data: Prop*) = alloc()
-    _get_koma_props(combat_id, account, 0, len, data)
-
-    return (len, data)
 end
 
 func FirstRelicCombat_new_combat{
@@ -782,24 +689,6 @@ func _clear_mining_ores{
     # ignore modifying mining ore storage becuase it's not necessary
 
     _clear_mining_ores(combat_id, account, index + 1, mining_ore_coordinates_len)
-
-    return ()
-end
-
-# recursively get props array 
-func _get_koma_props{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt, index: felt, data_len: felt, data: Prop*):
-    if data_len == 0:
-        return ()
-    end
-
-    let (prop_id) = koma_props_id_by_index.read(combat_id, account, index)
-    let (prop) = props.read(combat_id, prop_id)
-    assert data[index] = prop
-    _get_koma_props(combat_id, account, index+1, data_len-1, data)
 
     return ()
 end

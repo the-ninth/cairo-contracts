@@ -65,6 +65,13 @@ struct Prop:
     member prop_id: felt
     member prop_creature_id: felt
     member used_timetamp: felt
+    member index_in_koma_props: felt
+end
+
+struct PropEffect:
+    member prop_creature_id: felt
+    member index_in_koma_effects: felt
+    member used_timetamp: felt
 end
 
 struct Ore:
