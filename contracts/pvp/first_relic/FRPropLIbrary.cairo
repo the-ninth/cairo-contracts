@@ -68,6 +68,29 @@ func FirstRelicCombat_open_chest{
     return ()
 end
 
+func FirstRelicCombat_get_chest_options{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, target: Coordinate) -> (options_len: felt, options: felt*):
+    alloc_locals
+
+    let (chest) = chests.read(combat_id, target)
+    with_attr error_message("FirstRelicCombat: chest not opened"):
+        assert_not_zero(chest.opener)
+    end
+
+    let (local options: felt*) = alloc()
+    let (option1) = chest_options.read(combat_id, target, 1)
+    let (option2) = chest_options.read(combat_id, target, 1)
+    let (option3) = chest_options.read(combat_id, target, 1)
+    assert options[0] = option1
+    assert options[1] = option2
+    assert options[2] = option3
+
+    return (3, options)
+end
+
 func FirstRelicCombat_select_chest_option{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,

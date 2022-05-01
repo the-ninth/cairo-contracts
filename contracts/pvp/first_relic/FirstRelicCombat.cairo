@@ -71,6 +71,7 @@ from contracts.pvp.first_relic.FRPlayerLibrary import(
 from contracts.pvp.first_relic.FRPropLibrary import (
     FirstRelicCombat_open_chest,
     FirstRelicCombat_select_chest_option,
+    FirstRelicCombat_get_chest_options,
     FirstRelicCombat_get_koma_equipments,
     FirstRelicCombat_get_koma_props,
     FirstRelicCombat_use_prop,
@@ -153,6 +154,15 @@ func getChestByCoordinate{
     }(combat_id: felt, coordinate: Coordinate) -> (chest: Chest):
     let (chest) = FirstRelicCombat_get_chest_by_coordinate(combat_id, coordinate)
     return (chest)
+end
+
+@view
+func getChestOptions{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, coordinate: Coordinate) -> (options_len: felt, options: felt*):
+    return FirstRelicCombat_get_chest_options(combat_id, coordinate)
 end
 
 @view
