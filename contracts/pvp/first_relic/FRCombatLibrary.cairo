@@ -420,6 +420,29 @@ func FirstRelicCombat_change_to_first_stage{
     return ()
 end
 
+func FirstRelicCombat_change_to_second_stage{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt):
+    let (combat) = combats.read(combat_id)
+    with_attr error_message("FirstRelicCombat: not first stage"):
+        assert combat.status = COMBAT_STATUS_FIRST_STAGE
+    end
+    let new_combat = Combat(
+        prepare_time=combat.prepare_time,
+        first_stage_time=combat.first_stage_time,
+        second_stage_time=combat.second_stage_time,
+        third_stage_time=combat.second_stage_time + SECOND_STAGE_DURATION,
+        end_time=combat.end_time,
+        expire_time=combat.expire_time,
+        status=COMBAT_STATUS_SECOND_STAGE
+    )
+    combats.write(combat_id, new_combat)
+
+    return ()
+end
+
 func FirstRelicCombat_in_moving_stage{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,

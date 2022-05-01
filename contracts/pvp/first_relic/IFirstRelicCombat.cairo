@@ -2,7 +2,18 @@
 
 # combat for first relic
 
-from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, KomaMiningOre, Ore, ThirdStageAction, Movment, Prop
+from contracts.pvp.first_relic.structs import (
+    Combat,
+    Chest,
+    Coordinate,
+    Koma,
+    KomaEquipments,
+    KomaMiningOre,
+    Movment,
+    Ore,
+    Prop,
+    ThirdStageAction
+)
 
 @contract_interface
 namespace IFirstRelicCombat:
@@ -87,7 +98,13 @@ namespace IFirstRelicCombat:
     func getKomaProps(combat_id: felt, account: felt) -> (props_len: felt, props: Prop*):
     end
 
+    func getKomaEquipments(combat_id: felt, account: felt) -> (equipments: KomaEquipments):
+    end
+
     func useProp(combat_id: felt, account: felt, prop_id: felt):
+    end
+
+    func equipProp(combat_id: felt, account: felt, prop_id: felt):
     end
 
     func getAccountActualCoordinate(account: felt) -> (coordinate: Coordinate):
