@@ -97,3 +97,20 @@ func get_equipments() -> (equipments_len: felt, equipments: felt*):
     dw PROP_CREATURE_DRILL
     dw PROP_CREATURE_ARMOR
 end
+
+func get_relic_gate_key_ids() -> (key_ids_len: felt, key_ids: felt*):
+    let (ids_address) = get_label_location(gate_ids)
+
+    return (9, cast(ids_address, felt*))
+
+    gate_ids:
+    dw PROP_CREATURE_STAGE2_KEY1
+    dw PROP_CREATURE_STAGE2_KEY2
+    dw PROP_CREATURE_STAGE2_KEY3
+    dw PROP_CREATURE_STAGE2_KEY4
+    dw PROP_CREATURE_STAGE2_KEY5
+    dw PROP_CREATURE_STAGE2_KEY6
+    dw PROP_CREATURE_STAGE2_KEY7
+    dw PROP_CREATURE_STAGE2_KEY8
+    dw PROP_CREATURE_STAGE2_KEY9
+end

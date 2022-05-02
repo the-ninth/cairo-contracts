@@ -117,3 +117,9 @@ struct KomaEquipments:
     member weapon: Prop
     member armor: Prop
 end
+
+struct RelicGate:
+    member coordinate: Coordinate
+    member number: felt
+    member require_creature_id: felt
+end

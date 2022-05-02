@@ -12,6 +12,7 @@ from contracts.pvp.first_relic.structs import (
     Movment,
     Ore,
     Prop,
+    RelicGate,
     ThirdStageAction
 )
 
@@ -98,6 +99,9 @@ namespace IFirstRelicCombat:
     func getKomaProps(combat_id: felt, account: felt) -> (props_len: felt, props: Prop*):
     end
 
+    func getProp(combat_id: felt, prop_id: felt) -> (res: (felt, Prop)):
+    end
+
     func getKomaEquipments(combat_id: felt, account: felt) -> (equipments: KomaEquipments):
     end
 
@@ -115,7 +119,13 @@ namespace IFirstRelicCombat:
 
     # second stage
 
-    func enterRelicGate(account: felt, to: Coordinate):
+    func enterRelicGate(combat_id: felt, account: felt, to: Coordinate):
+    end
+
+    func getRelicGate(combat_id: felt, number: felt) -> (relic_gate: RelicGate):
+    end
+
+    func getRelicGates(combat_id: felt) -> (relic_gates_len: felt, relic_gates: RelicGate*):
     end
 
     # third stage

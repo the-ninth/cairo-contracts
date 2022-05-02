@@ -15,6 +15,7 @@ from contracts.pvp.first_relic.structs import (
     Coordinate,
     KomaMiningOre,
     Prop,
+    RelicGate,
     COMBAT_STATUS_NON_EXIST,
     COMBAT_STATUS_REGISTERING,
     COMBAT_STATUS_PREPARING,
@@ -34,7 +35,8 @@ from contracts.pvp.first_relic.constants import (
     SECOND_STAGE_DURATION,
     WORKER_MINING_SPEED,
     BOT_TYPE_WORKER,
-    PROP_CREATURE_SHIELD
+    PROP_CREATURE_SHIELD,
+    get_relic_gate_key_ids
 )
 from contracts.pvp.first_relic.storages import (
     combat_counter,
@@ -49,7 +51,9 @@ from contracts.pvp.first_relic.storages import (
     ores,
     ore_coordinates_len,
     ore_coordinate_by_index,
-    chest_options
+    chest_options,
+    FirstRelicCombat_relic_gates,
+    FirstRelicCombat_relic_gate_number_by_coordinate
 )
 # from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma
 from contracts.util.random import get_random_number_and_seed
@@ -440,7 +444,38 @@ func FirstRelicCombat_change_to_second_stage{
     )
     combats.write(combat_id, new_combat)
 
+    # generate 9 gates
+    let (block_timestamp) = get_block_timestamp()
+    let (block_number) = get_block_number()
+    let (key_ids_len, key_ids) = get_relic_gate_key_ids()
+    _init_relic_gates(combat_id, 1, key_ids_len, key_ids, block_timestamp * block_number)    
+
     return ()
+end
+
+func FirstRelicCombat_get_relic_gate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, number: felt) -> (relic_gate: RelicGate):
+    let (relic_gate) = FirstRelicCombat_relic_gates.read(combat_id, number)
+    with_attr error_message("FirstCombatRelic: relic gate invalid"):
+        assert_not_zero(relic_gate.number)
+    end
+    return (relic_gate)
+end
+
+func FirstRelicCombat_get_relic_gates{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (relic_gates_len: felt, relic_gates: RelicGate*):
+    alloc_locals
+
+    let (local relic_gates: RelicGate*) = alloc()
+    _get_relic_gates(combat_id, 1, relic_gates)
+
+    return (9, relic_gates)
 end
 
 func FirstRelicCombat_in_moving_stage{
@@ -712,6 +747,62 @@ func _clear_mining_ores{
     # ignore modifying mining ore storage becuase it's not necessary
 
     _clear_mining_ores(combat_id, account, index + 1, mining_ore_coordinates_len)
+
+    return ()
+end
+
+func _init_relic_gates{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, number: felt, key_ids_len: felt, key_ids: felt*, seed: felt) -> (next_seed: felt):
+    if key_ids_len==0:
+        return (seed)
+    end
+    let (coordinate, next_seed) = _fetch_relic_gate_coordinate(combat_id, seed)
+    let gate = RelicGate(coordinate, number, key_ids[0])
+    FirstRelicCombat_relic_gates.write(combat_id, number, gate)
+    FirstRelicCombat_relic_gate_number_by_coordinate.write(combat_id, coordinate, number)
+
+    return _init_relic_gates(combat_id, number + 1, key_ids_len - 1, key_ids + 1, next_seed)
+end
+
+# fetch a empty coordinate randomly for gate
+func _fetch_relic_gate_coordinate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, seed: felt) -> (coordinate: Coordinate, next_seed: felt):
+    alloc_locals
+    
+    let (local x, local next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
+    let (local y, local next_seed) = get_random_number_and_seed(next_seed, MAP_HEIGHT)
+    local coordinate: Coordinate = Coordinate(x=x, y=y)
+    let (chest) = chests.read(combat_id, coordinate)
+    let (ore) = ores.read(combat_id, coordinate)
+    let (number) = FirstRelicCombat_relic_gate_number_by_coordinate.read(combat_id, coordinate)
+    let exist = chest.coordinate.x * chest.coordinate.y * ore.total_supply * number
+    if exist != 0:
+        let (local coordinate, local next_seed) = _fetch_outer_empty_coordinate(combat_id, next_seed)
+        return (coordinate, next_seed)
+    end
+
+    return (coordinate, next_seed)
+end
+
+# recursively get relic gate struct array 
+func _get_relic_gates{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, number: felt, data: RelicGate*):
+    if number == 10:
+        return ()
+    end
+
+    let (relic_gate) = FirstRelicCombat_relic_gates.read(combat_id, number)
+    assert data[number - 1] = relic_gate
+    _get_relic_gates(combat_id, number + 1, data)
 
     return ()
 end

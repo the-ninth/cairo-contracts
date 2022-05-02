@@ -33,6 +33,7 @@ from contracts.pvp.first_relic.structs import (
     Movment,
     Ore,
     Prop,
+    RelicGate,
     KOMA_STATUS_DEAD,
     KOMA_STATUS_MINING
 )
@@ -57,7 +58,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_produce_bot,
     FirstRelicCombat_attack,
     FirstRelicCombat_clear_mining_ores,
-    
+    FirstRelicCombat_get_relic_gate,
+    FirstRelicCombat_get_relic_gates
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -274,6 +276,26 @@ func getKomaEquipments{
     return FirstRelicCombat_get_koma_equipments(combat_id, account)
 end
 
+@view
+func getRelicGate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, number: felt) -> (relic_gate: RelicGate):
+    return FirstRelicCombat_get_relic_gate(combat_id, number)
+end
+
+@view
+func getRelicGates{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (relic_gates_len: felt, relic_gates: RelicGate*):
+    let (relic_gates_len, relic_gates) = FirstRelicCombat_get_relic_gates(combat_id)
+
+    return (relic_gates_len, relic_gates)
+end
+
 @external
 func initPlayer{
         syscall_ptr : felt*, 
@@ -479,6 +501,15 @@ func equipProp{
 
     FirstRelicCombat_equip_prop(combat_id, account, prop_id)
 
+    return ()
+end
+
+@external
+func enterRelicGate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, to: Coordinate):
     return ()
 end
 

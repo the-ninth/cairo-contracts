@@ -9,7 +9,8 @@ from contracts.pvp.first_relic.structs import (
     Movment,
     Ore,
     Prop,
-    PropEffect
+    PropEffect,
+    RelicGate
 )
 
 # combat storages
@@ -121,4 +122,15 @@ end
 
 @storage_var
 func FirstRelicCombat_koma_equipments(combat_id: felt, account: felt, equip_part: felt) -> (prop_id: felt):
+end
+
+# gates storages
+
+# number based on 1
+@storage_var
+func FirstRelicCombat_relic_gates(combat_id: felt, number: felt) -> (relic_gate: RelicGate):
+end
+
+@storage_var
+func FirstRelicCombat_relic_gate_number_by_coordinate(combat_id: felt, coordinate: Coordinate) -> (number: felt):
 end
