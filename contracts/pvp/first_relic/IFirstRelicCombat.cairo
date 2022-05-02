@@ -179,11 +179,11 @@ func PlayerArrival(combat_id: felt, account: felt, from_: Coordinate, to: Coordi
 end
 
 @event
-func PlayerAttack(combat_id: felt, account: felt, target_account: felt, hit_coordinate: felt):
+func PlayerAttack(combat_id: felt, account: felt, target_account: felt, damage: felt, koma_attacked_status: felt):
 end
 
 @event
-func PlayerDeath(combat_id: felt, account: felt, coordinate: felt):
+func PlayerDeath(combat_id: felt, account: felt):
 end
 
 @event

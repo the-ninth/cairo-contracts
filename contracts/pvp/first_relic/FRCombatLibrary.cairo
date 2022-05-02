@@ -60,6 +60,7 @@ from contracts.pvp.first_relic.storages import (
 # from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma
 from contracts.util.random import get_random_number_and_seed
 from contracts.util.math import min
+from contracts.pvp.first_relic.IFirstRelicCombat import PlayerAttack
 
 func FirstRelicCombat_get_combat_count{
         syscall_ptr : felt*, 
@@ -342,6 +343,8 @@ func FirstRelicCombat_attack{
     )
     komas.write(combat_id, account, koma_attacked_updated)
     
+    PlayerAttack.emit(combat_id, account, target_account, damage, koma_attacked_status)
+
     return (koma_attacked_status)
 end
 

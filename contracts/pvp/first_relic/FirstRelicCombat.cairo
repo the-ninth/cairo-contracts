@@ -83,6 +83,7 @@ from contracts.pvp.first_relic.FRPropLibrary import (
     FirstRelicCombat_equip_prop
 )
 from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore, LazyUpdate_update_koma_mining
+from contracts.pvp.first_relic.IFirstRelicCombat import PlayerDeath
 from contracts.pvp.first_relic.third_stage.IFR3rdBoss import IFR3rd
 
 
@@ -436,6 +437,7 @@ func attack{
     let (koma_attacked_status) = FirstRelicCombat_attack(combat_id, account, target_account)
     if koma_attacked_status == KOMA_STATUS_DEAD:
         FirstRelicCombat_clear_mining_ores(combat_id, target_account)
+        PlayerDeath.emit(combat_id, target_account)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
