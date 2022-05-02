@@ -23,7 +23,8 @@ from contracts.pvp.first_relic.structs import (
     COMBAT_STATUS_SECOND_STAGE,
     COMBAT_STATUS_THIRD_STAGE,
     COMBAT_STATUS_END,
-    KOMA_STATUS_DEAD
+    KOMA_STATUS_DEAD,
+    KOMA_STATUS_THIRD_STAGE
 )
 from contracts.pvp.first_relic.constants import (
     MAP_WIDTH,
@@ -53,7 +54,8 @@ from contracts.pvp.first_relic.storages import (
     ore_coordinate_by_index,
     chest_options,
     FirstRelicCombat_relic_gates,
-    FirstRelicCombat_relic_gate_number_by_coordinate
+    FirstRelicCombat_relic_gate_number_by_coordinate,
+    FirstRelicCombat_props
 )
 # from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma
 from contracts.util.random import get_random_number_and_seed
@@ -459,7 +461,7 @@ func FirstRelicCombat_get_relic_gate{
         range_check_ptr
     }(combat_id: felt, number: felt) -> (relic_gate: RelicGate):
     let (relic_gate) = FirstRelicCombat_relic_gates.read(combat_id, number)
-    with_attr error_message("FirstCombatRelic: relic gate invalid"):
+    with_attr error_message("FirstRelicCombat: relic gate invalid"):
         assert_not_zero(relic_gate.number)
     end
     return (relic_gate)
@@ -476,6 +478,38 @@ func FirstRelicCombat_get_relic_gates{
     _get_relic_gates(combat_id, 1, relic_gates)
 
     return (9, relic_gates)
+end
+
+func FirstRelicCombat_enter_relic_gate{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, to: Coordinate, prop_id: felt):
+    let (number) = FirstRelicCombat_relic_gate_number_by_coordinate.read(combat_id, to)
+    let (relic_gate) = FirstRelicCombat_relic_gates.read(combat_id, number)
+    let (prop) = FirstRelicCombat_props.read(combat_id, prop_id)
+    with_attr error_message("FirstRelicCombat: invalid gate"):
+        assert_not_zero(relic_gate.number)
+    end
+    with_attr error_message("FirstRelicCombat: gate used"):
+        assert relic_gate.account = 0
+    end
+    with_attr error_message("FirstRelicCombat: key invaid"):
+        assert prop.prop_creature_id = relic_gate.require_creature_id
+    end
+
+    let relic_gate_updated = RelicGate(relic_gate.coordinate, relic_gate.number, relic_gate.require_creature_id, account)
+    FirstRelicCombat_relic_gates.write(combat_id, number, relic_gate_updated)
+
+    let (koma) = komas.read(combat_id, account)
+    let koma_updated = Koma(
+        koma.account, koma.coordinate, KOMA_STATUS_THIRD_STAGE, koma.health, koma.max_health, koma.agility,
+        koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count,
+        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
+    )
+    komas.write(combat_id, account, koma_updated)
+
+    return ()
 end
 
 func FirstRelicCombat_in_moving_stage{
@@ -760,7 +794,7 @@ func _init_relic_gates{
         return (seed)
     end
     let (coordinate, next_seed) = _fetch_relic_gate_coordinate(combat_id, seed)
-    let gate = RelicGate(coordinate, number, key_ids[0])
+    let gate = RelicGate(coordinate, number, key_ids[0], 0)
     FirstRelicCombat_relic_gates.write(combat_id, number, gate)
     FirstRelicCombat_relic_gate_number_by_coordinate.write(combat_id, coordinate, number)
 

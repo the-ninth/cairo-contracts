@@ -36,4 +36,7 @@ namespace IAccessControl:
     func delegateAccountRegistryContract() -> (contract: felt):
     end
 
+    func fr3RdBossContract() -> (contract: felt):
+    end
+
 end

@@ -119,7 +119,7 @@ namespace IFirstRelicCombat:
 
     # second stage
 
-    func enterRelicGate(combat_id: felt, account: felt, to: Coordinate):
+    func enterRelicGate(combat_id: felt, account: felt, to: Coordinate, prop_id: felt):
     end
 
     func getRelicGate(combat_id: felt, number: felt) -> (relic_gate: RelicGate):

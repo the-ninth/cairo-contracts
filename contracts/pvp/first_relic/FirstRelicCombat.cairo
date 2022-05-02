@@ -17,7 +17,8 @@ from contracts.delegate_account.actions import (
     ACTION_FR_COMBAT_PRODUCE_BOT,
     ACTION_FR_COMBAT_ATTACK,
     ACTION_FR_COMBAT_CHEST,
-    ACTION_FR_COMBAT_USE_PROP
+    ACTION_FR_COMBAT_USE_PROP,
+    ACTION_FR_COMBAT_ENTER_GATE
 )
 
 from contracts.random.IRandomProducer import IRandomProducer
@@ -35,7 +36,8 @@ from contracts.pvp.first_relic.structs import (
     Prop,
     RelicGate,
     KOMA_STATUS_DEAD,
-    KOMA_STATUS_MINING
+    KOMA_STATUS_MINING,
+    KOMA_STATUS_THIRD_STAGE
 )
 from contracts.pvp.first_relic.storages import komas
 from contracts.pvp.first_relic.FRCombatLibrary import (
@@ -59,7 +61,8 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_attack,
     FirstRelicCombat_clear_mining_ores,
     FirstRelicCombat_get_relic_gate,
-    FirstRelicCombat_get_relic_gates
+    FirstRelicCombat_get_relic_gates,
+    FirstRelicCombat_enter_relic_gate
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import(
     FirstRelicCombat_init_player,
@@ -80,6 +83,7 @@ from contracts.pvp.first_relic.FRPropLibrary import (
     FirstRelicCombat_equip_prop
 )
 from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore, LazyUpdate_update_koma_mining
+from contracts.pvp.first_relic.third_stage.IFR3rdBoss import IFR3rd
 
 
 const RANDOM_TYPE_COMBAT_INIT = 1
@@ -509,7 +513,16 @@ func enterRelicGate{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(combat_id: felt, account: felt, to: Coordinate):
+    }(combat_id: felt, account: felt, to: Coordinate, prop_id: felt):
+    authorized_call(account, ACTION_FR_COMBAT_ENTER_GATE)
+    LazyUpdate_update_combat_status(combat_id)
+    player_can_action(combat_id, account)
+
+    FirstRelicCombat_enter_relic_gate(combat_id, account, to, prop_id)
+    let (access_contract_address) = access_contract.read()
+    let (fr_3rd_contract_address) = IAccessControl.fr3RdBossContract(contract_address=access_contract_address)
+    IFR3rd.join(contract_address=fr_3rd_contract_address, combat_id=combat_id, address=account)
+    
     return ()
 end
 
@@ -602,6 +615,9 @@ func player_can_action{
 
     with_attr error_message("FirstRelicCombat: player not exist"):
         assert_not_zero(koma.status)
+    end
+    with_attr error_message("FirstRelicCombat: player in third stage"):
+        assert_not_equal(koma.status, KOMA_STATUS_THIRD_STAGE)
     end
     with_attr error_message("FirstRelicCombat: player is dead"):
         assert_not_equal(koma.status, KOMA_STATUS_DEAD)

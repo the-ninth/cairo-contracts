@@ -11,7 +11,8 @@ const COMBAT_STATUS_END = 6
 const KOMA_STATUS_STATIC = 1
 const KOMA_STATUS_MOVING = 2
 const KOMA_STATUS_MINING = 3
-const KOMA_STATUS_DEAD = 4
+const KOMA_STATUS_THIRD_STAGE = 4
+const KOMA_STATUS_DEAD = 5
 
 struct Combat:
     member prepare_time: felt
@@ -122,4 +123,5 @@ struct RelicGate:
     member coordinate: Coordinate
     member number: felt
     member require_creature_id: felt
+    member account: felt
 end
