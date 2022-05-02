@@ -27,7 +27,7 @@ def contract_path(name):
     if name.startswith("tests/"):
         return str(_root / name)
     elif name.startswith("openzeppelin/"):
-        return str(_root / "venv/lib/python3.7/site-packages" / name)
+        return "/home/john/cairo_venv/lib/python3.7/site-packages/" + name
     else:
         return str(_root / name)
 
