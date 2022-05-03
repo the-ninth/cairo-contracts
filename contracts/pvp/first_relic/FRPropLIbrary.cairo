@@ -19,6 +19,7 @@ from contracts.pvp.first_relic.constants import (
 from contracts.pvp.first_relic.structs import (
     Chest,
     Coordinate,
+    Koma,
     Prop,
     PropEffect,
     KomaEquipments
@@ -26,6 +27,7 @@ from contracts.pvp.first_relic.structs import (
 from contracts.pvp.first_relic.storages import (
     chests,
     chest_options,
+    komas,
     FirstRelicCombat_koma_props_len,
     FirstRelicCombat_koma_props_id_by_index,
     FirstRelicCombat_koma_props_effect,
@@ -36,7 +38,7 @@ from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_props_owner,
     FirstRelicCombat_koma_equipments
 )
-from contracts.util.math import max
+from contracts.util.math import max, min
 from contracts.util.random import get_random_number_and_seed
 
 
@@ -194,42 +196,13 @@ func FirstRelicCombat_use_prop{
     end
 
     if prop.prop_creature_id == PROP_CREATURE_HEALTH_KIT:
-
+        _use_health_kit(combat_id, account)
+        return ()
     end
 
     with_attr error_message("FirstRelicCombat: prop is unuseable"):
         assert 0 = 1
     end
-
-    return ()
-end
-
-# for useable and have consistent effect props
-func _prop_effect_use{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt, prop_creature_id: felt):
-    alloc_locals
-
-    let (prop_effect) = FirstRelicCombat_koma_props_effect.read(combat_id, account, prop_creature_id)
-    let (len) = FirstRelicCombat_koma_props_effect_creature_id_len.read(combat_id, account)
-    let (index) = max(prop_effect.index_in_koma_effects, len)
-    let (block_timestamp) = get_block_timestamp()
-    local new_len
-    if prop_effect.prop_creature_id == 0:
-        new_len = len + 1
-    else:
-        new_len = len
-    end
-    let prop_effect_updated = PropEffect(
-        prop_creature_id=prop_creature_id,
-        index_in_koma_effects=index,
-        used_timetamp=block_timestamp
-    )
-    FirstRelicCombat_koma_props_effect.write(combat_id, account, prop_creature_id, prop_effect_updated)
-    FirstRelicCombat_koma_props_effect_creature_id_len.write(combat_id, account, new_len)
-    FirstRelicCombat_koma_props_effect_creature_id_by_index.write(combat_id, account, index, prop_creature_id)
 
     return ()
 end
@@ -317,4 +290,53 @@ func _get_equip_part{
     end
 
     return (equip_part)
+end
+
+# for useable and have consistent effect props
+func _prop_effect_use{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, prop_creature_id: felt):
+    alloc_locals
+
+    let (prop_effect) = FirstRelicCombat_koma_props_effect.read(combat_id, account, prop_creature_id)
+    let (len) = FirstRelicCombat_koma_props_effect_creature_id_len.read(combat_id, account)
+    let (index) = max(prop_effect.index_in_koma_effects, len)
+    let (block_timestamp) = get_block_timestamp()
+    local new_len
+    if prop_effect.prop_creature_id == 0:
+        new_len = len + 1
+    else:
+        new_len = len
+    end
+    let prop_effect_updated = PropEffect(
+        prop_creature_id=prop_creature_id,
+        index_in_koma_effects=index,
+        used_timetamp=block_timestamp
+    )
+    FirstRelicCombat_koma_props_effect.write(combat_id, account, prop_creature_id, prop_effect_updated)
+    FirstRelicCombat_koma_props_effect_creature_id_len.write(combat_id, account, new_len)
+    FirstRelicCombat_koma_props_effect_creature_id_by_index.write(combat_id, account, index, prop_creature_id)
+
+    return ()
+end
+
+func _use_health_kit{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt):
+    alloc_locals
+
+    let (koma) = komas.read(combat_id, account)
+    let now_health = min(koma.health + 50, koma.max_health)
+    let koma_updated = Koma(
+        koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
+        koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
+        koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
+    )
+    komas.write(combat_id, account, koma_updated)
+
+    return ()
 end
