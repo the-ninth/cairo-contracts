@@ -84,7 +84,7 @@ from contracts.pvp.first_relic.FRPropLibrary import (
 )
 from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore, LazyUpdate_update_koma_mining
 from contracts.pvp.first_relic.IFirstRelicCombat import PlayerDeath
-from contracts.pvp.first_relic.third_stage.IFR3rdBoss import IFR3rd
+from contracts.pvp.first_relic.third_stage.interfaces.IFR3rd import IFR3rd
 
 
 const RANDOM_TYPE_COMBAT_INIT = 1

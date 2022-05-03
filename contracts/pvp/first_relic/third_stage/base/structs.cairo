@@ -3,27 +3,25 @@
 struct Hero:
     member address : felt  # if address is 0 ,hero is boss
     member health : felt
-    member defense : felt
-    member agility : felt
     member bear_from_hero : felt
     member bear_from_boss : felt
     member damage_to_hero : felt
     member damage_to_boss : felt
-    member next_hero_index : felt
-    member robots : felt
+    member agility_next_hero : felt  # agility_next_hero index
+    member damage_to_boss_next_hero : felt  # damage_to_boss_next_hero index
 end
 
 struct Combat:
     member combat_id : felt
     member meta_id : felt
     member boss_id : felt
-    member total_reward : felt  #
     member round : felt  # current round
     member action_count : felt  #
     member hero_count : felt  # current hero num
-    member hero_1th : felt
+    member agility_1st : felt
+    member damage_to_boss_1st : felt
     member start_time : felt  # start time
-    member last_combat_time : felt  # start time
+    member last_round_time : felt  # start time
     member end_info : felt
 end
 
@@ -38,6 +36,7 @@ struct Boss_meta:
     member health : felt
     member defense : felt
     member agility : felt
+    member atk : felt
 end
 
 struct Action:

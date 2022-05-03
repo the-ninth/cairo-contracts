@@ -1,6 +1,6 @@
 %lang starknet
 
-from contracts.pvp.first_relic.third_stage.structs import (
+from contracts.pvp.first_relic.third_stage.base.structs import (
     Hero,
     Combat,
     Combat_meta,
@@ -10,6 +10,10 @@ from contracts.pvp.first_relic.third_stage.structs import (
 
 @storage_var
 func FR3rd_reward_token() -> (address : felt):
+end
+
+@storage_var
+func FR3rd_combat_1st_address() -> (address : felt):
 end
 
 @storage_var
@@ -46,4 +50,12 @@ end
 
 @storage_var
 func FR3rd_combat_meta_len() -> (count : felt):
+end
+
+@storage_var
+func FR3rd_combat_prop_used(combat_id : felt, prop_id : felt) -> (used : felt):
+end
+
+@storage_var
+func FR3rd_combat_prop_len(combat_id : felt, accound : felt, type : felt) -> (len : felt):
 end

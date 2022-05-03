@@ -37,7 +37,6 @@ async def test_market():
     implementation_contract = await starknet.deploy(contract_def=frboss_def, constructor_calldata=[]) 
     frboss_contract = await starknet.deploy(Proxy_CONTRACT_FILE, constructor_calldata=[implementation_contract.contract_address])
     mock_contract = await starknet.deploy(COMBAT_MOCK, constructor_calldata=[])
-
     frboss_contract = StarknetContract(state=starknet.state, abi=frboss_def.abi, contract_address=frboss_contract.contract_address,deploy_execution_info=frboss_contract.deploy_execution_info)
     
 # 
@@ -52,7 +51,6 @@ async def test_market():
     print('initialize')
     # print(dir(frboss_contract1))
 
-    erc20_contract = await starknet.deploy(ERC20_CONTRACT_FILE, constructor_calldata=[str_to_felt('TEST'),str_to_felt('TEST'),18,*to_uint(100000000000000000),frboss_contract.contract_address,owner_contract.contract_address])
 
 
     # set market config
@@ -60,14 +58,9 @@ async def test_market():
         owner_contract, frboss_contract.contract_address, 'addBossMeta', [1000,100,100,500]
     )
     await signer.send_transaction(
-        owner_contract, frboss_contract.contract_address, 'setRewardTokenAddress', [erc20_contract.contract_address]
-    )
-    await signer.send_transaction(
         owner_contract, frboss_contract.contract_address, 'addCombatMeta', [100000000000000000,60,5,9]
     )
 
-    execution_info = await erc20_contract.balanceOf(frboss_contract.contract_address).call()
-    print(execution_info.result)
 
     print('boss init end ',time.time())
     heros = []
@@ -83,10 +76,6 @@ async def test_market():
         )
         execution_info = await mock_contract.getKoma(0,heros[i].contract_address).call()
         print(execution_info.result)
-    execution_info = await mock_contract.getKoma(0,heros[2].contract_address).call()
-    print(execution_info.result)
-    execution_info = await mock_contract.getKoma(0,heros[3].contract_address).call()
-    print(execution_info.result)
 
     # print heros
     execution_info = await frboss_contract.getCombatInfoById(0).call()
@@ -97,50 +86,50 @@ async def test_market():
         print(execution_info.result.heros[i])
     
 
-    # Test for repeated join
-#     await signer.send_transaction(heros[3], frboss_contract.contract_address, 'join', [])
-    # execution_info = await frboss_contract.getCombatInfoById(0).call()
-    # print(execution_info.result)
+#     # Test for repeated join
+# #     await signer.send_transaction(heros[3], frboss_contract.contract_address, 'join', [])
+#     # execution_info = await frboss_contract.getCombatInfoById(0).call()
+#     # print(execution_info.result)
 
-    print('hero join end ',time.time())
-    for j in range(4):
-        for i in range(9):
-            print('action',i)
-            await signer.send_transaction(
-                heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,0]
-            )
-        print('action end ',time.time())
-        execution_info = await frboss_contract.getCombatInfoById(0).call()
-        if execution_info.result.combat.end_info == 1:
-            break
+#     print('hero join end ',time.time())
+#     for j in range(4):
+#         for i in range(9):
+#             print('action',i)
+#             await signer.send_transaction(
+#                 heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,0]
+#             )
+#         print('action end ',time.time())
+#         execution_info = await frboss_contract.getCombatInfoById(0).call()
+#         if execution_info.result.combat.end_info == 1:
+#             break
     
 
 
     
 
-    # check token len
-    execution_info = await frboss_contract.getCombatInfoById(0).call()
-    print(execution_info.result)
+#     # check token len
+#     execution_info = await frboss_contract.getCombatInfoById(0).call()
+#     print(execution_info.result)
 
-    print(execution_info.result.combat)
-    heroLen = len(execution_info.result.heros)
-    for i in range(heroLen):
-        print(execution_info.result.heros[i])
-    print('heros ',heroLen)
-    actionLen = len(execution_info.result.actions)
-    print('actions ',actionLen)
-    for i in range(actionLen):
-        print(execution_info.result.actions[i])
+#     print(execution_info.result.combat)
+#     heroLen = len(execution_info.result.heros)
+#     for i in range(heroLen):
+#         print(execution_info.result.heros[i])
+#     print('heros ',heroLen)
+#     actionLen = len(execution_info.result.actions)
+#     print('actions ',actionLen)
+#     for i in range(actionLen):
+#         print(execution_info.result.actions[i])
 
-    execution_info = await erc20_contract.balanceOf(frboss_contract.contract_address).call()
-    print(execution_info.result)
-    for i in range(9):
-        execution_info = await erc20_contract.balanceOf(heros[i].contract_address).call()
-        print(execution_info.result)
+#     execution_info = await erc20_contract.balanceOf(frboss_contract.contract_address).call()
+#     print(execution_info.result)
+#     for i in range(9):
+#         execution_info = await erc20_contract.balanceOf(heros[i].contract_address).call()
+#         print(execution_info.result)
     
 
-    execution_info = await implementation_contract.getCombatInfoById(0).call()
-    print(execution_info.result)
+#     execution_info = await implementation_contract.getCombatInfoById(0).call()
+#     print(execution_info.result)
 
 
 

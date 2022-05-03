@@ -11,14 +11,14 @@ from openzeppelin.access.ownable import (
 )
 
 from openzeppelin.upgrades.library import Proxy_initializer
-from contracts.pvp.first_relic.third_stage.structs import (
+from contracts.pvp.first_relic.third_stage.base.structs import (
     Hero,
     Combat,
     Combat_meta,
     Boss_meta,
     Action,
 )
-from contracts.pvp.first_relic.third_stage.FR3rdBossLibrary import (
+from contracts.pvp.first_relic.third_stage.FR3rdLibrary import (
     FR3rd_get_combat_info,
     FR3rd_join,
     FR3rd_submit_action,
@@ -27,6 +27,8 @@ from contracts.pvp.first_relic.third_stage.FR3rdBossLibrary import (
 from contracts.pvp.first_relic.third_stage.FR3rdManagerLibrary import (
     FR3rd_get_reward_token_address,
     FR3rd_set_reward_token_address,
+    FR3rd_get_combat_1st_address,
+    FR3rd_set_combat_1st_address,
     FR3rd_add_boss_meta,
     FR3rd_get_boss_meta,
     FR3rd_get_cur_boss_meta,
@@ -36,6 +38,8 @@ from contracts.pvp.first_relic.third_stage.FR3rdManagerLibrary import (
     FR3rd_get_cur_combat_meta,
     FR3rd_set_cur_combat_meta,
 )
+
+from contracts.pvp.first_relic.third_stage.base.FR3rdBaseLibrary import FR3rd_base_get_combat
 
 #
 # Constructor
@@ -64,6 +68,14 @@ func getRewardTokenAddress{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, ran
     address : felt
 ):
     let (address : felt) = FR3rd_get_reward_token_address()
+    return (address=address)
+end
+
+@view
+func getCombat1stAddress{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}() -> (
+    address : felt
+):
+    let (address : felt) = FR3rd_get_combat_1st_address()
     return (address=address)
 end
 
@@ -101,7 +113,7 @@ end
 
 @view
 func getCombatInfoById{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    bf_index : felt
+    combat_id : felt
 ) -> (
     heros_len : felt,
     heros : Hero*,
@@ -112,7 +124,7 @@ func getCombatInfoById{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_c
     combat_meta : Combat_meta,
 ):
     let (heros_len : felt, heros : Hero*, actions_len : felt, actions : Action*, combat : Combat,
-        boss_meta : Boss_meta, combat_meta : Combat_meta) = FR3rd_get_combat_info(bf_index)
+        boss_meta : Boss_meta, combat_meta : Combat_meta) = FR3rd_get_combat_info(combat_id)
     return (
         heros_len=heros_len,
         heros=heros,
@@ -140,11 +152,20 @@ func setRewardTokenAddress{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, ran
 end
 
 @external
-func addBossMeta{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    health : felt, defense : felt, agility : felt
+func setCombat1stAddress{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    address : felt
 ) -> ():
     Ownable_only_owner()
-    FR3rd_add_boss_meta(health, defense, agility)
+    FR3rd_set_combat_1st_address(address)
+    return ()
+end
+
+@external
+func addBossMeta{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    health : felt, defense : felt, agility : felt, atk : felt
+) -> ():
+    Ownable_only_owner()
+    FR3rd_add_boss_meta(health, defense, agility, atk)
     return ()
 end
 
@@ -175,8 +196,8 @@ end
 
 @external
 func action{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    bf_index : felt, round_id : felt, hero_index : felt, type : felt, target : felt
+    combat_id : felt, round_id : felt, hero_index : felt, type : felt, target : felt
 ):
-    FR3rd_submit_action(bf_index, round_id, hero_index, type, target)
+    FR3rd_submit_action(combat_id, round_id, hero_index, type, target)
     return ()
 end
