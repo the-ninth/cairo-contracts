@@ -14,7 +14,8 @@ from contracts.pvp.first_relic.constants import (
     PROP_EQUIPMENT_PART_SHOE,
     PROP_EQUIPMENT_PART_WEAPON,
     PROP_EQUIPMENT_PART_ARMOR,
-    PROP_CREATURE_HEALTH_KIT
+    PROP_CREATURE_HEALTH_KIT,
+    PROP_CREATURE_MAX_HEALTH_UP_10
 )
 from contracts.pvp.first_relic.structs import (
     Chest,
@@ -194,9 +195,12 @@ func FirstRelicCombat_use_prop{
         _prop_effect_use(combat_id, account, PROP_CREATURE_SHIELD)
         return ()
     end
-
     if prop.prop_creature_id == PROP_CREATURE_HEALTH_KIT:
         _use_health_kit(combat_id, account)
+        return ()
+    end
+    if prop.prop_creature_id == PROP_CREATURE_MAX_HEALTH_UP_10:
+        _use_max_health_up_10(combat_id, account)
         return ()
     end
 
@@ -330,9 +334,25 @@ func _use_health_kit{
     alloc_locals
 
     let (koma) = komas.read(combat_id, account)
-    let now_health = min(koma.health + 50, koma.max_health)
+    let (now_health) = min(koma.health + 50, koma.max_health)
     let koma_updated = Koma(
-        koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
+        koma.account, koma.coordinate, koma.status, now_health, koma.max_health, koma.agility, koma.move_speed,
+        koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
+        koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
+    )
+    komas.write(combat_id, account, koma_updated)
+
+    return ()
+end
+
+func _use_max_health_up_10{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt):
+    let (koma) = komas.read(combat_id, account)
+    let koma_updated = Koma(
+        koma.account, koma.coordinate, koma.status, koma.health, koma.max_health + 10, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
         koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
     )
