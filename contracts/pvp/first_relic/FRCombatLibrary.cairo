@@ -15,6 +15,7 @@ from contracts.pvp.first_relic.structs import (
     Coordinate,
     KomaMiningOre,
     Prop,
+    PropEffect,
     RelicGate,
     COMBAT_STATUS_NON_EXIST,
     COMBAT_STATUS_REGISTERING,
@@ -37,6 +38,8 @@ from contracts.pvp.first_relic.constants import (
     WORKER_MINING_SPEED,
     BOT_TYPE_WORKER,
     PROP_CREATURE_SHIELD,
+    PROP_CREATURE_ATTACK_UP_30P,
+    PROP_CREATURE_DAMAGE_DOWN_30P,
     get_relic_gate_key_ids
 )
 from contracts.pvp.first_relic.storages import (
@@ -55,7 +58,10 @@ from contracts.pvp.first_relic.storages import (
     chest_options,
     FirstRelicCombat_relic_gates,
     FirstRelicCombat_relic_gate_number_by_coordinate,
-    FirstRelicCombat_props
+    FirstRelicCombat_props,
+    FirstRelicCombat_koma_props_effect,
+    FirstRelicCombat_koma_props_effect_creature_id_len,
+    FirstRelicCombat_koma_props_effect_creature_id_by_index
 )
 # from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma
 from contracts.util.random import get_random_number_and_seed
@@ -311,8 +317,23 @@ func FirstRelicCombat_attack{
 
     let (koma_attacker) = komas.read(combat_id, account)
     let (koma_attacked) = komas.read(combat_id, target_account)
+
+    # return if attacked koma has a shield
+    let (prop_effect_sheild) = FirstRelicCombat_koma_props_effect.read(combat_id, account, PROP_CREATURE_SHIELD)
+    if prop_effect_sheild.prop_creature_id != 0:
+        _remove_prop_effect(combat_id, account, prop_effect_sheild)
+        PlayerAttack.emit(combat_id, account, target_account, 0, koma_attacked.status)
+        return (koma_attacked.status)
+    end
+
     let atk = koma_attacker.atk * koma_attacker.drones_count
+    # add atk if koma_attacker has a buff
+    let (atk) = _use_prop_effect_attack_up(atk, combat_id, account)
+    
     let (damage, _) = unsigned_div_rem(atk * atk, atk + koma_attacked.defense)
+    # reduce damage
+    let (damage) = _use_prop_effect_damage_down(damage, combat_id, account)
+
     let remain_health = koma_attacked.health - damage
     let (health_sign) = sign(remain_health)
     local koma_attacked_status
@@ -842,4 +863,49 @@ func _get_relic_gates{
     _get_relic_gates(combat_id, number + 1, data)
 
     return ()
+end
+
+func _remove_prop_effect{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, prop_effect: PropEffect):
+    let prop_effect_updated = PropEffect(0, 0, 0)
+    FirstRelicCombat_koma_props_effect.write(combat_id, account, prop_effect.prop_creature_id, prop_effect_updated)
+    let (len) = FirstRelicCombat_koma_props_effect_creature_id_len.read(combat_id, account)
+    let (last_effect_prop_creature_id) = FirstRelicCombat_koma_props_effect_creature_id_by_index.read(combat_id, account, len - 1)
+    FirstRelicCombat_koma_props_effect_creature_id_by_index.write(combat_id, account, prop_effect.index_in_koma_effects, last_effect_prop_creature_id)
+    FirstRelicCombat_koma_props_effect_creature_id_len.write(combat_id, account, len - 1)
+
+    return ()
+end
+
+func _use_prop_effect_attack_up{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(atk: felt, combat_id: felt, account: felt) -> (atk: felt):
+    let (prop_effect_attack_up) = FirstRelicCombat_koma_props_effect.read(combat_id, account, PROP_CREATURE_ATTACK_UP_30P)
+    if prop_effect_attack_up.prop_creature_id != 0:
+        let (atk, _) = unsigned_div_rem(atk * 130, 100)
+        _remove_prop_effect(combat_id, account, prop_effect_attack_up)
+        return (atk)
+    else:
+        return (atk)
+    end
+end
+
+func _use_prop_effect_damage_down{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(damage: felt, combat_id: felt, account: felt) -> (damage: felt):
+    let (prop_effect_damage_down) = FirstRelicCombat_koma_props_effect.read(combat_id, account, PROP_CREATURE_DAMAGE_DOWN_30P)
+    if prop_effect_damage_down.prop_creature_id != 0:
+        let (damage, _) = unsigned_div_rem(damage * 7, 10)
+        _remove_prop_effect(combat_id, account, prop_effect_damage_down)
+        return (damage)
+    else:
+        return (damage)
+    end
 end
