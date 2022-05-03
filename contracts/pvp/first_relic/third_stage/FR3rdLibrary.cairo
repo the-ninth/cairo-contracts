@@ -92,6 +92,7 @@ from contracts.pvp.first_relic.third_stage.base.FR3rdBaseLibrary import (
     FR3rd_base_random,
     FR3rd_base_update_action,
     FR3rd_base_sort_by_agility_loop,
+    FR3rd_base_find_surviving_loop,
 )
 
 #
@@ -174,11 +175,11 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
     let (boss_meta) = FR3rd_boss_meta.read(combat.boss_id)
     let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
     let (local heros : Hero*) = alloc()
-    FR3rd_get_heros_loop(combat_id=combat_id, cur_index=0, heros=heros, left=combat.hero_count + 1)
+    FR3rd_get_heros_loop(combat_id=combat_id, cur_index=0, heros=heros, left=combat_meta.max_hero + 1)
     let (local actions : Action*) = alloc()
     if combat.round == 0:
         return (
-            heros_len=combat.hero_count + 1,
+            heros_len=combat_meta.max_hero + 1,
             heros=heros,
             actions_len=0,
             actions=actions,
@@ -196,7 +197,7 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
             left=combat_meta.max_hero + 1,
         )
         return (
-            heros_len=combat.hero_count + 1,
+            heros_len=combat_meta.max_hero + 1,
             heros=heros,
             actions_len=actions_len,
             actions=actions,
@@ -350,43 +351,6 @@ func FR3rd_combat_is_end{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     return (FALSE)
 end
 
-func FR3rd_combat_is_last_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt
-) -> (is_end : felt):
-    alloc_locals
-    let (combat) = _get_combat(combat_id)
-
-    if combat.end_info != 0:
-        return (TRUE)
-    end
-
-    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-    # check time & round
-    let cur_round_end_time = combat.last_round_time + combat_meta.max_round_time
-    let (block_timestamp) = get_block_timestamp()
-    let (is_le) = is_le_felt(block_timestamp, cur_round_end_time)
-    if is_le == TRUE:
-        return (FALSE)
-    end
-    return (TRUE)
-end
-
-func FR3rd_combat_is_round_end{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt
-) -> (is_end : felt):
-    alloc_locals
-    let (combat) = _get_combat(combat_id)
-    if combat.end_info != 0:
-        return (TRUE)
-    end
-    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-    let (is_le_round) = is_le_felt(combat.round + 2, combat_meta.max_round)
-    if is_le_round == TRUE:
-        return (FALSE)
-    end
-    return (TRUE)
-end
-
 func FR3rd_submit_action{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt, round_id : felt, hero_index : felt, type : felt, target : felt
 ) -> ():
@@ -426,8 +390,8 @@ func FR3rd_submit_action{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     if (combat.action_count + 1) == combat.hero_count:
         _combat(combat_id)
         # try clear
-        let (result) = FR3rd_try_clear_combat(combat_id)
-        if result == FALSE:
+        let (is_end) = FR3rd_try_clear_combat(combat_id)
+        if is_end == FALSE:
             # init next round
             let (block_timestamp) = get_block_timestamp()
             FR3rd_base_update_combat(
@@ -493,13 +457,17 @@ func _combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
         assert can_combat = TRUE
     end
     # boss action
+
+    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
+    let (local hero_indexs : felt*) = alloc()
+    let (count) = FR3rd_base_find_surviving_loop(combat_id, hero_indexs, 1, combat_meta.max_hero)
     let (random) = FR3rd_base_random()
-    let (r) = get_random_number(random, 1, combat.hero_count)
+    let (r) = get_random_number(random, 1, count)
 
     local boss_action : Action
     assert boss_action.hero_index = BOSS_INDEX
     assert boss_action.type = ACTION_TYPE_ATK
-    assert boss_action.target = r+1
+    assert boss_action.target = hero_indexs[r]
     assert boss_action.damage = 0
     FR3rd_action.write(combat_id, combat.round, BOSS_INDEX, boss_action)
     let (dead) = _combat_action_loop(

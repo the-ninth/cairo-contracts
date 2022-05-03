@@ -22,6 +22,7 @@ COMBAT_MOCK = contract_path('contracts/pvp/first_relic/third_stage/mocks/FirstRe
 Proxy_CONTRACT_FILE = contract_path('contracts/proxy/upgradeProxy/UpgradeProxy.cairo')
 signer = Signer(123456789)
 
+maxUser =9
 # The testing library uses python's asyncio. So the following
 # decorator and the ``async`` keyword are needed.
 @pytest.mark.asyncio
@@ -57,13 +58,13 @@ async def test_market():
 
     # set market config
     await signer.send_transaction(
-        owner_contract, frboss_contract.contract_address, 'addBossMeta', [1000,100,100,500]
+        owner_contract, frboss_contract.contract_address, 'addBossMeta', [100000,100,100,1100]
     )
     await signer.send_transaction(
         owner_contract, frboss_contract.contract_address, 'setRewardTokenAddress', [erc20_contract.contract_address]
     )
     await signer.send_transaction(
-        owner_contract, frboss_contract.contract_address, 'addCombatMeta', [100000000000000000,60,5,9]
+        owner_contract, frboss_contract.contract_address, 'addCombatMeta', [100000000000000000,60,2,maxUser]
     )
 
     execution_info = await erc20_contract.balanceOf(frboss_contract.contract_address).call()
@@ -71,22 +72,18 @@ async def test_market():
 
     print('boss init end ',time.time())
     heros = []
-    for i in range(9):
+    for i in range(maxUser):
         hero = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
         heros.append(hero)
     print('hero contract end ',time.time())
 
-    for i in range(9):
+    for i in range(maxUser):
         print(i,'join  : ',heros[i].contract_address)
         await signer.send_transaction(
             heros[i], frboss_contract.contract_address, 'join', [0,heros[i].contract_address]
         )
         execution_info = await mock_contract.getKoma(0,heros[i].contract_address).call()
         print(execution_info.result)
-    execution_info = await mock_contract.getKoma(0,heros[2].contract_address).call()
-    print(execution_info.result)
-    execution_info = await mock_contract.getKoma(0,heros[3].contract_address).call()
-    print(execution_info.result)
 
     # print heros
     execution_info = await frboss_contract.getCombatInfoById(0).call()
@@ -104,14 +101,14 @@ async def test_market():
 
     print('hero join end ',time.time())
     for j in range(4):
-        for i in range(9):
+        for i in range(maxUser):
             print('action',i)
             await signer.send_transaction(
                 heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,0]
             )
         print('action end ',time.time())
         execution_info = await frboss_contract.getCombatInfoById(0).call()
-        if execution_info.result.combat.end_info == 1:
+        if execution_info.result.combat.end_info != 0:
             break
     
 
@@ -134,7 +131,7 @@ async def test_market():
 
     execution_info = await erc20_contract.balanceOf(frboss_contract.contract_address).call()
     print(execution_info.result)
-    for i in range(9):
+    for i in range(maxUser):
         execution_info = await erc20_contract.balanceOf(heros[i].contract_address).call()
         print(execution_info.result)
     

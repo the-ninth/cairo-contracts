@@ -125,6 +125,28 @@ func FR3rd_base_check_hero_in_loop{
     return FR3rd_base_check_hero_in_loop(sender=sender, combat_id=combat_id, left=left - 1)
 end
 
+func FR3rd_base_find_surviving_loop{
+    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
+}(combat_id : felt, hero_indexs : felt*, cur_hero_index : felt, left) -> (count : felt):
+    alloc_locals
+    if left == 0:
+        return (0)
+    end
+    let (hero) = FR3rd_combat_hero.read(combat_id, cur_hero_index)
+    let (is_le) = is_le_felt(1, hero.health)
+    if is_le == TRUE:
+        assert [hero_indexs] = cur_hero_index
+    end
+    let (count) = FR3rd_base_find_surviving_loop(
+        combat_id, hero_indexs + 1, cur_hero_index + 1, left - 1
+    )
+    if is_le == TRUE:
+        return (count + 1)
+    else:
+        return (count)
+    end
+end
+
 func FR3rd_base_random{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
     hash : felt
 ):
@@ -140,10 +162,8 @@ func FR3rd_base_sort_by_damage_to_boss{
 }(combat_id : felt) -> ():
     alloc_locals
     let (combat) = FR3rd_base_get_combat(combat_id)
-    if combat.hero_count == 1:
-        return ()
-    end
-    FR3rd_base_sort_by_damage_to_boss_loop(combat_id, 2, combat.hero_count - 1)
+    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
+    FR3rd_base_sort_by_damage_to_boss_loop(combat_id, 2, combat_meta.max_hero - 1)
     return ()
 end
 
@@ -155,9 +175,25 @@ func FR3rd_base_sort_by_damage_to_boss_loop{
         return ()
     end
     let (hero) = FR3rd_combat_hero.read(combat_id, hero_index)
-    FR3rd_base_sort_by_damage_to_boss_loop2(
-        combat_id, hero.damage_to_boss, hero_index, hero, 1, 0, hero_index - 1
-    )
+    let (combat) = FR3rd_base_get_combat(combat_id)
+    if hero.damage_to_boss != 0:
+        FR3rd_base_sort_by_damage_to_boss_loop2(
+            combat_id,
+            hero.damage_to_boss,
+            hero_index,
+            hero,
+            combat.damage_to_boss_1st,
+            0,
+            hero_index - 1,
+        )
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    else:
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    end
     FR3rd_base_sort_by_damage_to_boss_loop(combat_id, hero_index + 1, left - 1)
     return ()
 end
@@ -321,7 +357,13 @@ func FR3rd_base_sort_by_agility_loop{
         return ()
     else:
         return FR3rd_base_sort_by_agility_loop(
-            combat_id, agility, hero_index, hero, cur_hero.agility_next_hero, cur_hero_index, left - 1
+            combat_id,
+            agility,
+            hero_index,
+            hero,
+            cur_hero.agility_next_hero,
+            cur_hero_index,
+            left - 1,
         )
     end
 end

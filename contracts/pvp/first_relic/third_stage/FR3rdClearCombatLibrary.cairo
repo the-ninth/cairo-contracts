@@ -75,6 +75,7 @@ from contracts.pvp.first_relic.third_stage.base.FR3rdBaseLibrary import (
     FR3rd_combat_is_round_end,
     FR3rd_combat_is_last_round,
     FR3rd_base_sort_by_damage_to_boss,
+    FR3rd_base_find_surviving_loop,
 )
 from contracts.pvp.first_relic.structs import (
     Chest,
@@ -94,7 +95,7 @@ from contracts.pvp.first_relic.structs import (
 # internal  check if can combat 0:false, 1 true
 func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt
-) -> (result : felt):
+) -> (is_end : felt):
     alloc_locals
     # if boss dead
     let (boss) = FR3rd_combat_hero.read(combat_id, 0)
@@ -133,38 +134,40 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
         return (TRUE)
     end
 
-    # if round end
     let (is_end) = FR3rd_combat_is_round_end(combat_id)
     let (is_last) = FR3rd_combat_is_last_round(combat_id)
-    if (is_end * is_last) == TRUE:
-        if boss.bear_from_hero == 0:
-            # no reward
-            FR3rd_base_update_combat(
-                combat_id=combat_id,
-                round=combat.round,
-                action_count=combat.action_count,
-                agility_1st=combat.agility_1st,
-                damage_to_boss_1st=combat.damage_to_boss_1st,
-                hero_count=combat.hero_count,
-                last_round_time=combat.last_round_time,
-                end_info=4,
-            )
-        else:
-            FR3rd_reward_hero_dead(combat_id)
-            FR3rd_base_update_combat(
-                combat_id=combat_id,
-                round=combat.round,
-                action_count=combat.action_count,
-                agility_1st=combat.agility_1st,
-                damage_to_boss_1st=combat.damage_to_boss_1st,
-                hero_count=combat.hero_count,
-                last_round_time=combat.last_round_time,
-                end_info=3,
-            )
-        end
-        return (TRUE)
+
+    # not end
+    if (1 - is_end) * (1 - is_last) == TRUE:
+        return (FALSE)
     end
-    return (FALSE)
+
+    if boss.bear_from_hero == 0:
+        # no reward
+        FR3rd_base_update_combat(
+            combat_id=combat_id,
+            round=combat.round,
+            action_count=combat.action_count,
+            agility_1st=combat.agility_1st,
+            damage_to_boss_1st=combat.damage_to_boss_1st,
+            hero_count=combat.hero_count,
+            last_round_time=combat.last_round_time,
+            end_info=4,
+        )
+    else:
+        FR3rd_reward_hero_dead(combat_id)
+        FR3rd_base_update_combat(
+            combat_id=combat_id,
+            round=combat.round,
+            action_count=combat.action_count,
+            agility_1st=combat.agility_1st,
+            damage_to_boss_1st=combat.damage_to_boss_1st,
+            hero_count=combat.hero_count,
+            last_round_time=combat.last_round_time,
+            end_info=3,
+        )
+    end
+    return (TRUE)
 end
 
 func FR3rd_reward_hero_dead{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
@@ -202,7 +205,7 @@ func FR3rd_reward_boss_dead{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     let (combat) = FR3rd_combat.read(combat_id)
     let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
     let (local hero_indexs : felt*) = alloc()
-    let (count) = FR3rd_find_surviving_loop(combat_id, hero_indexs, 1, combat_meta.max_hero)
+    let (count) = FR3rd_base_find_surviving_loop(combat_id, hero_indexs, 1, combat_meta.max_hero)
     if count != 0:
         let (amount, r) = unsigned_div_rem(combat_meta.total_reward, count)
         let (uint256Amount) = _felt_to_uint(amount)
@@ -242,28 +245,6 @@ func FR3rd_get_heros_loop_by_damage{
         combat_id, hero.damage_to_boss_next_hero, hero_indexs + 1, max, have_done + 1, left=left - 1
     )
     return (len + 1)
-end
-
-func FR3rd_find_surviving_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt, hero_indexs : felt*, cur_hero_index : felt, left
-) -> (count : felt):
-    alloc_locals
-    if left == 0:
-        return (0)
-    end
-    let (hero) = FR3rd_combat_hero.read(combat_id, cur_hero_index)
-    let (is_le) = is_le_felt(1, hero.health)
-    if is_le == TRUE:
-        assert [hero_indexs] = cur_hero_index
-    end
-    let (count) = FR3rd_find_surviving_loop(
-        combat_id, hero_indexs + 1, cur_hero_index + 1, left - 1
-    )
-    if is_le == TRUE:
-        return (count + 1)
-    else:
-        return (count)
-    end
 end
 
 func FR3rd_reward_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(

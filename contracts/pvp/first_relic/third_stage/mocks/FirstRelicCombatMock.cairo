@@ -28,17 +28,13 @@ func getKoma{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id : felt, account : felt) -> (koma: Koma):
-    let (r) = get_random_number(account, 1, 200)
+    let (agility) = get_random_number(account, 1, 200)
+    let (atk) = get_random_number(account, 1, 150)
+    let (defense) = get_random_number(account, 1, 150)
     let coo = Coordinate(0,0)
     let koma = Koma(
-        account, coo, 0, 1000, 1000, r,0,0,0,0,0,6, 0,0,0,30,100
+        account, coo, 0, 1000, 1000, agility,0,0,0,0,0,6, 0,0,0,atk+1,defense+1
     )
-
-    #  let new_koma = Koma(
-    #     koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
-    #     koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count+workers_count,
-    #     koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount, koma.atk, koma.defense
-    # )
     return (koma)
 end
 
