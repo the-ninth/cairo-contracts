@@ -49,7 +49,7 @@ async def test_market():
     """Test market."""
     starknet = await Starknet.empty()
 
-    frboss_def = compile_starknet_files([FRBoss_CONTRACT_FILE], debug_info=True)
+    frboss_def = compile_starknet_files([FRBoss_CONTRACT_FILE], debug_info=True,disable_hint_validation=True)
     state = await StarknetState.empty()
     print('start')
     print(time.time())
@@ -61,6 +61,10 @@ async def test_market():
     frboss_contract = StarknetContract(state=starknet.state, abi=frboss_def.abi, contract_address=frboss_contract.contract_address,deploy_execution_info=frboss_contract.deploy_execution_info)
     
 # 
+    execution_info = await frboss_contract.checkAction(0,0).call()
+    print(execution_info.result)
+    print(execution_info.result[0])
+    print(execution_info.result[1])
 
     print('frboss_contract')
     await signer.send_transaction(
@@ -122,14 +126,19 @@ async def test_market():
     for j in range(9):
         for i in range(maxUser):
             print('action',i)
+            execution_info = await frboss_contract.checkAction(0,i+1).call()
+            if execution_info.result[1] == 0:
+                print(f' hero {i+1} ,no need')
+                continue
             if i < maxUser/2:
                 target = 0
             else:
                 target = random.randint(0,maxUser)
             print(target)
-            await signer.send_transaction(
+            tx = await signer.send_transaction(
                 heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,target]
             )
+        print(tx.raw_events)
         print('action end ',time.time())
         execution_info = await frboss_contract.getCombatInfoById(0,0).call()
         print(execution_info.result.combat)

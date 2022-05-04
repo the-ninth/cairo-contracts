@@ -57,6 +57,9 @@ from contracts.pvp.first_relic.third_stage.base.constants import (
     ACTION_TYPE_PROP,
     DEFAULT_NEXT_HERO_INDEX,
 )
+@event
+func Demo1(step : felt, info : felt, step1 : felt, info1 : felt):
+end
 
 from contracts.pvp.first_relic.structs import Koma, Prop
 
@@ -88,7 +91,7 @@ func FR3rd_base_is_round_end{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     # check time & round
     let cur_round_end_time = combat.last_round_time + combat_meta.max_round_time
     let (block_timestamp) = get_block_timestamp()
-    let (is_end) = is_le_felt(cur_round_end_time, block_timestamp)
+    let (is_end) = is_le(cur_round_end_time, block_timestamp)
     return (is_end)
 end
 
@@ -101,7 +104,7 @@ func FR3rd_base_is_last_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
         return (TRUE)
     end
     let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-    let (is_end) = is_le_felt(combat_meta.max_round, combat.round + 1)
+    let (is_end) = is_le(combat_meta.max_round, combat.round + 1)
     return (is_end)
 end
 
@@ -127,8 +130,8 @@ func FR3rd_base_find_surviving_loop{
         return (0)
     end
     let (hero) = FR3rd_combat_hero.read(combat_id, cur_hero_index)
-    let (is_le) = is_le_felt(1, hero.health)
-    if is_le == TRUE:
+    let (is_l) = is_le(1, hero.health)
+    if is_l == TRUE:
         assert [hero_indexs] = cur_hero_index
         let (count) = FR3rd_base_find_surviving_loop(
             combat_id, hero_indexs + 1, cur_hero_index + 1, left - 1
@@ -156,8 +159,7 @@ func FR3rd_base_sort_by_damage_to_boss{
 }(combat_id : felt) -> ():
     alloc_locals
     let (combat) = FR3rd_base_get_combat(combat_id)
-    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-    FR3rd_base_sort_by_damage_to_boss_loop(combat_id, 2, combat_meta.max_hero - 1)
+    FR3rd_base_sort_by_damage_to_boss_loop(combat_id, 2, combat.init_hero_count - 1)
     return ()
 end
 
@@ -169,8 +171,8 @@ func FR3rd_base_sort_by_damage_to_boss_loop{
         return ()
     end
     let (hero) = FR3rd_combat_hero.read(combat_id, hero_index)
-    let (combat) = FR3rd_base_get_combat(combat_id)
     if hero.damage_to_boss != 0:
+        let (combat) = FR3rd_base_get_combat(combat_id)
         FR3rd_base_sort_by_damage_to_boss_loop2(
             combat_id,
             hero.damage_to_boss,
@@ -221,8 +223,8 @@ func FR3rd_base_sort_by_damage_to_boss_loop2{
         return ()
     end
     let (cur_hero) = FR3rd_combat_hero.read(combat_id, cur_hero_index)
-    let (is_le) = is_le_felt(cur_hero.damage_to_boss + 1, damage_to_boss)
-    if is_le == TRUE:
+    let (is_l) = is_le(cur_hero.damage_to_boss + 1, damage_to_boss)
+    if is_l == TRUE:
         FR3rd_base_update_hero(
             combat_id,
             hero_index,
@@ -310,8 +312,8 @@ func FR3rd_base_sort_by_agility_loop{
 
     let (cur_hero) = FR3rd_combat_hero.read(combat_id, cur_hero_index)
     let (opp_agility) = FR3rd_base_get_agility(combat_id, cur_hero_index, cur_hero.address)
-    let (is_le) = is_le_felt(opp_agility + 1, agility)
-    if is_le == TRUE:
+    let (is_l) = is_le(opp_agility + 1, agility)
+    if is_l == TRUE:
         FR3rd_base_update_hero(
             combat_id,
             hero_index,
@@ -433,10 +435,9 @@ func FR3rd_base_update_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     assert new_combat.action_count = action_count
 
     # cur_hero_count
-    assert new_combat.init_hero_count = init_hero_count
-
-    # cur_hero_count
     assert new_combat.cur_hero_count = cur_hero_count
+    # init_hero_count
+    assert new_combat.init_hero_count = init_hero_count
 
     # agility_1st
     assert new_combat.agility_1st = agility_1st

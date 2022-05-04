@@ -150,15 +150,43 @@ func FR3rd_get_actions_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     end
     let (local hero) = FR3rd_combat_hero.read(combat_id, cur_index)
     let (local action) = FR3rd_action.read(combat_id, round_id, cur_index)
-    assert [actions] = action
-    let (len) = FR3rd_get_actions_loop(
-        combat_id=combat_id,
-        round_id=round_id,
-        cur_index=hero.agility_next_hero,
-        actions=actions + Action.SIZE,
-        left=left - 1,
-    )
-    return (len + 1)
+    if action.type != 0:
+        assert [actions] = action
+        let (len) = FR3rd_get_actions_loop(
+            combat_id=combat_id,
+            round_id=round_id,
+            cur_index=hero.agility_next_hero,
+            actions=actions + Action.SIZE,
+            left=left - 1,
+        )
+        return (len + 1)
+    else:
+        let (len) = FR3rd_get_actions_loop(
+            combat_id=combat_id,
+            round_id=round_id,
+            cur_index=hero.agility_next_hero,
+            actions=actions,
+            left=left - 1,
+        )
+        return (len)
+    end
+end
+
+# get combat all info by combat_id
+func FR3rd_check_action{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    combat_id : felt, hero_index : felt
+) -> (need_end : felt, need_action : felt):
+    alloc_locals
+    let (hero) = FR3rd_combat_hero.read(combat_id, hero_index)
+    let (combat) = _get_combat(combat_id)
+    let (action) = FR3rd_action.read(combat_id, combat.round, hero_index)
+    let (is_round_end) = FR3rd_base_is_round_end(combat_id)
+    if hero.health != 0:
+        if action.type == 0:
+            return (need_end=is_round_end, need_action=TRUE)
+        end
+    end
+    return (need_end=is_round_end, need_action=FALSE)
 end
 
 # get combat all info by combat_id
@@ -179,9 +207,7 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
     let (combat) = _get_combat(combat_id)
     let (boss_meta) = FR3rd_boss_meta.read(combat.boss_id)
     let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-    let (action) = FR3rd_action.read(combat_id, combat.round, hero_index)
-    let (is_submit_action) = is_not_zero(action.type)
-    let (is_round_end) = FR3rd_base_is_round_end(combat_id)
+    let (need_end, need_action) = FR3rd_check_action(combat_id, hero_index)
     let (local heros : Hero*) = alloc()
     FR3rd_get_heros_loop(
         combat_id=combat_id, cur_index=0, heros=heros, left=combat.init_hero_count + 1
@@ -196,8 +222,8 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
             combat=combat,
             boss_meta=boss_meta,
             combat_meta=combat_meta,
-            need_end=is_round_end,
-            need_action=1 - is_submit_action,
+            need_end=need_end,
+            need_action=need_action,
         )
     else:
         let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
@@ -216,8 +242,8 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
             combat=combat,
             boss_meta=boss_meta,
             combat_meta=combat_meta,
-            need_end=is_round_end,
-            need_action=1 - is_submit_action,
+            need_end=need_end,
+            need_action=need_action,
         )
     end
 end
@@ -359,11 +385,17 @@ func FR3rd_submit_action{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     combat_id : felt, round_id : felt, hero_index : felt, type : felt, target : felt
 ) -> ():
     alloc_locals
+
     # check hero in combat
     let (hero) = FR3rd_combat_hero.read(combat_id, hero_index)
     let (sender) = get_caller_address()
     with_attr error_message("FR3rd_action: hero_index error "):
         assert hero.address = sender
+    end
+
+    # dead
+    if hero.health == 0:
+        return ()
     end
 
     # check no action
@@ -399,7 +431,6 @@ func FR3rd_try_end_cur_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     combat_id : felt
 ) -> ():
     alloc_locals
-    let (combat) = FR3rd_combat.read(combat_id)
     let (is_combat) = FR3rd_try_combat(combat_id)
     if is_combat == FALSE:
         return ()
@@ -409,6 +440,7 @@ func FR3rd_try_end_cur_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     if is_end == FALSE:
         # init next round
         let (block_timestamp) = get_block_timestamp()
+        let (combat) = FR3rd_combat.read(combat_id)
         FR3rd_base_update_combat(
             combat_id=combat_id,
             round=combat.round + 1,
@@ -431,27 +463,26 @@ func FR3rd_try_end_cur_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, r
     return ()
 end
 
-
 func FR3rd_get_survivings{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt
-) -> (indexs_len:felt,indexs:felt*,target:felt):
+) -> (indexs_len : felt, indexs : felt*, target : felt):
     alloc_locals
     let (combat) = _get_combat(combat_id)
     let (local hero_indexs : felt*) = alloc()
     let (count) = FR3rd_base_find_surviving_loop(combat_id, hero_indexs, 1, combat.init_hero_count)
     if count == 0:
-        return (0,hero_indexs,0) 
+        return (0, hero_indexs, 0)
     end
     let (random) = FR3rd_base_random()
     let (r) = get_random_number(random, 1, count)
-    return (count,hero_indexs,hero_indexs[r])
-
+    return (count, hero_indexs, hero_indexs[r])
 end
 
 func FR3rd_try_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt
-) -> (is_combat:felt):
+) -> (is_combat : felt):
     alloc_locals
+
     let (combat) = _get_combat(combat_id)
     if combat.end_info != 0:
         return (FALSE)
@@ -477,52 +508,32 @@ func FR3rd_try_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_ch
     assert boss_action.target = hero_indexs[r]
     assert boss_action.damage = 0
     FR3rd_action.write(combat_id, combat.round, BOSS_INDEX, boss_action)
-    let (dead) = _combat_action_loop(
-        combat_id, combat.round,combat.agility_1st,  combat.init_hero_count + 1
-    )
-    with_attr error_message("FR3rd_combat: dead error"):
-        assert_le(dead, combat.cur_hero_count)
-    end
-    FR3rd_base_update_combat(
-        combat_id=combat_id,
-        round=combat.round,
-        action_count=combat.action_count,
-        agility_1st=combat.agility_1st,
-        damage_to_boss_1st=combat.damage_to_boss_1st,
-        cur_hero_count=combat.cur_hero_count - dead,
-        init_hero_count=combat.init_hero_count,
-        last_round_time=combat.last_round_time,
-        end_info=combat.end_info,
-    )
+    _combat_action_loop(combat_id, combat.round, combat.agility_1st, combat.init_hero_count + 1)
     return (TRUE)
 end
 
 func _combat_action_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt, round_id : felt, current_hero_index : felt, left
-) -> (dead):
+) -> ():
     alloc_locals
     if left == 0:
-        return (0)
+        return ()
     end
     let (action) = FR3rd_action.read(combat_id, round_id, current_hero_index)
     let (hero) = FR3rd_combat_hero.read(combat_id, current_hero_index)
     # dead or no action
     if hero.health * action.type != 0:
-        let (cur_dead) = _combat_action_deal(combat_id, round_id, current_hero_index, hero, action)
-        let (dead) = _combat_action_loop(
-            combat_id, round_id, hero.agility_next_hero, left-1
-        )
-        return (cur_dead + dead)
+        _combat_action_deal(combat_id, round_id, current_hero_index, hero, action)
+        _combat_action_loop(combat_id, round_id, hero.agility_next_hero, left - 1)
+        return ()
     end
-    let (dead) = _combat_action_loop(
-        combat_id, round_id, hero.agility_next_hero, left-1
-    )
-    return (dead)
+    _combat_action_loop(combat_id, round_id, hero.agility_next_hero, left - 1)
+    return ()
 end
 
 func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt, round_id : felt, hero_index : felt, hero : Hero, action : Action
-) -> (dead : felt):
+) -> ():
     alloc_locals
     if action.type == ACTION_TYPE_PROP:
         FR3rd_use_prop(combat_id, action.target, hero.address)
@@ -547,12 +558,12 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
             tempvar pedersen_ptr = pedersen_ptr
             tempvar range_check_ptr = range_check_ptr
         end
-        return (0)
+        return ()
     end
 
     let (opponent) = FR3rd_combat_hero.read(combat_id, action.target)
     if opponent.health == 0:
-        return (0)
+        return ()
     end
     let (defense) = FR3rd_base_get_defense(combat_id, action.target, opponent.address)
     let (_atk) = FR3rd_base_get_atk(combat_id, hero_index, hero.address)
@@ -589,7 +600,7 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     tempvar syscall_ptr = syscall_ptr
     tempvar pedersen_ptr = pedersen_ptr
     tempvar range_check_ptr = range_check_ptr
-    let (is_dead) = is_le_felt(opponent.health,damage)
+    let (is_dead) = is_le(opponent.health, damage)
     if is_dead == FALSE:
         if hero_index == BOSS_INDEX:
             FR3rd_base_update_hero(
@@ -645,8 +656,30 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     end
     if is_dead == TRUE:
         if action.target != BOSS_INDEX:
-            return (1)
+            let (combat) = _get_combat(combat_id)
+            FR3rd_base_update_combat(
+                combat_id=combat_id,
+                round=combat.round,
+                action_count=combat.action_count,
+                agility_1st=combat.agility_1st,
+                damage_to_boss_1st=combat.damage_to_boss_1st,
+                cur_hero_count=combat.cur_hero_count - 1,
+                init_hero_count=combat.init_hero_count,
+                last_round_time=combat.last_round_time,
+                end_info=combat.end_info,
+            )
+            return ()
         end
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+    else:
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
     end
-    return (0)
+    tempvar syscall_ptr = syscall_ptr
+    tempvar pedersen_ptr = pedersen_ptr
+    tempvar range_check_ptr = range_check_ptr
+    return ()
 end

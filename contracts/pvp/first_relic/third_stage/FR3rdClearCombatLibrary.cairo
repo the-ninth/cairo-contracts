@@ -99,12 +99,13 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     alloc_locals
     # if boss dead
     let (boss) = FR3rd_combat_hero.read(combat_id, 0)
-    let (combat) = FR3rd_combat.read(combat_id)
+
     if boss.health == 0:
         FR3rd_reward_boss_dead(combat_id)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
+        let (combat) = FR3rd_combat.read(combat_id)
         FR3rd_base_update_combat(
             combat_id=combat_id,
             round=combat.round,
@@ -118,12 +119,12 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
         )
         return (TRUE)
     end
-    
-    let (local hero_indexs : felt*) = alloc()
-    let (count) = FR3rd_base_find_surviving_loop(combat_id, hero_indexs, 1, combat.init_hero_count)
+
     # if all hreo dead
-    if count == 0:
+    let (combat) = FR3rd_combat.read(combat_id)
+    if combat.cur_hero_count == 0:
         FR3rd_reward_hero_dead(combat_id)
+        let (combat) = FR3rd_combat.read(combat_id)
         FR3rd_base_update_combat(
             combat_id=combat_id,
             round=combat.round,
@@ -148,6 +149,7 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
 
     if boss.bear_from_hero == 0:
         # no reward
+        let (combat) = FR3rd_combat.read(combat_id)
         FR3rd_base_update_combat(
             combat_id=combat_id,
             round=combat.round,
@@ -161,6 +163,7 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
         )
     else:
         FR3rd_reward_hero_dead(combat_id)
+        let (combat) = FR3rd_combat.read(combat_id)
         FR3rd_base_update_combat(
             combat_id=combat_id,
             round=combat.round,
@@ -180,9 +183,9 @@ func FR3rd_reward_hero_dead{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     combat_id : felt
 ) -> ():
     alloc_locals
-    let (combat) = FR3rd_combat.read(combat_id)
     # sort by damage
     FR3rd_base_sort_by_damage_to_boss(combat_id)
+    let (combat) = FR3rd_combat.read(combat_id)
     let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
     let (local hero_indexs : felt*) = alloc()
     let (count) = FR3rd_get_heros_loop_by_damage(

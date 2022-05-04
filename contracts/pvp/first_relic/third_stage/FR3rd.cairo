@@ -24,6 +24,7 @@ from contracts.pvp.first_relic.third_stage.FR3rdLibrary import (
     FR3rd_submit_action,
     FR3rd_try_end_cur_round,
     FR3rd_get_survivings,
+    FR3rd_check_action,
 )
 
 from contracts.pvp.first_relic.third_stage.FR3rdManagerLibrary import (
@@ -114,11 +115,19 @@ func getCurCombatMetaId{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_
 end
 
 @view
-func getSurvivings{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(combat_id : felt) -> (
-    indexs_len:felt,indexs:felt*,target:felt
-):
-    let (indexs_len,indexs,target) = FR3rd_get_survivings(combat_id)
-    return (indexs_len,indexs,target)
+func getSurvivings{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    combat_id : felt
+) -> (indexs_len : felt, indexs : felt*, target : felt):
+    let (indexs_len, indexs, target) = FR3rd_get_survivings(combat_id)
+    return (indexs_len, indexs, target)
+end
+
+@view
+func checkAction{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    combat_id : felt, hero_index : felt
+) -> (need_end : felt, need_action : felt):
+    let (need_end, need_action) = FR3rd_check_action(combat_id, hero_index)
+    return (need_end, need_action)
 end
 
 @view
