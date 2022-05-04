@@ -347,14 +347,6 @@ func newCombat{
     let (caller) = get_caller_address()
     IAccessControl.onlyRole(access_contract_address, ROLE_FRCOMBAT_CREATOR, caller)
     let (combat_id) = FirstRelicCombat_new_combat()
-    
-    # random request deprecated
-    # let (producer_address) = IAccessControl.randomProducerContract(contract_address=access_contract_address)
-    # let (request_id) = IRandomProducer.requestRandom(contract_address=producer_address)
-    # random_request_type.write(request_id, RANDOM_TYPE_COMBAT_INIT)
-    # random_request_combat_init.write(request_id, combat_id)
-    # # trigger random fulfill, this should be removed after switch to random oracle
-    # IRandomProducer.triggerFulfill(producer_address, request_id)
 
     return (combat_id)
 end

@@ -40,6 +40,8 @@ from contracts.pvp.first_relic.constants import (
     PROP_CREATURE_SHIELD,
     PROP_CREATURE_ATTACK_UP_30P,
     PROP_CREATURE_DAMAGE_DOWN_30P,
+    ACTION_RADIUS_A,
+    ACTION_RADIUS_B,
     get_relic_gate_key_ids
 )
 from contracts.pvp.first_relic.storages import (
@@ -63,9 +65,9 @@ from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_koma_props_effect_creature_id_len,
     FirstRelicCombat_koma_props_effect_creature_id_by_index
 )
-# from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma
+from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma_actual_coordinate
 from contracts.util.random import get_random_number_and_seed
-from contracts.util.math import min
+from contracts.util.math import min, in_on_oval
 from contracts.pvp.first_relic.IFirstRelicCombat import PlayerAttack
 
 func FirstRelicCombat_get_combat_count{
@@ -188,6 +190,12 @@ func FirstRelicCombat_mine_ore{
     let available_workers_count = koma.workers_count - koma.mining_workers_count
     with_attr error_message("FirstRelicCombat: not enough workers"):
         assert_le_felt(workers_count, available_workers_count)
+    end
+
+    let (_, koma_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
+    let (in_range) = in_on_oval(koma_actual_at.x, koma_actual_at.y, ore.coordinate.x, ore.coordinate.y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    with_attr error_message("FirstRelicCombat: action out of range"):
+        assert in_range = TRUE
     end
 
     let (block_timestamp) = get_block_timestamp()
@@ -317,6 +325,13 @@ func FirstRelicCombat_attack{
 
     let (koma_attacker) = komas.read(combat_id, account)
     let (koma_attacked) = komas.read(combat_id, target_account)
+
+    let (_, koma_attacker_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma_attacker)
+    let (_, koma_attacked_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma_attacked)
+    let (in_range) = in_on_oval(koma_attacker_actual_at.x, koma_attacker_actual_at.y, koma_attacked_actual_at.x, koma_attacked_actual_at.y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    with_attr error_message("FirstRelicCombat: action out of range"):
+        assert in_range = TRUE
+    end
 
     # return if attacked koma has a shield
     let (prop_effect_sheild) = FirstRelicCombat_koma_props_effect.read(combat_id, account, PROP_CREATURE_SHIELD)
@@ -509,6 +524,8 @@ func FirstRelicCombat_enter_relic_gate{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, to: Coordinate, prop_id: felt):
+    alloc_locals
+
     let (number) = FirstRelicCombat_relic_gate_number_by_coordinate.read(combat_id, to)
     let (relic_gate) = FirstRelicCombat_relic_gates.read(combat_id, number)
     let (prop) = FirstRelicCombat_props.read(combat_id, prop_id)
@@ -522,10 +539,17 @@ func FirstRelicCombat_enter_relic_gate{
         assert prop.prop_creature_id = relic_gate.require_creature_id
     end
 
+    let gate_x = relic_gate.coordinate.x
+    let gate_y = relic_gate.coordinate.y
+    let (koma) = komas.read(combat_id, account)
+    let (_, koma_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
+    let (in_range) = in_on_oval(koma_actual_at.x, koma_actual_at.y, gate_x, gate_y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    with_attr error_message("FirstRelicCombat: action out of range"):
+        assert in_range = TRUE
+    end
+
     let relic_gate_updated = RelicGate(relic_gate.coordinate, relic_gate.number, relic_gate.require_creature_id, account)
     FirstRelicCombat_relic_gates.write(combat_id, number, relic_gate_updated)
-
-    let (koma) = komas.read(combat_id, account)
     let koma_updated = Koma(
         koma.account, koma.coordinate, KOMA_STATUS_THIRD_STAGE, koma.health, koma.max_health, koma.agility,
         koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count,

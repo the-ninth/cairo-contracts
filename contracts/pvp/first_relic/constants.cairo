@@ -12,6 +12,8 @@ const MAX_PLAYERS = 2
 const PREPARE_TIME = 300 # how much time for preparation time
 const FIRST_STAGE_DURATION = 600
 const SECOND_STAGE_DURATION = 600
+const ACTION_RADIUS_A = 616
+const ACTION_RADIUS_B = 448
 
 const KOMA_MOVING_SPEED = 20
 const KOMA_ATK = 7

@@ -151,7 +151,7 @@ func FirstRelicCombat_move{
     }(combat_id: felt, account: felt, to: Coordinate):
     alloc_locals
     let (koma) = komas.read(combat_id, account)
-    let (actual_status, actual_at) = _get_koma_actual_coordinate(combat_id, account, koma)
+    let (actual_status, actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
     let (block_timestamp) = get_block_timestamp()
     with_attr error_message("FirstRelicCombat: coordinate invalid"):
         assert_not_zero(actual_at.x - to.x + actual_at.y - to.y)
@@ -248,7 +248,7 @@ func _get_komas_movments{
     return _get_komas_movments(combat_id, accounts_len - 1, accounts + 1, data_len + 1, data)
 end
 
-func _get_koma_actual_coordinate{
+func FirstRelicCombat_get_koma_actual_coordinate{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
