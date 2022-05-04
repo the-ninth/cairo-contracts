@@ -35,7 +35,8 @@ from contracts.pvp.first_relic.constants import (
     MAP_HEIGHT,
     KOMA_MOVING_SPEED,
     KOMA_ATK,
-    KOMA_DEFENSE
+    KOMA_DEFENSE,
+    WORKER_MINING_SPEED
 )
 from contracts.pvp.first_relic.storages import combats, players_count, player_by_index, komas, komas_movments
 from contracts.util.random import get_random_number_and_seed
@@ -131,8 +132,8 @@ func FirstRelicCombat_init_player{
     let (coordinate, next_seed) = _fetch_outer_non_player_coordinate(combat_id, seed)
     let koma = Koma(
         account=account, coordinate=coordinate, status=KOMA_STATUS_STATIC, health=100, max_health=100, agility=7,
-        move_speed=KOMA_MOVING_SPEED, props_weight=0, props_max_weight=1000, workers_count=3,
-        mining_workers_count=0, drones_count=3, action_radius=5, element=0, ore_amount=0, atk=KOMA_ATK, defense=KOMA_DEFENSE
+        move_speed=KOMA_MOVING_SPEED, props_weight=0, props_max_weight=1000, workers_count=3, mining_workers_count=0,
+        drones_count=3, action_radius=5, element=0, ore_amount=0, atk=KOMA_ATK, defense=KOMA_DEFENSE, worker_mining_speed=WORKER_MINING_SPEED
     )
 
 
@@ -165,7 +166,7 @@ func FirstRelicCombat_move{
     let new_koma = Koma(
         account, actual_at, KOMA_STATUS_MOVING, koma.health, koma.max_health, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
-        koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
+        koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
     )
     komas.write(combat_id, account, new_koma)
     let (distance) = _get_distance(actual_at, to)

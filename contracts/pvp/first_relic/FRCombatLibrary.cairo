@@ -197,14 +197,14 @@ func FirstRelicCombat_mine_ore{
     let new_mining_ore = KomaMiningOre(target, mining_ore.mining_workers_count + workers_count, block_timestamp)
 
     let mining_workers_count = ore.mining_workers_count + workers_count
-    let (empty_time_need, _) = unsigned_div_rem(remaining, mining_workers_count * WORKER_MINING_SPEED)
+    let (empty_time_need, _) = unsigned_div_rem(remaining, mining_workers_count * koma.worker_mining_speed)
     let empty_time = block_timestamp + empty_time_need + 1
     let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply, mining_workers_count, block_timestamp, empty_time)
 
     let new_koma = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count+workers_count,
-        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount, koma.atk, koma.defense
+        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount, koma.atk, koma.defense, koma.worker_mining_speed
     )
 
     komas.write(combat_id, account, new_koma)
@@ -257,7 +257,7 @@ func FirstRelicCombat_recall_workers{
     let new_koma = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count - workers_count,
-        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount, koma.atk, koma.defense
+        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount + retreive_amount, koma.atk, koma.defense, koma.worker_mining_speed
     )
 
     komas.write(combat_id, account, new_koma)
@@ -301,7 +301,7 @@ func FirstRelicCombat_produce_bot{
     let koma_updated = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility,
         koma.move_speed, koma.props_weight, koma.props_max_weight, workers_count, koma.mining_workers_count,
-        drones_count, koma.action_radius, koma.element, remaining_amount, koma.atk, koma.defense
+        drones_count, koma.action_radius, koma.element, remaining_amount, koma.atk, koma.defense, koma.worker_mining_speed
     )
     komas.write(combat_id, account, koma_updated)
 
@@ -360,7 +360,8 @@ func FirstRelicCombat_attack{
         element=koma_attacked.element,
         ore_amount=koma_attacked.ore_amount,
         atk=koma_attacked.atk,
-        defense=koma_attacked.defense
+        defense=koma_attacked.defense,
+        worker_mining_speed=koma_attacked.worker_mining_speed
     )
     komas.write(combat_id, account, koma_attacked_updated)
     
@@ -529,7 +530,7 @@ func FirstRelicCombat_enter_relic_gate{
     let koma_updated = Koma(
         koma.account, koma.coordinate, KOMA_STATUS_THIRD_STAGE, koma.health, koma.max_health, koma.agility,
         koma.move_speed, koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count,
-        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
+        koma.drones_count, koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
     )
     komas.write(combat_id, account, koma_updated)
 
