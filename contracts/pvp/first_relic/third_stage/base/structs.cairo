@@ -17,7 +17,8 @@ struct Combat:
     member boss_id : felt
     member round : felt  # current round
     member action_count : felt  #
-    member hero_count : felt  # current hero num
+    member init_hero_count : felt  # init hero num
+    member cur_hero_count : felt  # current hero num
     member agility_1st : felt
     member damage_to_boss_1st : felt
     member start_time : felt  # start time

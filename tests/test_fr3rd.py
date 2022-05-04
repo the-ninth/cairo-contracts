@@ -6,6 +6,8 @@ from numpy import sign
 import pytest
 import json
 import time
+import random
+
 from starkware.starknet.testing.starknet import Starknet
 from starkware.starknet.testing.contract import StarknetContract
 from starkware.starknet.compiler.compile import compile_starknet_files
@@ -25,6 +27,23 @@ signer = Signer(123456789)
 maxUser =9
 # The testing library uses python's asyncio. So the following
 # decorator and the ``async`` keyword are needed.
+
+
+def printAction(result):
+    alen = len(result.actions)
+    print('actions ',alen)
+    for i in range(alen):
+        print(result.actions[i])
+
+def printHero(result,infos):
+    alen = len(result.heros)
+    print('heros ',alen)
+    for i in range(alen):
+        if i ==0:
+            print(result.heros[i])
+        else:
+            print(result.heros[i],infos[i-1].agility,infos[i-1].atk)
+
 @pytest.mark.asyncio
 async def test_market():
     """Test market."""
@@ -64,7 +83,7 @@ async def test_market():
         owner_contract, frboss_contract.contract_address, 'setRewardTokenAddress', [erc20_contract.contract_address]
     )
     await signer.send_transaction(
-        owner_contract, frboss_contract.contract_address, 'addCombatMeta', [100000000000000000,60,2,maxUser]
+        owner_contract, frboss_contract.contract_address, 'addCombatMeta', [100000000000000000,60,11,maxUser]
     )
 
     execution_info = await erc20_contract.balanceOf(frboss_contract.contract_address).call()
@@ -76,22 +95,22 @@ async def test_market():
         hero = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
         heros.append(hero)
     print('hero contract end ',time.time())
-
+    
+    allInfos = []
     for i in range(maxUser):
         print(i,'join  : ',heros[i].contract_address)
         await signer.send_transaction(
             heros[i], frboss_contract.contract_address, 'join', [0,heros[i].contract_address]
         )
         execution_info = await mock_contract.getKoma(0,heros[i].contract_address).call()
+        allInfos.append(execution_info.result.koma)
         print(execution_info.result)
-
+        
     # print heros
-    execution_info = await frboss_contract.getCombatInfoById(0).call()
+    execution_info = await frboss_contract.getCombatInfoById(0,0).call()
     print(execution_info.result)
     print(execution_info.result.combat)
-    heroLen = len(execution_info.result.heros)
-    for i in range(heroLen):
-        print(execution_info.result.heros[i])
+    printHero(execution_info.result,allInfos)
     
 
     # Test for repeated join
@@ -100,34 +119,31 @@ async def test_market():
     # print(execution_info.result)
 
     print('hero join end ',time.time())
-    for j in range(4):
+    for j in range(9):
         for i in range(maxUser):
             print('action',i)
+            target = random.randint(0,maxUser)
+            print(target)
             await signer.send_transaction(
-                heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,0]
+                heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,target]
             )
         print('action end ',time.time())
-        execution_info = await frboss_contract.getCombatInfoById(0).call()
+        execution_info = await frboss_contract.getCombatInfoById(0,0).call()
+        print(execution_info.result.combat)
+        printHero(execution_info.result,allInfos)
+        printAction(execution_info.result)
+        execution_info1 = await frboss_contract.getSurvivings(0).call()
+        print(execution_info1.result)
         if execution_info.result.combat.end_info != 0:
             break
-    
-
-
-    
 
     # check token len
-    execution_info = await frboss_contract.getCombatInfoById(0).call()
+    execution_info = await frboss_contract.getCombatInfoById(0,0).call()
     print(execution_info.result)
 
     print(execution_info.result.combat)
-    heroLen = len(execution_info.result.heros)
-    for i in range(heroLen):
-        print(execution_info.result.heros[i])
-    print('heros ',heroLen)
-    actionLen = len(execution_info.result.actions)
-    print('actions ',actionLen)
-    for i in range(actionLen):
-        print(execution_info.result.actions[i])
+    printHero(execution_info.result,allInfos)
+    printAction(execution_info.result)
 
     execution_info = await erc20_contract.balanceOf(frboss_contract.contract_address).call()
     print(execution_info.result)
@@ -136,13 +152,5 @@ async def test_market():
         print(execution_info.result)
     
 
-    execution_info = await implementation_contract.getCombatInfoById(0).call()
+    execution_info = await implementation_contract.getCombatInfoById(0,0).call()
     print(execution_info.result)
-
-
-
-
-
-
-
-

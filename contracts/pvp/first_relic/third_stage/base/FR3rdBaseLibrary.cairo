@@ -74,7 +74,7 @@ func FR3rd_base_get_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
     return (combat=combat)
 end
 
-func FR3rd_combat_is_last_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func FR3rd_base_is_round_end{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt
 ) -> (is_end : felt):
     alloc_locals
@@ -88,14 +88,11 @@ func FR3rd_combat_is_last_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*
     # check time & round
     let cur_round_end_time = combat.last_round_time + combat_meta.max_round_time
     let (block_timestamp) = get_block_timestamp()
-    let (is_le) = is_le_felt(block_timestamp, cur_round_end_time)
-    if is_le == TRUE:
-        return (FALSE)
-    end
-    return (TRUE)
+    let (is_end) = is_le_felt(cur_round_end_time, block_timestamp)
+    return (is_end)
 end
 
-func FR3rd_combat_is_round_end{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func FR3rd_base_is_last_round{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt
 ) -> (is_end : felt):
     alloc_locals
@@ -104,11 +101,8 @@ func FR3rd_combat_is_round_end{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*,
         return (TRUE)
     end
     let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-    let (is_le_round) = is_le_felt(combat.round + 2, combat_meta.max_round)
-    if is_le_round == TRUE:
-        return (FALSE)
-    end
-    return (TRUE)
+    let (is_end) = is_le_felt(combat_meta.max_round, combat.round + 1)
+    return (is_end)
 end
 
 func FR3rd_base_check_hero_in_loop{
@@ -136,15 +130,15 @@ func FR3rd_base_find_surviving_loop{
     let (is_le) = is_le_felt(1, hero.health)
     if is_le == TRUE:
         assert [hero_indexs] = cur_hero_index
+        let (count) = FR3rd_base_find_surviving_loop(
+            combat_id, hero_indexs + 1, cur_hero_index + 1, left - 1
+        )
+        return (count + 1)
     end
     let (count) = FR3rd_base_find_surviving_loop(
-        combat_id, hero_indexs + 1, cur_hero_index + 1, left - 1
+        combat_id, hero_indexs, cur_hero_index + 1, left - 1
     )
-    if is_le == TRUE:
-        return (count + 1)
-    else:
-        return (count)
-    end
+    return (count)
 end
 
 func FR3rd_base_random{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}() -> (
@@ -248,7 +242,8 @@ func FR3rd_base_sort_by_damage_to_boss_loop2{
                 action_count=combat.action_count,
                 agility_1st=combat.agility_1st,
                 damage_to_boss_1st=hero_index,
-                hero_count=combat.hero_count,
+                cur_hero_count=combat.cur_hero_count,
+                init_hero_count=combat.init_hero_count,
                 last_round_time=combat.last_round_time,
                 end_info=combat.end_info,
             )
@@ -336,7 +331,8 @@ func FR3rd_base_sort_by_agility_loop{
                 action_count=combat.action_count,
                 agility_1st=hero_index,
                 damage_to_boss_1st=combat.damage_to_boss_1st,
-                hero_count=combat.hero_count,
+                cur_hero_count=combat.cur_hero_count,
+                init_hero_count=combat.init_hero_count,
                 last_round_time=combat.last_round_time,
                 end_info=combat.end_info,
             )
@@ -410,14 +406,15 @@ func FR3rd_base_get_atk{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_
     end
 end
 
-# FR3rd_base_update_combat(combat_id= ,round= ,action_count=,agility_1st=,damage_to_boss_1st=,hero_count=,last_round_time=,end_info=)
+# FR3rd_base_update_combat(combat_id= ,round= ,action_count=,agility_1st=,damage_to_boss_1st=,cur_hero_count=,init_hero_count=,last_round_time=,end_info=)
 func FR3rd_base_update_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt,
     round : felt,
     action_count : felt,
     agility_1st : felt,
     damage_to_boss_1st : felt,
-    hero_count : felt,
+    cur_hero_count : felt,
+    init_hero_count : felt,
     last_round_time : felt,
     end_info : felt,
 ) -> ():
@@ -435,8 +432,11 @@ func FR3rd_base_update_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, 
     # action_count
     assert new_combat.action_count = action_count
 
-    # hero_count
-    assert new_combat.hero_count = hero_count
+    # cur_hero_count
+    assert new_combat.init_hero_count = init_hero_count
+
+    # cur_hero_count
+    assert new_combat.cur_hero_count = cur_hero_count
 
     # agility_1st
     assert new_combat.agility_1st = agility_1st

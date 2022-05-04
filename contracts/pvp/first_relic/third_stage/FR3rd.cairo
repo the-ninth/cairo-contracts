@@ -22,6 +22,8 @@ from contracts.pvp.first_relic.third_stage.FR3rdLibrary import (
     FR3rd_get_combat_info,
     FR3rd_join,
     FR3rd_submit_action,
+    FR3rd_try_end_cur_round,
+    FR3rd_get_survivings,
 )
 
 from contracts.pvp.first_relic.third_stage.FR3rdManagerLibrary import (
@@ -112,8 +114,16 @@ func getCurCombatMetaId{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_
 end
 
 @view
+func getSurvivings{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(combat_id : felt) -> (
+    indexs_len:felt,indexs:felt*,target:felt
+):
+    let (indexs_len,indexs,target) = FR3rd_get_survivings(combat_id)
+    return (indexs_len,indexs,target)
+end
+
+@view
 func getCombatInfoById{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    combat_id : felt
+    combat_id : felt, hero_index : felt
 ) -> (
     heros_len : felt,
     heros : Hero*,
@@ -122,9 +132,12 @@ func getCombatInfoById{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_c
     combat : Combat,
     boss_meta : Boss_meta,
     combat_meta : Combat_meta,
+    need_end : felt,
+    need_action : felt,
 ):
     let (heros_len : felt, heros : Hero*, actions_len : felt, actions : Action*, combat : Combat,
-        boss_meta : Boss_meta, combat_meta : Combat_meta) = FR3rd_get_combat_info(combat_id)
+        boss_meta : Boss_meta, combat_meta : Combat_meta, need_end : felt,
+        need_action : felt) = FR3rd_get_combat_info(combat_id, hero_index)
     return (
         heros_len=heros_len,
         heros=heros,
@@ -133,6 +146,8 @@ func getCombatInfoById{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_c
         combat=combat,
         boss_meta=boss_meta,
         combat_meta=combat_meta,
+        need_end=need_end,
+        need_action=need_action,
     )
 end
 
@@ -141,7 +156,6 @@ end
 #
 
 # manager
-
 @external
 func setRewardTokenAddress{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
     address : felt
@@ -186,6 +200,8 @@ func transferOwnership{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_c
     return (new_owner=new_owner)
 end
 
+# combat
+
 @external
 func join{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
     combat_id : felt, address : felt
@@ -199,5 +215,13 @@ func action{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
     combat_id : felt, round_id : felt, hero_index : felt, type : felt, target : felt
 ):
     FR3rd_submit_action(combat_id, round_id, hero_index, type, target)
+    return ()
+end
+
+@external
+func tryEndRound{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    combat_id : felt
+):
+    FR3rd_try_end_cur_round(combat_id)
     return ()
 end

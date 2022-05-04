@@ -72,8 +72,8 @@ from contracts.pvp.first_relic.third_stage.base.constants import (
 from contracts.pvp.first_relic.third_stage.base.FR3rdBaseLibrary import (
     FR3rd_base_update_hero,
     FR3rd_base_update_combat,
-    FR3rd_combat_is_round_end,
-    FR3rd_combat_is_last_round,
+    FR3rd_base_is_round_end,
+    FR3rd_base_is_last_round,
     FR3rd_base_sort_by_damage_to_boss,
     FR3rd_base_find_surviving_loop,
 )
@@ -111,15 +111,18 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
             action_count=combat.action_count,
             agility_1st=combat.agility_1st,
             damage_to_boss_1st=combat.damage_to_boss_1st,
-            hero_count=combat.hero_count,
+            cur_hero_count=combat.cur_hero_count,
+            init_hero_count=combat.init_hero_count,
             last_round_time=combat.last_round_time,
             end_info=1,
         )
         return (TRUE)
     end
-
+    
+    let (local hero_indexs : felt*) = alloc()
+    let (count) = FR3rd_base_find_surviving_loop(combat_id, hero_indexs, 1, combat.init_hero_count)
     # if all hreo dead
-    if combat.hero_count == 0:
+    if count == 0:
         FR3rd_reward_hero_dead(combat_id)
         FR3rd_base_update_combat(
             combat_id=combat_id,
@@ -127,15 +130,16 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
             action_count=combat.action_count,
             agility_1st=combat.agility_1st,
             damage_to_boss_1st=combat.damage_to_boss_1st,
-            hero_count=combat.hero_count,
+            cur_hero_count=combat.cur_hero_count,
+            init_hero_count=combat.init_hero_count,
             last_round_time=combat.last_round_time,
             end_info=2,
         )
         return (TRUE)
     end
 
-    let (is_end) = FR3rd_combat_is_round_end(combat_id)
-    let (is_last) = FR3rd_combat_is_last_round(combat_id)
+    let (is_end) = FR3rd_base_is_round_end(combat_id)
+    let (is_last) = FR3rd_base_is_last_round(combat_id)
 
     # not end
     if (1 - is_end) * (1 - is_last) == TRUE:
@@ -150,7 +154,8 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
             action_count=combat.action_count,
             agility_1st=combat.agility_1st,
             damage_to_boss_1st=combat.damage_to_boss_1st,
-            hero_count=combat.hero_count,
+            cur_hero_count=combat.cur_hero_count,
+            init_hero_count=combat.init_hero_count,
             last_round_time=combat.last_round_time,
             end_info=4,
         )
@@ -162,7 +167,8 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
             action_count=combat.action_count,
             agility_1st=combat.agility_1st,
             damage_to_boss_1st=combat.damage_to_boss_1st,
-            hero_count=combat.hero_count,
+            cur_hero_count=combat.cur_hero_count,
+            init_hero_count=combat.init_hero_count,
             last_round_time=combat.last_round_time,
             end_info=3,
         )
