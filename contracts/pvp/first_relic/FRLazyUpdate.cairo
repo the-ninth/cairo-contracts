@@ -17,12 +17,12 @@ from contracts.pvp.first_relic.structs import (
 )
 from contracts.pvp.first_relic.constants import WORKER_MINING_SPEED
 from contracts.pvp.first_relic.storages import (
-    combats,
-    ores,
-    komas,
-    koma_mining_ore_coordinates_len,
-    koma_mining_ore_coordinates_by_index,
-    koma_mining_ores
+    FirstRelicCombat_combats,
+    FirstRelicCombat_ores,
+    FirstRelicCombat_komas,
+    FirstRelicCombat_koma_mining_ore_coordinates_len,
+    FirstRelicCombat_koma_mining_ore_coordinates_by_index,
+    FirstRelicCombat_koma_mining_ores
 )
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_change_to_first_stage,
@@ -38,7 +38,7 @@ func LazyUpdate_update_combat_status{
     }(combat_id: felt):
     alloc_locals
 
-    let (combat) = combats.read(combat_id)
+    let (combat) = FirstRelicCombat_combats.read(combat_id)
     local status_changed
     if combat.status == COMBAT_STATUS_PREPARING:
         let (status_changed) = _update_combat_status_preparing(combat_id, combat)
@@ -138,7 +138,7 @@ func LazyUpdate_update_ore{
     }(combat_id: felt, ore_coordinate: Coordinate):
     alloc_locals
 
-    let (ore) = ores.read(combat_id, ore_coordinate)
+    let (ore) = FirstRelicCombat_ores.read(combat_id, ore_coordinate)
     if ore.mining_workers_count == 0:
         return ()
     end
@@ -146,7 +146,7 @@ func LazyUpdate_update_ore{
     let (end_time) = min(block_timestamp, ore.empty_time)
     let mined_amount = (end_time - ore.start_time) * ore.mining_workers_count * WORKER_MINING_SPEED
     let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply + mined_amount, ore.mining_workers_count, block_timestamp, ore.empty_time)
-    ores.write(combat_id, ore_coordinate, new_ore)
+    FirstRelicCombat_ores.write(combat_id, ore_coordinate, new_ore)
 
     return ()
 end
@@ -159,15 +159,15 @@ func LazyUpdate_update_koma_mining{
     }(combat_id: felt, account: felt):
     alloc_locals
 
-    let (koma) = komas.read(combat_id, account)
-    let (mining_ore_coordinates_len) = koma_mining_ore_coordinates_len.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
+    let (mining_ore_coordinates_len) = FirstRelicCombat_koma_mining_ore_coordinates_len.read(combat_id, account)
     let (ore_amount) = _retreive_mining_ores(combat_id, account, 0, mining_ore_coordinates_len, 0)
     let koma_updated = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
         koma.action_radius, koma.element, koma.ore_amount + ore_amount, koma.atk, koma.defense
     )
-    komas.write(combat_id, account, koma_updated)
+    FirstRelicCombat_komas.write(combat_id, account, koma_updated)
 
     return ()
 end
@@ -182,9 +182,9 @@ func _retreive_mining_ores{
     if index == len:
         return (0)
     end
-    let (mining_ore_coordinate) = koma_mining_ore_coordinates_by_index.read(combat_id, account, index)
-    let (mining_ore) = koma_mining_ores.read(combat_id, account, mining_ore_coordinate)
-    let (ore) = ores.read(combat_id, mining_ore_coordinate)
+    let (mining_ore_coordinate) = FirstRelicCombat_koma_mining_ore_coordinates_by_index.read(combat_id, account, index)
+    let (mining_ore) = FirstRelicCombat_koma_mining_ores.read(combat_id, account, mining_ore_coordinate)
+    let (ore) = FirstRelicCombat_ores.read(combat_id, mining_ore_coordinate)
 
     let (block_timestamp) = get_block_timestamp()
     let (end_time) = min(block_timestamp, ore.empty_time)
@@ -193,7 +193,7 @@ func _retreive_mining_ores{
     let mining_ore_updated = KomaMiningOre(
         mining_ore.coordinate, mining_ore.mining_workers_count, block_timestamp
     )
-    koma_mining_ores.write(combat_id, account, mining_ore_coordinate, mining_ore_updated)
+    FirstRelicCombat_koma_mining_ores.write(combat_id, account, mining_ore_coordinate, mining_ore_updated)
 
     let (ore_amount) = _retreive_mining_ores(combat_id, account, index + 1, len, retreive_amount + current_retreive_amount)
     return (ore_amount)

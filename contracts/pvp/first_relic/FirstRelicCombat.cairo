@@ -39,7 +39,7 @@ from contracts.pvp.first_relic.structs import (
     KOMA_STATUS_MINING,
     KOMA_STATUS_THIRD_STAGE
 )
-from contracts.pvp.first_relic.storages import komas
+from contracts.pvp.first_relic.storages import FirstRelicCombat_komas
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_init_chests,
     FirstRelicCombat_in_moving_stage,
@@ -574,7 +574,7 @@ func player_can_move{
     }(combat_id: felt, account: felt):
     alloc_locals
 
-    let (koma) = komas.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     let (in_moving_stage) = FirstRelicCombat_in_moving_stage(combat_id)
     with_attr error_message("FirstRelicCombat: combat status invalid"):
         assert in_moving_stage = TRUE
@@ -601,7 +601,7 @@ func player_can_action{
     }(combat_id: felt, account: felt):
     alloc_locals
 
-    let (koma) = komas.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     let (in_moving_stage) = FirstRelicCombat_in_moving_stage(combat_id)
     with_attr error_message("FirstRelicCombat: combat status invalid"):
         assert in_moving_stage = TRUE

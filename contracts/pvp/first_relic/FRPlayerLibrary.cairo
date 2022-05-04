@@ -37,7 +37,13 @@ from contracts.pvp.first_relic.constants import (
     KOMA_ATK,
     KOMA_DEFENSE
 )
-from contracts.pvp.first_relic.storages import combats, players_count, player_by_index, komas, komas_movments
+from contracts.pvp.first_relic.storages import (
+    FirstRelicCombat_combats,
+    FirstRelicCombat_players_count,
+    FirstRelicCombat_player_by_index,
+    FirstRelicCombat_komas,
+    FirstRelicCombat_komas_movments
+)
 from contracts.util.random import get_random_number_and_seed
 
 func FirstRelicCombat_get_players_count{
@@ -45,7 +51,7 @@ func FirstRelicCombat_get_players_count{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt) -> (count: felt):
-    let (count) = players_count.read(combat_id)
+    let (count) = FirstRelicCombat_players_count.read(combat_id)
     return (count)
 end
 
@@ -71,7 +77,7 @@ func FirstRelicCombat_get_koma{
     }(combat_id: felt, account: felt) -> (koma: Koma):
     alloc_locals
 
-    let (koma) = komas.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     with_attr error_message("FirstRelicCombat: player not exist"):
         assert_not_zero(koma.status)
     end
@@ -110,12 +116,12 @@ func FirstRelicCombat_init_player{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt) -> (next_seed: felt):
-    let (combat) = combats.read(combat_id)
+    let (combat) = FirstRelicCombat_combats.read(combat_id)
     with_attr error_message("FirstRelicCombat: combat not registering"):
         assert combat.status = COMBAT_STATUS_REGISTERING
     end
 
-    let (koma) = komas.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     with_attr error_message("FirstRelicCombat: account registered"):
         assert koma.status = 0
     end
@@ -136,10 +142,10 @@ func FirstRelicCombat_init_player{
     )
 
 
-    let (count) = players_count.read(combat_id)
-    players_count.write(combat_id, count + 1)
-    player_by_index.write(combat_id, count, account)
-    komas.write(combat_id, account, koma)
+    let (count) = FirstRelicCombat_players_count.read(combat_id)
+    FirstRelicCombat_players_count.write(combat_id, count + 1)
+    FirstRelicCombat_player_by_index.write(combat_id, count, account)
+    FirstRelicCombat_komas.write(combat_id, account, koma)
 
     return (next_seed)
 end
@@ -150,7 +156,7 @@ func FirstRelicCombat_move{
         range_check_ptr
     }(combat_id: felt, account: felt, to: Coordinate):
     alloc_locals
-    let (koma) = komas.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     let (actual_status, actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
     let (block_timestamp) = get_block_timestamp()
     with_attr error_message("FirstRelicCombat: coordinate invalid"):
@@ -167,11 +173,11 @@ func FirstRelicCombat_move{
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
         koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
     )
-    komas.write(combat_id, account, new_koma)
+    FirstRelicCombat_komas.write(combat_id, account, new_koma)
     let (distance) = _get_distance(actual_at, to)
     let (time_need, _) = unsigned_div_rem(distance, koma.move_speed)
     let movement = Movment(to, block_timestamp, block_timestamp + time_need + 1)
-    komas_movments.write(combat_id, account, movement)
+    FirstRelicCombat_komas_movments.write(combat_id, account, movement)
 
     return ()
 end
@@ -199,12 +205,12 @@ func _get_players{
         return (data_len, data)
     end
 
-    let (count) = players_count.read(combat_id)
+    let (count) = FirstRelicCombat_players_count.read(combat_id)
     if index == count:
         return (data_len, data)
     end
 
-    let (account) = player_by_index.read(combat_id, index)
+    let (account) = FirstRelicCombat_player_by_index.read(combat_id, index)
     assert data[data_len] = account
 
     return _get_players(combat_id, index+1, length-1, data_len+1, data)
@@ -221,7 +227,7 @@ func _get_komas{
     end
     
     let account = accounts[0]
-    let (koma) = komas.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     with_attr error_message("player not exist"):
         assert_not_zero(koma.status)
     end
@@ -242,7 +248,7 @@ func _get_komas_movments{
     end
     
     let account = accounts[0]
-    let (movment) = komas_movments.read(combat_id, account)
+    let (movment) = FirstRelicCombat_komas_movments.read(combat_id, account)
 
     assert data[data_len] = movment
     return _get_komas_movments(combat_id, accounts_len - 1, accounts + 1, data_len + 1, data)
@@ -259,7 +265,7 @@ func FirstRelicCombat_get_koma_actual_coordinate{
     tempvar pedersen_ptr = pedersen_ptr
     tempvar range_check_ptr = range_check_ptr
     if koma.status == KOMA_STATUS_MOVING:
-        let (movment) = komas_movments.read(combat_id, account)
+        let (movment) = FirstRelicCombat_komas_movments.read(combat_id, account)
         let (block_timestamp) = get_block_timestamp()
         let (reached) = sign(block_timestamp - movment.reach_time)
         tempvar syscall_ptr = syscall_ptr

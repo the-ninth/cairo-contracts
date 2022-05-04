@@ -26,9 +26,9 @@ from contracts.pvp.first_relic.structs import (
     KomaEquipments
 )
 from contracts.pvp.first_relic.storages import (
-    chests,
-    chest_options,
-    komas,
+    FirstRelicCombat_chests,
+    FirstRelicCombat_chest_options,
+    FirstRelicCombat_komas,
     FirstRelicCombat_koma_props_len,
     FirstRelicCombat_koma_props_id_by_index,
     FirstRelicCombat_koma_props_effect,
@@ -48,7 +48,7 @@ func FirstRelicCombat_open_chest{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate):
-    let (chest) = chests.read(combat_id, target)
+    let (chest) = FirstRelicCombat_chests.read(combat_id, target)
     with_attr error_message("FirstRelicCombat: invalid chest"):
         assert_not_zero(chest.coordinate.x * chest.coordinate.y)
     end
@@ -62,11 +62,11 @@ func FirstRelicCombat_open_chest{
     let (index1, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
     let (index2, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
     let (index3, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
-    chest_options.write(combat_id, target, 1, props_pool[index1])
-    chest_options.write(combat_id, target, 2, props_pool[index2])
-    chest_options.write(combat_id, target, 3, props_pool[index3])
+    FirstRelicCombat_chest_options.write(combat_id, target, 1, props_pool[index1])
+    FirstRelicCombat_chest_options.write(combat_id, target, 2, props_pool[index2])
+    FirstRelicCombat_chest_options.write(combat_id, target, 3, props_pool[index3])
     let chest_updated = Chest(coordinate=target, opener=account, option_selected=0)
-    chests.write(combat_id, target, chest_updated)
+    FirstRelicCombat_chests.write(combat_id, target, chest_updated)
 
     return ()
 end
@@ -78,15 +78,15 @@ func FirstRelicCombat_get_chest_options{
     }(combat_id: felt, target: Coordinate) -> (options_len: felt, options: felt*):
     alloc_locals
 
-    let (chest) = chests.read(combat_id, target)
+    let (chest) = FirstRelicCombat_chests.read(combat_id, target)
     with_attr error_message("FirstRelicCombat: chest not opened"):
         assert_not_zero(chest.opener)
     end
 
     let (local options: felt*) = alloc()
-    let (option1) = chest_options.read(combat_id, target, 1)
-    let (option2) = chest_options.read(combat_id, target, 1)
-    let (option3) = chest_options.read(combat_id, target, 1)
+    let (option1) = FirstRelicCombat_chest_options.read(combat_id, target, 1)
+    let (option2) = FirstRelicCombat_chest_options.read(combat_id, target, 1)
+    let (option3) = FirstRelicCombat_chest_options.read(combat_id, target, 1)
     assert options[0] = option1
     assert options[1] = option2
     assert options[2] = option3
@@ -99,7 +99,7 @@ func FirstRelicCombat_select_chest_option{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate, option: felt):
-    let (chest) = chests.read(combat_id, target)
+    let (chest) = FirstRelicCombat_chests.read(combat_id, target)
     with_attr error_message("FirstRelicCombat: invalid chest"):
         assert_not_zero(chest.coordinate.x * chest.coordinate.y)
     end
@@ -111,7 +111,7 @@ func FirstRelicCombat_select_chest_option{
     end
 
     let chest_updated = Chest(chest.coordinate, chest.opener, option)
-    let (selected_prop_creature_id) = chest_options.read(combat_id, target, option)
+    let (selected_prop_creature_id) = FirstRelicCombat_chest_options.read(combat_id, target, option)
     with_attr error_message("FirstRelicCombat: invalid chest option"):
         assert_lt_felt(0, selected_prop_creature_id)
     end
@@ -333,14 +333,14 @@ func _use_health_kit{
     }(combat_id: felt, account: felt):
     alloc_locals
 
-    let (koma) = komas.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     let (now_health) = min(koma.health + 50, koma.max_health)
     let koma_updated = Koma(
         koma.account, koma.coordinate, koma.status, now_health, koma.max_health, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
         koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
     )
-    komas.write(combat_id, account, koma_updated)
+    FirstRelicCombat_komas.write(combat_id, account, koma_updated)
 
     return ()
 end
@@ -350,13 +350,13 @@ func _use_max_health_up_10{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt):
-    let (koma) = komas.read(combat_id, account)
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     let koma_updated = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health + 10, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
         koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense
     )
-    komas.write(combat_id, account, koma_updated)
+    FirstRelicCombat_komas.write(combat_id, account, koma_updated)
 
     return ()
 end
