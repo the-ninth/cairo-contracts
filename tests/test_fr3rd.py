@@ -122,7 +122,10 @@ async def test_market():
     for j in range(9):
         for i in range(maxUser):
             print('action',i)
-            target = random.randint(0,maxUser)
+            if i < maxUser/2:
+                target = 0
+            else:
+                target = random.randint(0,maxUser)
             print(target)
             await signer.send_transaction(
                 heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,target]
@@ -152,5 +155,5 @@ async def test_market():
         print(execution_info.result)
     
 
-    execution_info = await implementation_contract.getCombatInfoById(0,0).call()
+    execution_info = await frboss_contract.getCombatInfoById(0,0).call()
     print(execution_info.result)
