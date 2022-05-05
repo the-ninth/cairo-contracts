@@ -180,7 +180,7 @@ func _retreive_mining_ores{
     alloc_locals
     
     if index == len:
-        return (0)
+        return (retreive_amount)
     end
     let (mining_ore_coordinate) = FirstRelicCombat_koma_mining_ore_coordinates_by_index.read(combat_id, account, index)
     let (mining_ore) = FirstRelicCombat_koma_mining_ores.read(combat_id, account, mining_ore_coordinate)
