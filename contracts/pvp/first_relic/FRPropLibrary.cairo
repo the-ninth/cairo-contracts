@@ -20,7 +20,9 @@ from contracts.pvp.first_relic.constants import (
     PROP_CREATURE_SHOE,
     PROP_CREATURE_LASER_GUN,
     PROP_CREATURE_DRILL,
-    PROP_CREATURE_ARMOR
+    PROP_CREATURE_ARMOR,
+    PROP_WEIGHT_EQUIPMENTS,
+    PROP_WEIGHT_OTHERS
 )
 from contracts.pvp.first_relic.structs import (
     Chest,
@@ -104,6 +106,8 @@ func FirstRelicCombat_select_chest_option{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate, option: felt):
+    alloc_locals
+
     let (chest) = FirstRelicCombat_chests.read(combat_id, target)
     with_attr error_message("FirstRelicCombat: invalid chest"):
         assert_not_zero(chest.coordinate.x * chest.coordinate.y)
@@ -120,15 +124,29 @@ func FirstRelicCombat_select_chest_option{
     with_attr error_message("FirstRelicCombat: invalid chest option"):
         assert_lt_felt(0, selected_prop_creature_id)
     end
+
+    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
+    let (prop_weight) = _get_prop_weight(selected_prop_creature_id)
+    let new_weight = koma.props_weight + prop_weight
+    with_attr error_message("FirstRelicCombat: excceed max weight"):
+        assert_le_felt(new_weight, koma.props_max_weight)
+    end
+
     let (props_count) = FirstRelicCombat_props_counter.read(combat_id)
     let prop_id = props_count + 1
     let (len) = FirstRelicCombat_koma_props_len.read(combat_id, account)
     let prop = Prop(prop_id=prop_id, prop_creature_id=selected_prop_creature_id, used_timetamp=0, index_in_koma_props=len)
+    let koma_updated = Koma(
+        koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, new_weight,
+        koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
+        koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
+    )
     FirstRelicCombat_props.write(combat_id, prop_id, prop)
     FirstRelicCombat_props_owner.write(combat_id, prop_id, account)
     FirstRelicCombat_koma_props_id_by_index.write(combat_id, account, len, prop_id)
     FirstRelicCombat_props_counter.write(combat_id, prop_id)
     FirstRelicCombat_koma_props_len.write(combat_id, account, len + 1)
+    FirstRelicCombat_komas.write(combat_id, account, koma_updated)
     
     return ()
 end
@@ -255,6 +273,7 @@ func FirstRelicCombat_equip_prop{
         let (props_len) = FirstRelicCombat_koma_props_len.read(combat_id, account)
         let equiped_prop_updated = Prop(equiped_prop.prop_id, equiped_prop.prop_creature_id, 0, props_len)
         FirstRelicCombat_props.write(combat_id, equiped_prop.prop_id, equiped_prop_updated)
+        FirstRelicCombat_koma_props_id_by_index.write(combat_id, account, props_len, equiped_prop.prop_id)
         FirstRelicCombat_koma_props_len.write(combat_id, account, props_len + 1)
         FirstRelicCombat_koma_equipments.write(combat_id, account, equip_part, prop_id)
         _equip_off(combat_id, account, equiped_prop.prop_creature_id)
@@ -287,6 +306,17 @@ func FirstRelicCombat_get_koma_equipments{
     let equipments = KomaEquipments(account, engine, shoe, weapon, armor)
 
     return (equipments)
+end
+
+func _get_prop_weight{
+        range_check_ptr
+    }(prop_creature_id: felt) -> (prop_weight: felt):
+    let (prop_type, r) = unsigned_div_rem(prop_creature_id, 10**8)
+    if prop_type == PROP_TYPE_EQUIPMENT:
+        return (PROP_WEIGHT_EQUIPMENTS)
+    else:
+        return (PROP_WEIGHT_OTHERS)
+    end
 end
 
 func _get_equip_part{
@@ -382,35 +412,35 @@ func _equip_on{
 
     if prop_creature_id == PROP_CREATURE_ENGINE:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed + 5, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed + 5, koma.props_weight - PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
         )
     end
     if prop_creature_id == PROP_CREATURE_SHOE:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility + 5, koma.move_speed, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility + 5, koma.move_speed, koma.props_weight - PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
         )
     end
     if prop_creature_id == PROP_CREATURE_LASER_GUN:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight - PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk + 5, koma.defense, koma.worker_mining_speed
         )
     end
     if prop_creature_id == PROP_CREATURE_DRILL:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight - PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed + 100
         )
     end
     if prop_creature_id == PROP_CREATURE_ARMOR:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight - PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk, koma.defense + 5, koma.worker_mining_speed
         )
@@ -432,35 +462,35 @@ func _equip_off{
 
     if prop_creature_id == PROP_CREATURE_ENGINE:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed - 5, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed - 5, koma.props_weight + PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
         )
     end
     if prop_creature_id == PROP_CREATURE_SHOE:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility - 5, koma.move_speed, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility - 5, koma.move_speed, koma.props_weight + PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
         )
     end
     if prop_creature_id == PROP_CREATURE_LASER_GUN:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight + PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk - 5, koma.defense, koma.worker_mining_speed
         )
     end
     if prop_creature_id == PROP_CREATURE_DRILL:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight + PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed - 100
         )
     end
     if prop_creature_id == PROP_CREATURE_ARMOR:
         assert koma_updated[0] = Koma(
-            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight,
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed, koma.props_weight + PROP_WEIGHT_EQUIPMENTS,
             koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count, koma.action_radius, koma.element,
             koma.ore_amount, koma.atk, koma.defense - 5, koma.worker_mining_speed
         )
