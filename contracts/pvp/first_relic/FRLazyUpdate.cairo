@@ -39,28 +39,30 @@ func LazyUpdate_update_combat_status{
     alloc_locals
 
     let (combat) = FirstRelicCombat_combats.read(combat_id)
-    local status_changed
+    let status_changed = FALSE
     if combat.status == COMBAT_STATUS_PREPARING:
-        let (res) = _update_combat_status_preparing(combat_id, combat)
-        status_changed = res
+        let (status_changed) = _update_combat_status_preparing(combat_id, combat)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
+        tempvar status_changed = status_changed
     else:
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
+        tempvar status_changed = status_changed
     end
     if combat.status == COMBAT_STATUS_FIRST_STAGE:
-        let (res) = _update_combat_status_first_stage(combat_id, combat)
-        status_changed = res
+        let (status_changed) = _update_combat_status_first_stage(combat_id, combat)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
+        tempvar status_changed = status_changed
     else:
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
+        tempvar status_changed = status_changed
     end
     
     # update until combat status no change
