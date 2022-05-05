@@ -165,7 +165,7 @@ func LazyUpdate_update_koma_mining{
     let koma_updated = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
         koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count, koma.drones_count,
-        koma.action_radius, koma.element, koma.ore_amount + ore_amount, koma.atk, koma.defense
+        koma.action_radius, koma.element, koma.ore_amount + ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
     )
     FirstRelicCombat_komas.write(combat_id, account, koma_updated)
 

@@ -47,6 +47,7 @@ struct Koma:
     member ore_amount: felt
     member atk: felt
     member defense: felt
+    member worker_mining_speed: felt
 end
 
 struct KomaEquip:
