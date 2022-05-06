@@ -112,9 +112,6 @@ func FirstRelicCombat_select_chest_option{
     with_attr error_message("FirstRelicCombat: invalid chest"):
         assert_not_zero(chest.coordinate.x * chest.coordinate.y)
     end
-    with_attr error_message("FirstRelicCombat: not your chest"):
-        assert chest.opener = account
-    end
     with_attr error_message("FirstRelicCombat: chest option selected"):
         assert chest.option_selected = 0
     end
