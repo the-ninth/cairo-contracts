@@ -1,6 +1,7 @@
 %lang starknet
 
 from starkware.cairo.common.alloc import alloc
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.math import assert_not_zero, assert_le_felt, assert_lt_felt, unsigned_div_rem
 
@@ -22,7 +23,9 @@ from contracts.pvp.first_relic.constants import (
     PROP_CREATURE_DRILL,
     PROP_CREATURE_ARMOR,
     PROP_WEIGHT_EQUIPMENTS,
-    PROP_WEIGHT_OTHERS
+    PROP_WEIGHT_OTHERS,
+    ACTION_RADIUS_A,
+    ACTION_RADIUS_B
 )
 from contracts.pvp.first_relic.structs import (
     Chest,
@@ -46,7 +49,8 @@ from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_props_owner,
     FirstRelicCombat_koma_equipments
 )
-from contracts.util.math import max, min
+from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma_actual_coordinate
+from contracts.util.math import max, min, in_on_oval
 from contracts.util.random import get_random_number_and_seed
 
 
@@ -128,6 +132,12 @@ func FirstRelicCombat_select_chest_option{
     with_attr error_message("FirstRelicCombat: excceed max weight"):
         assert_le_felt(new_weight, koma.props_max_weight)
     end
+
+    # let (_, koma_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
+    # let (in_range) = in_on_oval(koma_actual_at.x, koma_actual_at.y, chest.coordinate.x, chest.coordinate.y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    # with_attr error_message("FirstRelicCombat: action out of range"):
+    #     assert in_range = TRUE
+    # end
 
     let (props_count) = FirstRelicCombat_props_counter.read(combat_id)
     let prop_id = props_count + 1
