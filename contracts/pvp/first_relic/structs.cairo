@@ -126,3 +126,10 @@ struct RelicGate:
     member require_creature_id: felt
     member account: felt
 end
+
+struct CoordinateRange:
+    member x0: felt
+    member x1: felt
+    member y0: felt
+    member y1: felt
+end

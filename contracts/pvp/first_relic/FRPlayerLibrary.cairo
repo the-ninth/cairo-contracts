@@ -36,7 +36,8 @@ from contracts.pvp.first_relic.constants import (
     KOMA_MOVING_SPEED,
     KOMA_ATK,
     KOMA_DEFENSE,
-    WORKER_MINING_SPEED
+    WORKER_MINING_SPEED,
+    get_outer_coordinate_ranges
 )
 from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_combats,
@@ -188,9 +189,19 @@ func _fetch_outer_non_player_coordinate{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, seed: felt) -> (coordinate: Coordinate, next_seed: felt):
+
+    let (ranges_len, ranges) = get_outer_coordinate_ranges()
+    let (index, next_seed) = get_random_number_and_seed(seed, ranges_len)
+    let range = ranges[index]
     
-    let (x, next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
-    let (y, next_seed) = get_random_number_and_seed(next_seed, MAP_HEIGHT)
+    let x_offset = range.x1 - range.x0
+    let (x_random, next_seed) = get_random_number_and_seed(next_seed, x_offset)
+    let x = x_random + range.x0
+
+    let y_offset = range.y1 - range.y0
+    let (y_random, next_seed) = get_random_number_and_seed(next_seed, y_offset)
+    let y = y_random + range.y0
+    
     let coordinate = Coordinate(x=x, y=y)
 
     return (coordinate, next_seed)

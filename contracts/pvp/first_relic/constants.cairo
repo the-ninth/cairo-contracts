@@ -2,10 +2,12 @@
 
 from starkware.cairo.common.registers import get_label_location
 
+from contracts.pvp.first_relic.structs import CoordinateRange
+
 const MAP_WIDTH = 20727
 const MAP_HEIGHT = 11900
-const MAP_INNER_AREA_WIDTH = 5000
-const MAP_INNER_AREA_HEIGHT = 5000
+const MAP_INNER_AREA_WIDTH = 4500
+const MAP_INNER_AREA_HEIGHT = 3000
 const CHEST_PER_PLAYER = 3
 const ORE_PER_PLAYER = 3
 const MAX_PLAYERS = 2
@@ -119,4 +121,48 @@ func get_relic_gate_key_ids() -> (key_ids_len: felt, key_ids: felt*):
     dw PROP_CREATURE_STAGE2_KEY7
     dw PROP_CREATURE_STAGE2_KEY8
     dw PROP_CREATURE_STAGE2_KEY9
+end
+
+func get_outer_coordinate_ranges() -> (ranges_len: felt, ranges: CoordinateRange*):
+    let (ranges_address) = get_label_location(coordinate_ranges)
+
+    return (8, cast(ranges_address, CoordinateRange*))
+
+    coordinate_ranges:
+    # left * 3
+    dw 0
+    dw 8113
+    dw 0
+    dw 11900
+    dw 0
+    dw 8113
+    dw 0
+    dw 11900
+    dw 0
+    dw 8113
+    dw 0
+    dw 11900
+    # bottom
+    dw 8113
+    dw 12613
+    dw 0
+    dw 4450
+    # top
+    dw 8113
+    dw 12613
+    dw 7450
+    dw 11900
+    # right * 3
+    dw 12613
+    dw 20727
+    dw 0
+    dw 11900
+    dw 12613
+    dw 20727
+    dw 0
+    dw 11900
+    dw 12613
+    dw 20727
+    dw 0
+    dw 11900
 end
