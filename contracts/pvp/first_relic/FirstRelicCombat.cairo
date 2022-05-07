@@ -282,6 +282,16 @@ func getKomaEquipments{
 end
 
 @view
+func getKomaPropEffectCreatureIds{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (creature_ids_len: felt, creature_ids: felt*):
+    let (creature_ids_len, creature_ids) = FirstRelicCombat_get_koma_prop_effect_creature_ids(combat_id, account)
+    return (creature_ids_len, creature_ids)
+end
+
+@view
 func getRelicGate{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,

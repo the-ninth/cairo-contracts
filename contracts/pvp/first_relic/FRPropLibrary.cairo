@@ -315,6 +315,18 @@ func FirstRelicCombat_get_koma_equipments{
     return (equipments)
 end
 
+func FirstRelicCombat_get_koma_prop_effect_creature_ids{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt) -> (data_len: felt, data: felt*):
+    let (len) = FirstRelicCombat_koma_props_effect_creature_id_len.read(combat_id, account)
+    let (local data: felt*) = alloc()
+    _get_koma_prop_effect_creature_ids(combat_id, account, 0, len, data)
+
+    return (len, data)
+end
+
 func _get_prop_weight{
         range_check_ptr
     }(prop_creature_id: felt) -> (prop_weight: felt):
@@ -504,5 +516,20 @@ func _equip_off{
     end
     FirstRelicCombat_komas.write(combat_id, account, koma_updated[0])
 
+    return ()
+end
+
+func _get_koma_prop_effect_creature_ids{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, index: felt, len: felt, data: felt*):
+    if index == len:
+        return ()
+    end
+    let (id) = FirstRelicCombat_koma_props_effect_creature_id_by_index.read(combat_id, account, index)
+    assert data[index] = id
+
+    _get_koma_prop_effect_creature_ids(combat_id, account, index + 1, len, data)
     return ()
 end
