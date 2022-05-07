@@ -12,8 +12,8 @@ const CHEST_PER_PLAYER = 3
 const ORE_PER_PLAYER = 3
 const MAX_PLAYERS = 2
 const PREPARE_TIME = 300 # how much time for preparation time
-const FIRST_STAGE_DURATION = 600
-const SECOND_STAGE_DURATION = 600
+const FIRST_STAGE_DURATION = 900
+const SECOND_STAGE_DURATION = 300
 const ACTION_RADIUS_A = 616
 const ACTION_RADIUS_B = 448
 

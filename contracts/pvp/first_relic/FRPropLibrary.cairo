@@ -133,11 +133,11 @@ func FirstRelicCombat_select_chest_option{
         assert_le_felt(new_weight, koma.props_max_weight)
     end
 
-    # let (_, koma_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
-    # let (in_range) = in_on_oval(koma_actual_at.x, koma_actual_at.y, chest.coordinate.x, chest.coordinate.y, ACTION_RADIUS_A, ACTION_RADIUS_B)
-    # with_attr error_message("FirstRelicCombat: action out of range"):
-    #     assert in_range = TRUE
-    # end
+    let (_, koma_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
+    let (in_range) = in_on_oval(koma_actual_at.x, koma_actual_at.y, chest.coordinate.x, chest.coordinate.y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    with_attr error_message("FirstRelicCombat: action out of range"):
+        assert in_range = TRUE
+    end
 
     let (props_count) = FirstRelicCombat_props_counter.read(combat_id)
     let prop_id = props_count + 1
