@@ -13,7 +13,8 @@ from contracts.pvp.first_relic.structs import (
     Koma,
     KomaMiningOre,
     COMBAT_STATUS_PREPARING,
-    COMBAT_STATUS_FIRST_STAGE
+    COMBAT_STATUS_FIRST_STAGE,
+    COMBAT_STATUS_SECOND_STAGE
 )
 from contracts.pvp.first_relic.constants import WORKER_MINING_SPEED
 from contracts.pvp.first_relic.storages import (
@@ -26,7 +27,8 @@ from contracts.pvp.first_relic.storages import (
 )
 from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_change_to_first_stage,
-    FirstRelicCombat_change_to_second_stage
+    FirstRelicCombat_change_to_second_stage,
+    FirstRelicCombat_change_to_third_stage
 )
 from contracts.util.math import min
 
@@ -54,6 +56,18 @@ func LazyUpdate_update_combat_status{
     end
     if combat.status == COMBAT_STATUS_FIRST_STAGE:
         let (status_changed) = _update_combat_status_first_stage(combat_id, combat)
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+        tempvar status_changed = status_changed
+    else:
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+        tempvar status_changed = status_changed
+    end
+    if combat.status == COMBAT_STATUS_SECOND_STAGE:
+        let (status_changed) = _update_combat_status_second_stage(combat_id, combat)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
@@ -115,8 +129,33 @@ func _update_combat_status_first_stage{
     let (block_timestamp) = get_block_timestamp()
     let (time_passed) = sign(block_timestamp - combat.second_stage_time)
     if time_passed != -1:
-        # change to first stage
+        # change to second stage
         FirstRelicCombat_change_to_second_stage(combat_id)
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+        return (TRUE)
+    else:
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
+        return (FALSE)
+    end
+
+end
+
+func _update_combat_status_second_stage{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, combat: Combat) -> (status_changed: felt):
+    alloc_locals
+
+    let (block_timestamp) = get_block_timestamp()
+    let (time_passed) = sign(block_timestamp - combat.third_stage_time)
+    if time_passed != -1:
+        # change to third stage
+        FirstRelicCombat_change_to_third_stage(combat_id)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr

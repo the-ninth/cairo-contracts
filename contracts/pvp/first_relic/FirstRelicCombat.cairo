@@ -80,7 +80,8 @@ from contracts.pvp.first_relic.FRPropLibrary import (
     FirstRelicCombat_get_koma_equipments,
     FirstRelicCombat_get_koma_props,
     FirstRelicCombat_use_prop,
-    FirstRelicCombat_equip_prop
+    FirstRelicCombat_equip_prop,
+    FirstRelicCombat_get_koma_prop_effect_creature_ids
 )
 from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore, LazyUpdate_update_koma_mining
 from contracts.pvp.first_relic.IFirstRelicCombat import PlayerDeath

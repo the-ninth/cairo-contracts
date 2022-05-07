@@ -320,6 +320,8 @@ func FirstRelicCombat_get_koma_prop_effect_creature_ids{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt) -> (data_len: felt, data: felt*):
+    alloc_locals
+
     let (len) = FirstRelicCombat_koma_props_effect_creature_id_len.read(combat_id, account)
     let (local data: felt*) = alloc()
     _get_koma_prop_effect_creature_ids(combat_id, account, 0, len, data)
