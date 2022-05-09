@@ -134,3 +134,7 @@ end
 @storage_var
 func FirstRelicCombat_relic_gate_number_by_coordinate(combat_id: felt, coordinate: Coordinate) -> (number: felt):
 end
+
+@storage_var
+func FirstRelicCombat_third_stage_players_count(combat_id: felt) -> (count: felt):
+end

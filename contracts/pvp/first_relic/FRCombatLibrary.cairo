@@ -63,7 +63,8 @@ from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_props,
     FirstRelicCombat_koma_props_effect,
     FirstRelicCombat_koma_props_effect_creature_id_len,
-    FirstRelicCombat_koma_props_effect_creature_id_by_index
+    FirstRelicCombat_koma_props_effect_creature_id_by_index,
+    FirstRelicCombat_third_stage_players_count
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma_actual_coordinate
 from contracts.util.random import get_random_number_and_seed
@@ -505,16 +506,30 @@ func FirstRelicCombat_change_to_third_stage{
     with_attr error_message("FirstRelicCombat: not first stage"):
         assert combat.status = COMBAT_STATUS_SECOND_STAGE
     end
-    let new_combat = Combat(
-        prepare_time=combat.prepare_time,
-        first_stage_time=combat.first_stage_time,
-        second_stage_time=combat.second_stage_time,
-        third_stage_time=combat.third_stage_time,
-        end_time=combat.end_time,
-        expire_time=combat.expire_time,
-        status=COMBAT_STATUS_THIRD_STAGE
-    )
-    FirstRelicCombat_combats.write(combat_id, new_combat)
+    let (count) = FirstRelicCombat_third_stage_players_count.read(combat_id)
+    if count == 0:
+        let new_combat = Combat(
+            prepare_time=combat.prepare_time,
+            first_stage_time=combat.first_stage_time,
+            second_stage_time=combat.second_stage_time,
+            third_stage_time=combat.third_stage_time,
+            end_time=combat.end_time,
+            expire_time=combat.expire_time,
+            status=COMBAT_STATUS_END
+        )
+        FirstRelicCombat_combats.write(combat_id, new_combat)
+    else:
+        let new_combat = Combat(
+            prepare_time=combat.prepare_time,
+            first_stage_time=combat.first_stage_time,
+            second_stage_time=combat.second_stage_time,
+            third_stage_time=combat.third_stage_time,
+            end_time=combat.end_time,
+            expire_time=combat.expire_time,
+            status=COMBAT_STATUS_THIRD_STAGE
+        )
+        FirstRelicCombat_combats.write(combat_id, new_combat)
+    end
 
     return ()
 end
@@ -581,6 +596,8 @@ func FirstRelicCombat_enter_relic_gate{
         koma.drones_count, koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
     )
     FirstRelicCombat_komas.write(combat_id, account, koma_updated)
+    let (count) = FirstRelicCombat_third_stage_players_count.read(combat_id)
+    FirstRelicCombat_third_stage_players_count.write(combat_id, count + 1)
 
     return ()
 end
