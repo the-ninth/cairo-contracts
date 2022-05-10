@@ -379,7 +379,7 @@ func FirstRelicCombat_attack{
         defense=koma_attacked.defense,
         worker_mining_speed=koma_attacked.worker_mining_speed
     )
-    FirstRelicCombat_komas.write(combat_id, account, koma_attacked_updated)
+    FirstRelicCombat_komas.write(combat_id, target_account, koma_attacked_updated)
     
     PlayerAttack.emit(combat_id, account, target_account, damage, koma_attacked_status)
 
