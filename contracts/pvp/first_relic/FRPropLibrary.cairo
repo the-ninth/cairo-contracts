@@ -70,9 +70,9 @@ func FirstRelicCombat_open_chest{
     # write options to storage
     let (props_pool_len, props_pool) = get_props_pool()
     let (block_timestamp) = get_block_timestamp()
-    let (index1, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
-    let (index2, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
-    let (index3, _) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
+    let (index1, next_seed) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
+    let (index2, next_seed) = get_random_number_and_seed(next_seed, props_pool_len)
+    let (index3, _) = get_random_number_and_seed(next_seed, props_pool_len)
     FirstRelicCombat_chest_options.write(combat_id, target, 1, props_pool[index1])
     FirstRelicCombat_chest_options.write(combat_id, target, 2, props_pool[index2])
     FirstRelicCombat_chest_options.write(combat_id, target, 3, props_pool[index3])
