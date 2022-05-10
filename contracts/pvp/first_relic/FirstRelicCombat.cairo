@@ -312,6 +312,22 @@ func getRelicGates{
     return (relic_gates_len, relic_gates)
 end
 
+@view
+func getAll{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, offset: felt, length: felt) -> (komas_len: felt, komas: Koma*, chests_len: felt, chests: Chest*, ores_len: felt, ores: Ore*):
+    alloc_locals
+    
+    let (ores_len, ores) = FirstRelicCombat_get_ores(combat_id, offset, length)
+    let (chests_len, chests) = FirstRelicCombat_get_chests(combat_id, offset, length)
+    let (accounts_len, accounts) = FirstRelicCombat_get_players(combat_id, offset, length)
+    let (komas_len, komas) = FirstRelicCombat_get_komas(combat_id, accounts_len, accounts)
+
+    return (komas_len, komas, chests_len, chests, ores_len, ores)
+end
+
 @external
 func initPlayer{
         syscall_ptr : felt*, 
