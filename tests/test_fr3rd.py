@@ -29,6 +29,9 @@ maxUser =9
 # decorator and the ``async`` keyword are needed.
 
 
+def getPropId(heroIndex,type,index):
+    return type + (heroIndex*100)+index
+
 def printAction(result):
     alen = len(result.actions)
     print('actions ',alen)
@@ -44,9 +47,14 @@ def printHero(result,infos):
         else:
             print(result.heros[i],infos[i-1].agility,infos[i-1].atk)
 
+PROP_CREATURE_SHIELD           = 100000001
+PROP_CREATURE_ATTACK_UP_30P    = 100000002
+PROP_CREATURE_DAMAGE_DOWN_30P  = 100000003
+PROP_CREATURE_HEALTH_KIT       = 100000004
 @pytest.mark.asyncio
 async def test_market():
     """Test market."""
+    print('start')
     starknet = await Starknet.empty()
 
     frboss_def = compile_starknet_files([FRBoss_CONTRACT_FILE], debug_info=True,disable_hint_validation=True)
@@ -57,6 +65,10 @@ async def test_market():
     implementation_contract = await starknet.deploy(contract_def=frboss_def, constructor_calldata=[]) 
     frboss_contract = await starknet.deploy(Proxy_CONTRACT_FILE, constructor_calldata=[implementation_contract.contract_address])
     mock_contract = await starknet.deploy(COMBAT_MOCK, constructor_calldata=[])
+
+    print(await mock_contract.demo().call())
+
+    print('-----------')
 
     frboss_contract = StarknetContract(state=starknet.state, abi=frboss_def.abi, contract_address=frboss_contract.contract_address,deploy_execution_info=frboss_contract.deploy_execution_info)
     
@@ -81,7 +93,7 @@ async def test_market():
 
     # set market config
     await signer.send_transaction(
-        owner_contract, frboss_contract.contract_address, 'addBossMeta', [100000,100,100,1100]
+        owner_contract, frboss_contract.contract_address, 'addBossMeta', [5000,100,100,1100]
     )
     await signer.send_transaction(
         owner_contract, frboss_contract.contract_address, 'setRewardTokenAddress', [erc20_contract.contract_address]
@@ -115,7 +127,11 @@ async def test_market():
     print(execution_info.result)
     print(execution_info.result.combat)
     printHero(execution_info.result,allInfos)
-    
+
+    # props
+    await signer.send_transaction(
+        heros[1], mock_contract.contract_address, 'mintProp', [0,heros[1].contract_address,1]
+    )
 
     # Test for repeated join
 #     await signer.send_transaction(heros[3], frboss_contract.contract_address, 'join', [])
@@ -123,21 +139,27 @@ async def test_market():
     # print(execution_info.result)
 
     print('hero join end ',time.time())
-    for j in range(9):
+    for j in range(5):
         for i in range(maxUser):
             print('action',i)
             execution_info = await frboss_contract.checkAction(0,i+1).call()
             if execution_info.result[1] == 0:
                 print(f' hero {i+1} ,no need')
                 continue
-            if i < maxUser/2:
-                target = 0
+            if i ==1:
+                await signer.send_transaction(
+                    heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,2,getPropId(1,PROP_CREATURE_SHIELD,j)]
+                )
             else:
-                target = random.randint(0,maxUser)
-            print(target)
-            tx = await signer.send_transaction(
-                heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,target]
-            )
+                if i < maxUser/2:
+                    target = 0
+                else:
+                    target = random.randint(0,maxUser)
+                print(target)
+                tx = await signer.send_transaction(
+                    heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,target]
+                )
+                print(await mock_contract.demo().call())
         print(tx.raw_events)
         print('action end ',time.time())
         execution_info = await frboss_contract.getCombatInfoById(0,0).call()

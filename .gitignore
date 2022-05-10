@@ -2,6 +2,7 @@ __pycache__/
 artifacts/
 .env
 venv/
+.venv
 localhost.accounts.json
 localhost.deployments.txt
 /node_modules/

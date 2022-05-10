@@ -138,20 +138,26 @@ func getCombatInfoById{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_c
     heros : Hero*,
     actions_len : felt,
     actions : Action*,
+    last_actions_len : felt,
+    last_actions : Action*,
     combat : Combat,
     boss_meta : Boss_meta,
     combat_meta : Combat_meta,
     need_end : felt,
     need_action : felt,
 ):
-    let (heros_len : felt, heros : Hero*, actions_len : felt, actions : Action*, combat : Combat,
-        boss_meta : Boss_meta, combat_meta : Combat_meta, need_end : felt,
-        need_action : felt) = FR3rd_get_combat_info(combat_id, hero_index)
+    let (heros_len : felt, heros : Hero*, actions_len : felt, actions : Action*,
+        last_actions_len : felt, last_actions : Action*, combat : Combat, boss_meta : Boss_meta,
+        combat_meta : Combat_meta, need_end : felt, need_action : felt) = FR3rd_get_combat_info(
+        combat_id, hero_index
+    )
     return (
         heros_len=heros_len,
         heros=heros,
         actions_len=actions_len,
         actions=actions,
+        last_actions_len=last_actions_len,
+        last_actions=last_actions,
         combat=combat,
         boss_meta=boss_meta,
         combat_meta=combat_meta,
@@ -198,6 +204,15 @@ func addCombatMeta{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check
 ) -> ():
     Ownable_only_owner()
     FR3rd_add_combat_meta(total_reward, max_round_time, max_round, max_hero)
+    return ()
+end
+
+@external
+func setCombatMeta{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    id : felt
+) -> ():
+    Ownable_only_owner()
+    FR3rd_set_cur_combat_meta(id)
     return ()
 end
 

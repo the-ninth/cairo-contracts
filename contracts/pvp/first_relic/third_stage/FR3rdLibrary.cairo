@@ -197,6 +197,8 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
     heros : Hero*,
     actions_len : felt,
     actions : Action*,
+    last_actions_len : felt,
+    last_actions : Action*,
     combat : Combat,
     boss_meta : Boss_meta,
     combat_meta : Combat_meta,
@@ -213,12 +215,22 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
         combat_id=combat_id, cur_index=0, heros=heros, left=combat.init_hero_count + 1
     )
     let (local actions : Action*) = alloc()
+    let (local last_actions : Action*) = alloc()
     if combat.round == 0:
+        let (actions_len) = FR3rd_get_actions_loop(
+            combat_id=combat_id,
+            round_id=combat.round,
+            cur_index=combat.agility_1st,
+            actions=actions,
+            left=combat.init_hero_count + 1,
+        )
         return (
             heros_len=combat.init_hero_count + 1,
             heros=heros,
             actions_len=0,
             actions=actions,
+            last_actions_len=0,
+            last_actions=last_actions,
             combat=combat,
             boss_meta=boss_meta,
             combat_meta=combat_meta,
@@ -227,9 +239,16 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
         )
     else:
         let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-        let (actions_len) = FR3rd_get_actions_loop(
+        let (last_actions_len) = FR3rd_get_actions_loop(
             combat_id=combat_id,
             round_id=combat.round - 1,
+            cur_index=combat.agility_1st,
+            actions=last_actions,
+            left=combat.init_hero_count + 1,
+        )
+        let (actions_len) = FR3rd_get_actions_loop(
+            combat_id=combat_id,
+            round_id=combat.round,
             cur_index=combat.agility_1st,
             actions=actions,
             left=combat.init_hero_count + 1,
@@ -239,6 +258,8 @@ func FR3rd_get_combat_info{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ran
             heros=heros,
             actions_len=actions_len,
             actions=actions,
+            last_actions_len=last_actions_len,
+            last_actions=last_actions,
             combat=combat,
             boss_meta=boss_meta,
             combat_meta=combat_meta,
