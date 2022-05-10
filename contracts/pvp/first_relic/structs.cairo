@@ -101,6 +101,7 @@ struct ThirdStageAction:
 end
 
 struct Movment:
+    member from_: Coordinate
     member to: Coordinate
     member start_time: felt # timestamp starting to move
     member reach_time: felt # timestamp reaching the target location

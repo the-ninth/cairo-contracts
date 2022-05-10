@@ -178,7 +178,7 @@ func FirstRelicCombat_move{
     FirstRelicCombat_komas.write(combat_id, account, new_koma)
     let (distance) = _get_distance(actual_at, to)
     let (time_need, _) = unsigned_div_rem(distance, koma.move_speed)
-    let movement = Movment(to, block_timestamp, block_timestamp + time_need + 1)
+    let movement = Movment(new_koma.coordinate, to, block_timestamp, block_timestamp + time_need + 1)
     FirstRelicCombat_komas_movments.write(combat_id, account, movement)
 
     return ()
