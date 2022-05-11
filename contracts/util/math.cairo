@@ -29,14 +29,16 @@ end
 func in_on_oval{
         range_check_ptr
     }(x0: felt, y0: felt, x1: felt, y1: felt, a: felt, b: felt) -> (res: felt):
-    let x_distance = x1 - x0
-    let y_distance = y1 - y0
-    let (x, _) = unsigned_div_rem(x_distance * x_distance, a * a)
-    let (y, _) = unsigned_div_rem(y_distance * y_distance, b * b)
-    let (sign_) = sign(x + y - 1)
-    if sign_ == 1:
-        return (FALSE)
-    else:
-        return (TRUE)
-    end
+
+    return (TRUE)
+    # let x_distance = x1 - x0
+    # let y_distance = y1 - y0
+    # let (x, _) = unsigned_div_rem(x_distance * x_distance, a * a)
+    # let (y, _) = unsigned_div_rem(y_distance * y_distance, b * b)
+    # let (sign_) = sign(x + y - 1)
+    # if sign_ == 1:
+    #     return (FALSE)
+    # else:
+    #     return (TRUE)
+    # end
 end
