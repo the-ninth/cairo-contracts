@@ -219,6 +219,7 @@ func FR3rd_base_sort_by_damage_to_boss_loop2{
             pre_hero.damage_to_boss,
             pre_hero.agility_next_hero,
             hero_index,
+            pre_hero.reward,
         )
         return ()
     end
@@ -235,6 +236,7 @@ func FR3rd_base_sort_by_damage_to_boss_loop2{
             hero.damage_to_boss,
             hero.agility_next_hero,
             cur_hero_index,
+            hero.reward,
         )
         let (combat) = FR3rd_combat.read(combat_id)
         if cur_hero_index == combat.damage_to_boss_1st:
@@ -261,6 +263,7 @@ func FR3rd_base_sort_by_damage_to_boss_loop2{
                 pre_hero.damage_to_boss,
                 pre_hero.agility_next_hero,
                 hero_index,
+                pre_hero.reward,
             )
         end
         tempvar syscall_ptr = syscall_ptr
@@ -306,6 +309,7 @@ func FR3rd_base_sort_by_agility_loop{
             pre_hero.damage_to_boss,
             hero_index,
             pre_hero.damage_to_boss_next_hero,
+            pre_hero.reward,
         )
         return ()
     end
@@ -324,6 +328,7 @@ func FR3rd_base_sort_by_agility_loop{
             hero.damage_to_boss,
             cur_hero_index,
             hero.damage_to_boss_next_hero,
+            hero.reward,
         )
         let (combat) = FR3rd_combat.read(combat_id)
         if cur_hero_index == combat.agility_1st:
@@ -350,6 +355,7 @@ func FR3rd_base_sort_by_agility_loop{
                 pre_hero.damage_to_boss,
                 hero_index,
                 pre_hero.damage_to_boss_next_hero,
+                pre_hero.reward,
             )
         end
         return ()
@@ -465,6 +471,7 @@ func FR3rd_base_update_hero{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     damage_to_boss : felt,
     agility_next_hero : felt,
     damage_to_boss_next_hero : felt,
+    reward:felt,
 ) -> ():
     alloc_locals
     let (hero) = FR3rd_combat_hero.read(combat_id, hero_index)
@@ -484,6 +491,7 @@ func FR3rd_base_update_hero{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     assert new_hero.agility_next_hero = agility_next_hero
     # damage_to_boss_next_hero
     assert new_hero.damage_to_boss_next_hero = damage_to_boss_next_hero
+    assert new_hero.reward = reward
 
     FR3rd_combat_hero.write(combat_id, hero_index, new_hero)
     return ()
