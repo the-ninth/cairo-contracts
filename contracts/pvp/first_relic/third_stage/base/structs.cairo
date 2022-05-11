@@ -9,6 +9,7 @@ struct Hero:
     member damage_to_boss : felt
     member agility_next_hero : felt  # agility_next_hero index
     member damage_to_boss_next_hero : felt  # damage_to_boss_next_hero index
+    member reward : felt  # reward
 end
 
 struct Combat:

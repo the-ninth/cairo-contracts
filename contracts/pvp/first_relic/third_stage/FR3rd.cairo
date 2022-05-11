@@ -217,6 +217,15 @@ func setCombatMeta{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check
 end
 
 @external
+func setBossMeta{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    id : felt
+) -> ():
+    Ownable_only_owner()
+    FR3rd_set_cur_boss_meta(id)
+    return ()
+end
+
+@external
 func transferOwnership{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
     new_owner : felt
 ) -> (new_owner : felt):

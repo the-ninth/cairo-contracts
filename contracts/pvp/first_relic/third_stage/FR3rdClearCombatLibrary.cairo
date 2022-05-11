@@ -193,8 +193,7 @@ func FR3rd_reward_hero_dead{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     )
     if count != 0:
         let (amount, r) = unsigned_div_rem(combat_meta.total_reward, count)
-        let (uint256Amount) = _felt_to_uint(amount)
-        FR3rd_reward_loop(combat_id, uint256Amount, hero_indexs, count)
+        FR3rd_reward_loop(combat_id, amount, hero_indexs, count)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
@@ -217,8 +216,7 @@ func FR3rd_reward_boss_dead{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     let (count) = FR3rd_base_find_surviving_loop(combat_id, hero_indexs, 1, combat_meta.max_hero)
     if count != 0:
         let (amount, r) = unsigned_div_rem(combat_meta.total_reward, count)
-        let (uint256Amount) = _felt_to_uint(amount)
-        FR3rd_reward_loop(combat_id, uint256Amount, hero_indexs, count)
+        FR3rd_reward_loop(combat_id, amount, hero_indexs, count)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
@@ -257,7 +255,7 @@ func FR3rd_get_heros_loop_by_damage{
 end
 
 func FR3rd_reward_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt, amount : Uint256, hero_indexs : felt*, left
+    combat_id : felt, amount : felt, hero_indexs : felt*, left
 ) -> ():
     alloc_locals
     if left == 0:
@@ -265,9 +263,22 @@ func FR3rd_reward_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     end
     let (hero) = FR3rd_combat_hero.read(combat_id, [hero_indexs])
     let (contract_address) = FR3rd_reward_token.read()
+    let (uint256Amount) = _felt_to_uint(amount)
     let (res) = IERC20.transfer(
-        contract_address=contract_address, recipient=hero.address, amount=amount
+        contract_address=contract_address, recipient=hero.address, amount=uint256Amount
     )
+    FR3rd_base_update_hero(
+            combat_id,
+            [hero_indexs],
+            hero.health,
+            hero.bear_from_hero,
+            hero.bear_from_boss,
+            hero.damage_to_hero,
+            hero.damage_to_boss,
+            hero.agility_next_hero,
+            hero.damage_to_boss_next_hero,
+            amount,
+        )
     FR3rd_reward_loop(combat_id, amount, hero_indexs + 1, left - 1)
     return ()
 end

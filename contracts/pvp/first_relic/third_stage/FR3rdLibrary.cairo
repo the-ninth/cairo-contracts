@@ -320,6 +320,7 @@ func FR3rd_join_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     assert hero.bear_from_boss = 0
     assert hero.damage_to_hero = 0
     assert hero.damage_to_boss = 0
+    assert hero.reward = 0
 
     let new_hero_index = combat.init_hero_count + 1
     FR3rd_combat_hero.write(combat_id, new_hero_index, hero)
@@ -385,6 +386,7 @@ func FR3rd_init_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     assert boss.bear_from_boss = 0
     assert boss.damage_to_hero = 0
     assert boss.damage_to_boss = 0
+    assert boss.reward = 0
     FR3rd_combat_hero.write(combat_id, BOSS_INDEX, boss)
     return ()
 end
@@ -570,6 +572,7 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
                 hero.damage_to_boss,
                 hero.agility_next_hero,
                 hero.damage_to_boss_next_hero,
+                hero.reward,
             )
             tempvar syscall_ptr = syscall_ptr
             tempvar pedersen_ptr = pedersen_ptr
@@ -604,6 +607,7 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
             hero.damage_to_boss + damage,
             hero.agility_next_hero,
             hero.damage_to_boss_next_hero,
+            hero.reward,
         )
     else:
         FR3rd_base_update_hero(
@@ -616,6 +620,7 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
             hero.damage_to_boss,
             hero.agility_next_hero,
             hero.damage_to_boss_next_hero,
+            hero.reward,
         )
     end
     tempvar syscall_ptr = syscall_ptr
@@ -634,6 +639,7 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
                 opponent.damage_to_boss,
                 opponent.agility_next_hero,
                 opponent.damage_to_boss_next_hero,
+                opponent.reward,
             )
         else:
             FR3rd_base_update_hero(
@@ -646,6 +652,7 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
                 opponent.damage_to_boss,
                 opponent.agility_next_hero,
                 opponent.damage_to_boss_next_hero,
+                opponent.reward,
             )
         end
     else:
@@ -660,6 +667,7 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
                 opponent.damage_to_boss,
                 opponent.agility_next_hero,
                 opponent.damage_to_boss_next_hero,
+                opponent.reward,
             )
         else:
             FR3rd_base_update_hero(
@@ -672,6 +680,7 @@ func _combat_action_deal{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
                 opponent.damage_to_boss,
                 opponent.agility_next_hero,
                 opponent.damage_to_boss_next_hero,
+                opponent.reward,
             )
         end
     end
