@@ -42,7 +42,9 @@ from contracts.pvp.first_relic.constants import (
     PROP_CREATURE_DAMAGE_DOWN_30P,
     ACTION_RADIUS_A,
     ACTION_RADIUS_B,
-    get_relic_gate_key_ids
+    get_relic_gate_key_ids,
+    get_inner_coordinates,
+    get_outer_coordinates
 )
 from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_combat_counter,
@@ -708,10 +710,11 @@ func _fetch_outer_empty_coordinate{
         range_check_ptr
     }(combat_id: felt, seed: felt) -> (coordinate: Coordinate, next_seed: felt):
     alloc_locals
+
+    let (coordinates_len, coordinates) = get_outer_coordinates()
     
-    let (local x, local next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
-    let (local y, local next_seed) = get_random_number_and_seed(next_seed, MAP_HEIGHT)
-    local coordinate: Coordinate = Coordinate(x=x, y=y)
+    let (local index, local next_seed) = get_random_number_and_seed(seed, coordinates_len)
+    local coordinate: Coordinate = coordinates[index]
     let (chest) = FirstRelicCombat_chests.read(combat_id, coordinate)
     let (ore) = FirstRelicCombat_ores.read(combat_id, coordinate)
     let exist = chest.coordinate.x * chest.coordinate.y * ore.total_supply
@@ -899,15 +902,15 @@ func _fetch_relic_gate_coordinate{
     }(combat_id: felt, seed: felt) -> (coordinate: Coordinate, next_seed: felt):
     alloc_locals
     
-    let (local x, local next_seed) = get_random_number_and_seed(seed, MAP_WIDTH)
-    let (local y, local next_seed) = get_random_number_and_seed(next_seed, MAP_HEIGHT)
-    local coordinate: Coordinate = Coordinate(x=x, y=y)
-    let (chest) = FirstRelicCombat_chests.read(combat_id, coordinate)
-    let (ore) = FirstRelicCombat_ores.read(combat_id, coordinate)
+    let (coordinates_len, coordinates) = get_inner_coordinates()
+    let (local index, local next_seed) = get_random_number_and_seed(seed, coordinates_len)
+    local coordinate: Coordinate = coordinates[index]
+    # let (chest) = FirstRelicCombat_chests.read(combat_id, coordinate)
+    # let (ore) = FirstRelicCombat_ores.read(combat_id, coordinate)
     let (number) = FirstRelicCombat_relic_gate_number_by_coordinate.read(combat_id, coordinate)
-    let exist = chest.coordinate.x * chest.coordinate.y * ore.total_supply * number
+    let exist = number
     if exist != 0:
-        let (local coordinate, local next_seed) = _fetch_outer_empty_coordinate(combat_id, next_seed)
+        let (local coordinate, local next_seed) = _fetch_relic_gate_coordinate(combat_id, next_seed)
         return (coordinate, next_seed)
     end
 

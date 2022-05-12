@@ -37,7 +37,8 @@ from contracts.pvp.first_relic.constants import (
     KOMA_ATK,
     KOMA_DEFENSE,
     WORKER_MINING_SPEED,
-    get_outer_coordinate_ranges
+    get_outer_coordinate_ranges,
+    get_outer_coordinates
 )
 from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_combats,
@@ -140,7 +141,7 @@ func FirstRelicCombat_init_player{
     let koma = Koma(
         account=account, coordinate=coordinate, status=KOMA_STATUS_STATIC, health=100, max_health=100, agility=7,
         move_speed=KOMA_MOVING_SPEED, props_weight=0, props_max_weight=1000, workers_count=3, mining_workers_count=0,
-        drones_count=3, action_radius=5, element=0, ore_amount=0, atk=KOMA_ATK, defense=KOMA_DEFENSE, worker_mining_speed=WORKER_MINING_SPEED
+        drones_count=3, action_radius=5, element=0, ore_amount=10000000, atk=KOMA_ATK, defense=KOMA_DEFENSE, worker_mining_speed=WORKER_MINING_SPEED
     )
 
 
@@ -189,20 +190,9 @@ func _fetch_outer_non_player_coordinate{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, seed: felt) -> (coordinate: Coordinate, next_seed: felt):
-
-    let (ranges_len, ranges) = get_outer_coordinate_ranges()
-    let (index, next_seed) = get_random_number_and_seed(seed, ranges_len)
-    let range = ranges[index]
-    
-    let x_offset = range.x1 - range.x0
-    let (x_random, next_seed) = get_random_number_and_seed(next_seed, x_offset)
-    let x = x_random + range.x0
-
-    let y_offset = range.y1 - range.y0
-    let (y_random, next_seed) = get_random_number_and_seed(next_seed, y_offset)
-    let y = y_random + range.y0
-    
-    let coordinate = Coordinate(x=x, y=y)
+    let (coordinates_len, coordinates) = get_outer_coordinates()
+    let (index, next_seed) = get_random_number_and_seed(seed, coordinates_len)
+    let coordinate = coordinates[index]
 
     return (coordinate, next_seed)
 end
