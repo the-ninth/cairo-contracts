@@ -61,7 +61,7 @@ from contracts.pvp.first_relic.third_stage.base.constants import (
 func Demo1(step : felt, info : felt, step1 : felt, info1 : felt):
 end
 
-from contracts.pvp.first_relic.structs import Koma, Prop
+from contracts.pvp.first_relic.structs import Koma, Prop,Combat as Combat_1st
 
 from contracts.pvp.first_relic.IFirstRelicCombat import IFirstRelicCombat
 
@@ -534,4 +534,15 @@ func FR3rd_base_get_prop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
         contract_address=contract_address, combat_id=combat_id, prop_id=prop_id
     )
     return (owner=res[0], prop=res[1])
+end
+
+
+func FR3rd_base_get_1st_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    combat_id : felt
+) -> (combat : Combat_1st):
+    let (contract_address) = FR3rd_combat_1st_address.read()
+    let (combat) = IFirstRelicCombat.getCombat(
+        contract_address=contract_address, combat_id=combat_id
+    )
+    return (combat=combat)
 end

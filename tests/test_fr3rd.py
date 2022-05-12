@@ -66,7 +66,6 @@ async def test_market():
     frboss_contract = await starknet.deploy(Proxy_CONTRACT_FILE, constructor_calldata=[implementation_contract.contract_address])
     mock_contract = await starknet.deploy(COMBAT_MOCK, constructor_calldata=[])
 
-    print(await mock_contract.demo().call())
 
     print('-----------')
 
@@ -159,7 +158,6 @@ async def test_market():
                 tx = await signer.send_transaction(
                     heros[i], frboss_contract.contract_address, 'action', [0, j, i+1 ,1,target]
                 )
-                print(await mock_contract.demo().call())
         print(tx.raw_events)
         print('action end ',time.time())
         execution_info = await frboss_contract.getCombatInfoById(0,0).call()

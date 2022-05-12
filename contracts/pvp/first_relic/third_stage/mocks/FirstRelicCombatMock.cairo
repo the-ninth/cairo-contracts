@@ -5,6 +5,7 @@ from contracts.pvp.first_relic.structs import (
     Koma,
     Prop,
     Coordinate,
+    Combat,
 )
 from contracts.pvp.first_relic.third_stage.base.FR3rdBaseLibrary import (
     FR3rd_base_random
@@ -103,7 +104,26 @@ func mintItem{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id : felt,account:felt,type : felt,hero_index:felt, index : felt) -> ():
-    let prop_id =type + (hero_index*100)+index
+    let prop_id =type*1000 + (hero_index*100)+index
     FR3rd_mock_props.write(combat_id,prop_id,(account,Prop(prop_id,type,0,0)))
     return ()
+end
+
+@view
+func getCombat{
+        syscall_ptr : felt*,
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt) -> (combat: Combat):
+    alloc_locals
+    let (timestamp) = get_block_timestamp()
+    local combat : Combat
+    assert combat.prepare_time= 0
+    assert combat.first_stage_time= 0
+    assert combat.second_stage_time= 0
+    assert combat.third_stage_time= timestamp
+    assert combat.end_time= 0
+    assert combat.expire_time= 0
+    assert combat.status= 0
+    return (combat)
 end

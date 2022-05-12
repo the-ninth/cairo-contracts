@@ -94,6 +94,7 @@ from contracts.pvp.first_relic.third_stage.base.FR3rdBaseLibrary import (
     FR3rd_base_sort_by_agility_loop,
     FR3rd_base_find_surviving_loop,
     FR3rd_base_is_round_end,
+    FR3rd_base_get_1st_combat,
 )
 
 #
@@ -358,6 +359,7 @@ func FR3rd_init_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     let (meta_id) = FR3rd_cur_combat_meta.read()
     let (boss_id) = FR3rd_cur_boss_meta.read()
     let (combat_meta) = FR3rd_combat_meta.read(meta_id)
+    let (combat1st) = FR3rd_base_get_1st_combat(combat_id)
 
     local combat : Combat
     assert combat.combat_id = combat_id
@@ -369,8 +371,8 @@ func FR3rd_init_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
     assert combat.cur_hero_count = 0
     assert combat.agility_1st = 0
     assert combat.damage_to_boss_1st = 1
-    assert combat.start_time = block_timestamp
-    assert combat.last_round_time = block_timestamp
+    assert combat.start_time = combat1st.third_stage_time
+    assert combat.last_round_time = combat1st.third_stage_time
     assert combat.end_info = 0
     FR3rd_combat.write(combat_id, combat)
 
@@ -421,6 +423,19 @@ func FR3rd_submit_action{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
         return ()
     end
 
+    # time
+    let (combat) = FR3rd_combat.read(combat_id)
+    let (block_timestamp) = get_block_timestamp()
+    let (is_l) = is_le(combat.start_time,block_timestamp)
+    if is_l == FALSE:
+        return()
+    end
+
+    # round_id
+    if round_id!=combat.round:
+        return()
+    end
+
     # check no action
     let (action) = FR3rd_action.read(combat_id, round_id, hero_index)
     with_attr error_message("FR3rd_action: already action "):
@@ -434,7 +449,6 @@ func FR3rd_submit_action{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     assert new_action.damage = 0
     FR3rd_action.write(combat_id, round_id, hero_index, new_action)
 
-    let (combat) = FR3rd_combat.read(combat_id)
     FR3rd_base_update_combat(
         combat_id=combat_id,
         round=combat.round,
