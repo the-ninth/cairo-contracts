@@ -51,6 +51,7 @@ from contracts.pvp.first_relic.storages import (
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma_actual_coordinate
 from contracts.util.math import max, min, in_on_oval
+from contracts.util.array import felt_in_array
 from contracts.util.random import get_random_number_and_seed
 
 
@@ -59,6 +60,8 @@ func FirstRelicCombat_open_chest{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, target: Coordinate):
+    alloc_locals
+
     let (chest) = FirstRelicCombat_chests.read(combat_id, target)
     with_attr error_message("FirstRelicCombat: invalid chest"):
         assert_not_zero(chest.coordinate.x * chest.coordinate.y)
@@ -70,12 +73,14 @@ func FirstRelicCombat_open_chest{
     # write options to storage
     let (props_pool_len, props_pool) = get_props_pool()
     let (block_timestamp) = get_block_timestamp()
-    let (index1, next_seed) = get_random_number_and_seed(block_timestamp * account, props_pool_len)
-    let (index2, next_seed) = get_random_number_and_seed(next_seed, props_pool_len)
-    let (index3, _) = get_random_number_and_seed(next_seed, props_pool_len)
-    FirstRelicCombat_chest_options.write(combat_id, target, 1, props_pool[index1])
-    FirstRelicCombat_chest_options.write(combat_id, target, 2, props_pool[index2])
-    FirstRelicCombat_chest_options.write(combat_id, target, 3, props_pool[index3])
+    let (local options: felt*) = alloc()
+    _generate_chest_options(block_timestamp * account, 0, options, props_pool_len)
+    # let (index1, next_seed) = get_random_number_and_seed(, props_pool_len)
+    # let (index2, next_seed) = get_random_number_and_seed(next_seed, props_pool_len)
+    # let (index3, _) = get_random_number_and_seed(next_seed, props_pool_len)
+    FirstRelicCombat_chest_options.write(combat_id, target, 1, props_pool[options[0]])
+    FirstRelicCombat_chest_options.write(combat_id, target, 2, props_pool[options[1]])
+    FirstRelicCombat_chest_options.write(combat_id, target, 3, props_pool[options[2]])
     let chest_updated = Chest(coordinate=target, opener=account, option_selected=0)
     FirstRelicCombat_chests.write(combat_id, target, chest_updated)
 
@@ -534,4 +539,23 @@ func _get_koma_prop_effect_creature_ids{
 
     _get_koma_prop_effect_creature_ids(combat_id, account, index + 1, len, data)
     return ()
+end
+
+func _generate_chest_options{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(random_seed: felt, options_len: felt, options: felt*, props_pool_len: felt) -> (next_seed: felt):
+    alloc_locals
+
+    if options_len == 3:
+        return (random_seed)
+    end
+    let (index, next_seed) = get_random_number_and_seed(random_seed, props_pool_len)
+    let (res) = felt_in_array(index, options_len, options)
+    if res == TRUE:
+        return _generate_chest_options(next_seed, options_len, options, props_pool_len)
+    end
+    assert options[options_len] = index
+    return _generate_chest_options(next_seed, options_len + 1, options, props_pool_len)
 end
