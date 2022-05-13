@@ -859,7 +859,13 @@ func _clear_mining_ores{
     let ore_mined_amount = ore.mining_workers_count * (end_time - ore.start_time) * WORKER_MINING_SPEED + ore.mined_supply
     let remaining_amount = ore.total_supply - ore_mined_amount
     let mining_workers_count = ore.mining_workers_count - mining_ore.mining_workers_count
-    let (empty_time_need, _) = unsigned_div_rem(remaining_amount, mining_workers_count * WORKER_MINING_SPEED)
+    local empty_time_need
+    if mining_workers_count == 0:
+        empty_time_need = 0
+    else:
+        let (q, _) = unsigned_div_rem(remaining_amount, mining_workers_count * WORKER_MINING_SPEED)
+        empty_time_need = q
+    end
     let empty_time = block_timestamp + empty_time_need + 1
     let ore_updated = Ore(
         coordinate=ore.coordinate,
