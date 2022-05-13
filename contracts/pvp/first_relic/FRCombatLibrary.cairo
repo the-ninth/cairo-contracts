@@ -673,8 +673,8 @@ func _init_chests{
         return (seed)
     end
     let (coordinate, next_seed) = _fetch_outer_empty_coordinate(combat_id, seed)
-    let chest = Chest(coordinate=coordinate, opener=0, option_selected=0)
     let (chest_len) = FirstRelicCombat_chest_coordinates_len.read(combat_id)
+    let chest = Chest(coordinate=coordinate, opener=0, option_selected=0, id=chest_len+1)
     FirstRelicCombat_chests.write(combat_id, coordinate, chest)
     FirstRelicCombat_chest_coordinate_by_index.write(combat_id, chest_len, coordinate)
     FirstRelicCombat_chest_coordinates_len.write(combat_id, chest_len + 1)

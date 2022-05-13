@@ -61,6 +61,7 @@ struct Chest:
     member coordinate: Coordinate
     member opener: felt
     member option_selected: felt # based on 1
+    member id: felt
 end
 
 struct Prop:

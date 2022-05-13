@@ -64,7 +64,7 @@ func FirstRelicCombat_open_chest{
 
     let (chest) = FirstRelicCombat_chests.read(combat_id, target)
     with_attr error_message("FirstRelicCombat: invalid chest"):
-        assert_not_zero(chest.coordinate.x * chest.coordinate.y)
+        assert_not_zero(chest.id)
     end
     with_attr error_message("FirstRelicCombat: chest opened"):
         assert chest.opener = 0
@@ -81,7 +81,7 @@ func FirstRelicCombat_open_chest{
     FirstRelicCombat_chest_options.write(combat_id, target, 1, props_pool[options[0]])
     FirstRelicCombat_chest_options.write(combat_id, target, 2, props_pool[options[1]])
     FirstRelicCombat_chest_options.write(combat_id, target, 3, props_pool[options[2]])
-    let chest_updated = Chest(coordinate=target, opener=account, option_selected=0)
+    let chest_updated = Chest(coordinate=target, opener=account, option_selected=0, id=chest.id)
     FirstRelicCombat_chests.write(combat_id, target, chest_updated)
 
     return ()
@@ -101,8 +101,8 @@ func FirstRelicCombat_get_chest_options{
 
     let (local options: felt*) = alloc()
     let (option1) = FirstRelicCombat_chest_options.read(combat_id, target, 1)
-    let (option2) = FirstRelicCombat_chest_options.read(combat_id, target, 1)
-    let (option3) = FirstRelicCombat_chest_options.read(combat_id, target, 1)
+    let (option2) = FirstRelicCombat_chest_options.read(combat_id, target, 2)
+    let (option3) = FirstRelicCombat_chest_options.read(combat_id, target, 3)
     assert options[0] = option1
     assert options[1] = option2
     assert options[2] = option3
@@ -125,7 +125,7 @@ func FirstRelicCombat_select_chest_option{
         assert chest.option_selected = 0
     end
 
-    let chest_updated = Chest(chest.coordinate, chest.opener, option)
+    let chest_updated = Chest(chest.coordinate, chest.opener, option, chest.id)
     let (selected_prop_creature_id) = FirstRelicCombat_chest_options.read(combat_id, target, option)
     with_attr error_message("FirstRelicCombat: invalid chest option"):
         assert_lt_felt(0, selected_prop_creature_id)
