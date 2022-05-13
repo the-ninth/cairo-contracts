@@ -209,7 +209,7 @@ func FirstRelicCombat_mine_ore{
 
     let mining_workers_count = ore.mining_workers_count + workers_count
     let (empty_time_need, _) = unsigned_div_rem(remaining, mining_workers_count * koma.worker_mining_speed)
-    let empty_time = block_timestamp + empty_time_need + 1
+    let empty_time = block_timestamp + empty_time_need
     let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply, mining_workers_count, block_timestamp, empty_time)
 
     let new_koma = Koma(
@@ -294,8 +294,8 @@ func FirstRelicCombat_produce_bot{
     alloc_locals
 
     let (koma) = FirstRelicCombat_komas.read(combat_id, account)
-    let bots_count = koma.workers_count + koma.drones_count + quantity
-    let (ore_required, _) = unsigned_div_rem(bots_count * (bots_count + 1) * 1000, 2)
+    let bots_count = koma.workers_count + koma.drones_count
+    let (ore_required) = _get_produce_bot_required_ore_amount(bots_count, quantity, 0)
     with_attr error_message("FirstRelicCombat: insufficient ores"):
         assert_le_felt(ore_required, koma.ore_amount)
     end
@@ -983,4 +983,18 @@ func _use_prop_effect_damage_down{
     else:
         return (damage)
     end
+end
+
+func _get_produce_bot_required_ore_amount{
+        range_check_ptr
+    }(quantity_now: felt, quantity_produce: felt, ore_amount: felt) -> (ore_amount: felt):
+    assert_le_felt(quantity_now, quantity_produce + quantity_now)
+    if quantity_produce == 0:
+        return (ore_amount)
+    end
+
+    let bots_count = quantity_now + 1
+    let (ore_required, _) = unsigned_div_rem(bots_count * (bots_count + 1) * 1000, 2)
+
+    return _get_produce_bot_required_ore_amount(quantity_now + 1, quantity_produce - 1, ore_amount + ore_required)
 end

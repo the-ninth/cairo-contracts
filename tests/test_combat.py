@@ -97,7 +97,7 @@ async def test_player_move(contract_factory):
     await signer.send_transaction(player2, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
     await signer.send_transaction(player1, fr_combat_register_contract.contract_address, "register", [1])
     await signer.send_transaction(player2, fr_combat_register_contract.contract_address, "register", [1])
-    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + PREPARE_TIME + 3000)
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + PREPARE_TIME + 600)
     await signer.send_transaction(player1, fr_combat_contract.contract_address, "move", [1, player1.contract_address, MOVE_TO["x"], MOVE_TO["y"]])
     
     execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
@@ -134,6 +134,13 @@ async def test_mine_ore(contract_factory):
     execution_info = await fr_combat_contract.getKomaMiningOres(1, player1.contract_address).call()
     mining_ores = execution_info.result.mining_ores
     assert len(mining_ores) == 1
+
+    execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
+    print(execution_info.result.koma)
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + 86400)
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "recallWorkers", [1, player1.contract_address, *ores[0].coordinate, 3])
+    execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
+    print(execution_info.result.koma)
 
 @pytest.mark.asyncio
 async def test_produce_bot(contract_factory):
