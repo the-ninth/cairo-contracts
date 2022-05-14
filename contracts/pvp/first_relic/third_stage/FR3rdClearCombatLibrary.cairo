@@ -101,14 +101,14 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     let (boss) = FR3rd_combat_hero.read(combat_id, 0)
 
     if boss.health == 0:
-        FR3rd_reward_boss_dead(combat_id)
+        FR3rd_reward_living(combat_id)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr
         tempvar range_check_ptr = range_check_ptr
         let (combat) = FR3rd_combat.read(combat_id)
         FR3rd_base_update_combat(
             combat_id=combat_id,
-            round=combat.round,
+            round=combat.round + 1,
             action_count=combat.action_count,
             agility_1st=combat.agility_1st,
             damage_to_boss_1st=combat.damage_to_boss_1st,
@@ -123,11 +123,11 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     # if all hreo dead
     let (combat) = FR3rd_combat.read(combat_id)
     if combat.cur_hero_count == 0:
-        FR3rd_reward_hero_dead(combat_id)
+        FR3rd_reward_by_damage(combat_id)
         let (combat) = FR3rd_combat.read(combat_id)
         FR3rd_base_update_combat(
             combat_id=combat_id,
-            round=combat.round,
+            round=combat.round + 1,
             action_count=combat.action_count,
             agility_1st=combat.agility_1st,
             damage_to_boss_1st=combat.damage_to_boss_1st,
@@ -143,43 +143,37 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
     let (is_last) = FR3rd_base_is_last_round(combat_id)
 
     # not end
-    if (1 - is_end) * (1 - is_last) == TRUE:
+    if is_end * is_last == FALSE:
         return (FALSE)
     end
 
-    if boss.bear_from_hero == 0:
-        # no reward
-        let (combat) = FR3rd_combat.read(combat_id)
-        FR3rd_base_update_combat(
-            combat_id=combat_id,
-            round=combat.round,
-            action_count=combat.action_count,
-            agility_1st=combat.agility_1st,
-            damage_to_boss_1st=combat.damage_to_boss_1st,
-            cur_hero_count=combat.cur_hero_count,
-            init_hero_count=combat.init_hero_count,
-            last_round_time=combat.last_round_time,
-            end_info=4,
-        )
+    let (has_damage) = is_le(1, boss.bear_from_hero)
+    if has_damage == TRUE:
+        FR3rd_reward_by_damage(combat_id)
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
     else:
-        FR3rd_reward_hero_dead(combat_id)
-        let (combat) = FR3rd_combat.read(combat_id)
-        FR3rd_base_update_combat(
-            combat_id=combat_id,
-            round=combat.round,
-            action_count=combat.action_count,
-            agility_1st=combat.agility_1st,
-            damage_to_boss_1st=combat.damage_to_boss_1st,
-            cur_hero_count=combat.cur_hero_count,
-            init_hero_count=combat.init_hero_count,
-            last_round_time=combat.last_round_time,
-            end_info=3,
-        )
+        tempvar syscall_ptr = syscall_ptr
+        tempvar pedersen_ptr = pedersen_ptr
+        tempvar range_check_ptr = range_check_ptr
     end
+    let (combat) = FR3rd_combat.read(combat_id)
+    FR3rd_base_update_combat(
+        combat_id=combat_id,
+        round=combat.round + 1,
+        action_count=combat.action_count,
+        agility_1st=combat.agility_1st,
+        damage_to_boss_1st=combat.damage_to_boss_1st,
+        cur_hero_count=combat.cur_hero_count,
+        init_hero_count=combat.init_hero_count,
+        last_round_time=combat.last_round_time,
+        end_info=3,
+    )
     return (TRUE)
 end
 
-func FR3rd_reward_hero_dead{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func FR3rd_reward_by_damage{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt
 ) -> ():
     alloc_locals
@@ -206,7 +200,7 @@ func FR3rd_reward_hero_dead{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
 end
 
 # boss dead
-func FR3rd_reward_boss_dead{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+func FR3rd_reward_living{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt
 ) -> ():
     alloc_locals
@@ -268,17 +262,17 @@ func FR3rd_reward_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
         contract_address=contract_address, recipient=hero.address, amount=uint256Amount
     )
     FR3rd_base_update_hero(
-            combat_id,
-            [hero_indexs],
-            hero.health,
-            hero.bear_from_hero,
-            hero.bear_from_boss,
-            hero.damage_to_hero,
-            hero.damage_to_boss,
-            hero.agility_next_hero,
-            hero.damage_to_boss_next_hero,
-            amount,
-        )
+        combat_id,
+        [hero_indexs],
+        hero.health,
+        hero.bear_from_hero,
+        hero.bear_from_boss,
+        hero.damage_to_hero,
+        hero.damage_to_boss,
+        hero.agility_next_hero,
+        hero.damage_to_boss_next_hero,
+        amount,
+    )
     FR3rd_reward_loop(combat_id, amount, hero_indexs + 1, left - 1)
     return ()
 end

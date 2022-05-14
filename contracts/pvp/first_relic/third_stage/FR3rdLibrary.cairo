@@ -426,14 +426,14 @@ func FR3rd_submit_action{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range
     # time
     let (combat) = FR3rd_combat.read(combat_id)
     let (block_timestamp) = get_block_timestamp()
-    let (is_l) = is_le(combat.start_time,block_timestamp)
+    let (is_l) = is_le(combat.start_time, block_timestamp)
     if is_l == FALSE:
-        return()
+        return ()
     end
 
     # round_id
-    if round_id!=combat.round:
-        return()
+    if round_id != combat.round:
+        return ()
     end
 
     # check no action
