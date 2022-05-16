@@ -86,6 +86,7 @@ from contracts.pvp.first_relic.FRPropLibrary import (
 from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore, LazyUpdate_update_koma_mining
 from contracts.pvp.first_relic.IFirstRelicCombat import PlayerDeath
 from contracts.pvp.first_relic.third_stage.interfaces.IFR3rd import IFR3rd
+from contracts.proxy.two_step_upgrade.library import TwoStepUpgradeProxy
 
 
 const RANDOM_TYPE_COMBAT_INIT = 1
@@ -102,8 +103,8 @@ end
 func random_request_combat_init(request_id: felt) -> (combat_id: felt):
 end
 
-@constructor
-func constructor{
+@external
+func initialize{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
@@ -111,7 +112,18 @@ func constructor{
         access_contract_: felt
     ):
     access_contract.write(access_contract_)
+    TwoStepUpgradeProxy.constructor()
     return ()
+end
+
+@view
+func accessContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (access_contract_address: felt):
+    let (access_contract_address) = access_contract.read()
+    return (access_contract_address)
 end
 
 @view
