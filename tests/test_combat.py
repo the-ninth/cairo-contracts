@@ -20,9 +20,12 @@ signer = Signer(123456789)
 COMBAT_STATUS_REGISTERING = 1
 COMBAT_STATUS_PREPARING = 2
 COMBAT_STATUS_FIRST_STAGE = 3
+COMBAT_STATUS_SECOND_STAGE = 4
 KOMA_STATUS_STATIC = 1
 KOMA_STATUS_MOVING = 2
 PREPARE_TIME = 300
+WORKERS_COUNT = 3
+DRONES_COUNT = 3
 MOVE_TO = {"x": 50, "y": 60}
 
 
@@ -94,7 +97,7 @@ async def test_player_move(contract_factory):
     await signer.send_transaction(player2, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
     await signer.send_transaction(player1, fr_combat_register_contract.contract_address, "register", [1])
     await signer.send_transaction(player2, fr_combat_register_contract.contract_address, "register", [1])
-    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + PREPARE_TIME + 1)
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + PREPARE_TIME + 600)
     await signer.send_transaction(player1, fr_combat_contract.contract_address, "move", [1, player1.contract_address, MOVE_TO["x"], MOVE_TO["y"]])
     
     execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
@@ -102,7 +105,7 @@ async def test_player_move(contract_factory):
     print(execution_info.result.koma)
 
     execution_info = await fr_combat_contract.getCombat(1).call()
-    assert execution_info.result.combat.status == COMBAT_STATUS_FIRST_STAGE
+    assert execution_info.result.combat.status == COMBAT_STATUS_SECOND_STAGE
 
     execution_info = await fr_combat_contract.getKomasMovments(1, [player1.contract_address]).call()
     movment = execution_info.result.movments[0]
@@ -110,6 +113,87 @@ async def test_player_move(contract_factory):
     assert movment.to.y == MOVE_TO["y"]
     print(movment)
 
+
+@pytest.mark.asyncio
+async def test_mine_ore(contract_factory):
+    """test player move"""
+    starknet, account_contract, _, fr_combat_contract, fr_combat_register_contract, _, ninth_contract = contract_factory
+    await signer.send_transaction(account_contract, fr_combat_contract.contract_address, "newCombat", [])
+    player1 = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    player2 = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    await signer.send_transaction(account_contract, ninth_contract.contract_address, "transfer", [player1.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(account_contract, ninth_contract.contract_address, "transfer", [player2.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player1, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player2, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player1, fr_combat_register_contract.contract_address, "register", [1])
+    await signer.send_transaction(player2, fr_combat_register_contract.contract_address, "register", [1])
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + PREPARE_TIME + 1)
+    execution_info = await fr_combat_contract.getOres(1, 0, 5).call()
+    ores = execution_info.result.ores
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "mineOre", [1, player1.contract_address, *ores[0].coordinate, 3])
+    execution_info = await fr_combat_contract.getKomaMiningOres(1, player1.contract_address).call()
+    mining_ores = execution_info.result.mining_ores
+    assert len(mining_ores) == 1
+
+    execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
+    print(execution_info.result.koma)
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + 86400)
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "recallWorkers", [1, player1.contract_address, *ores[0].coordinate, 3])
+    execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
+    print(execution_info.result.koma)
+
+@pytest.mark.asyncio
+async def test_produce_bot(contract_factory):
+    """test player move"""
+    starknet, account_contract, _, fr_combat_contract, fr_combat_register_contract, _, ninth_contract = contract_factory
+    await signer.send_transaction(account_contract, fr_combat_contract.contract_address, "newCombat", [])
+    player1 = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    player2 = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    await signer.send_transaction(account_contract, ninth_contract.contract_address, "transfer", [player1.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(account_contract, ninth_contract.contract_address, "transfer", [player2.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player1, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player2, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player1, fr_combat_register_contract.contract_address, "register", [1])
+    await signer.send_transaction(player2, fr_combat_register_contract.contract_address, "register", [1])
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + PREPARE_TIME + 1)
+    execution_info = await fr_combat_contract.getOres(1, 0, 5).call()
+    ores = execution_info.result.ores
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "mineOre", [1, player1.contract_address, *ores[0].coordinate, 3])
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + 600)
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "produceBot", [1, player1.contract_address, 1, 1])
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "produceBot", [1, player1.contract_address, 2, 1])
+    execution_info = await fr_combat_contract.getKoma(1, player1.contract_address).call()
+    koma = execution_info.result.koma
+    assert koma.workers_count == WORKERS_COUNT + 1
+    assert koma.drones_count == DRONES_COUNT + 1
+
+@pytest.mark.asyncio
+async def test_chest(contract_factory):
+    """test player move"""
+    starknet, account_contract, _, fr_combat_contract, fr_combat_register_contract, _, ninth_contract = contract_factory
+    await signer.send_transaction(account_contract, fr_combat_contract.contract_address, "newCombat", [])
+    player1 = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    player2 = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
+    await signer.send_transaction(account_contract, ninth_contract.contract_address, "transfer", [player1.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(account_contract, ninth_contract.contract_address, "transfer", [player2.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player1, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player2, ninth_contract.contract_address, "approve", [fr_combat_register_contract.contract_address, *to_uint(10000000000000000000)])
+    await signer.send_transaction(player1, fr_combat_register_contract.contract_address, "register", [1])
+    await signer.send_transaction(player2, fr_combat_register_contract.contract_address, "register", [1])
+    starknet.state.state.block_info = BlockInfo.create_for_testing(starknet.state.state.block_info.block_number, starknet.state.state.block_info.block_timestamp + PREPARE_TIME + 1)
+    execution_info = await fr_combat_contract.getChests(1, 0, 5).call()
+    chests = execution_info.result.data
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "openChest", [1, player1.contract_address, *chests[0].coordinate])
+    execution_info = await fr_combat_contract.getChestOptions(1, chests[0].coordinate).call()
+    options = execution_info.result.options
+    assert len(options) == 3
+    print(options)
+
+    await signer.send_transaction(player1, fr_combat_contract.contract_address, "selectChestOption", [1, player1.contract_address, *chests[0].coordinate, 2])
+    execution_info = await fr_combat_contract.getKomaProps(1, player1.contract_address).call()
+    player1_props = execution_info.result.koma_props
+    print(player1_props)
+    assert options[1] == player1_props[0].prop_creature_id
 
 
 @pytest.fixture

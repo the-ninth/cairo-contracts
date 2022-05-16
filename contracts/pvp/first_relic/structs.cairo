@@ -11,11 +11,8 @@ const COMBAT_STATUS_END = 6
 const KOMA_STATUS_STATIC = 1
 const KOMA_STATUS_MOVING = 2
 const KOMA_STATUS_MINING = 3
-const KOMA_STATUS_DEAD = 4
-
-const CHEST_TYPE_LIVE = 1
-const CHEST_TYPE_EQUIP = 2
-const CHEST_TYPE_CRYSTAL = 3
+const KOMA_STATUS_THIRD_STAGE = 4
+const KOMA_STATUS_DEAD = 5
 
 struct Combat:
     member prepare_time: felt
@@ -33,6 +30,7 @@ struct Coordinate:
 end
 
 struct Koma:
+    member account: felt
     member coordinate: Coordinate
     member status: felt
     member health: felt
@@ -42,10 +40,14 @@ struct Koma:
     member props_weight: felt
     member props_max_weight: felt
     member workers_count: felt
-    member working_workers_count: felt
+    member mining_workers_count: felt
     member drones_count: felt
     member action_radius: felt
     member element: felt
+    member ore_amount: felt
+    member atk: felt
+    member defense: felt
+    member worker_mining_speed: felt
 end
 
 struct KomaEquip:
@@ -57,20 +59,31 @@ end
 
 struct Chest:
     member coordinate: Coordinate
-    member chest_type: felt
+    member opener: felt
+    member option_selected: felt # based on 1
+    member id: felt
 end
 
 struct Prop:
     member prop_id: felt
-    member prop_category: felt
     member prop_creature_id: felt
-    member prop_weight: felt
+    member used_timetamp: felt
+    member index_in_koma_props: felt
+end
+
+struct PropEffect:
+    member prop_creature_id: felt
+    member index_in_koma_effects: felt
+    member used_timetamp: felt
 end
 
 struct Ore:
+    member coordinate: Coordinate
     member total_supply: felt
     member mined_supply: felt
     member mining_workers_count: felt
+    member start_time: felt
+    member empty_time: felt
 end
 
 struct Boss:
@@ -89,7 +102,36 @@ struct ThirdStageAction:
 end
 
 struct Movment:
+    member from_: Coordinate
     member to: Coordinate
     member start_time: felt # timestamp starting to move
     member reach_time: felt # timestamp reaching the target location
+end
+
+struct KomaMiningOre:
+    member coordinate: Coordinate
+    member mining_workers_count: felt
+    member start_time: felt
+end
+
+struct KomaEquipments:
+    member account: felt
+    member engine: Prop
+    member shoe: Prop
+    member weapon: Prop
+    member armor: Prop
+end
+
+struct RelicGate:
+    member coordinate: Coordinate
+    member number: felt
+    member require_creature_id: felt
+    member account: felt
+end
+
+struct CoordinateRange:
+    member x0: felt
+    member x1: felt
+    member y0: felt
+    member y1: felt
 end

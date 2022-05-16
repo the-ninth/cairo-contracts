@@ -68,6 +68,10 @@ end
 func AccessControl_delegate_account_registry_contract() -> (res: felt):
 end
 
+@storage_var
+func AccessControl_fr_3rd_boss_contract() -> (res: felt):
+end
+
 #
 # View
 #
@@ -172,6 +176,16 @@ func delegateAccountRegistryContract{
     return (addr)
 end
 
+@view
+func fr3RdBossContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (contract: felt):
+    let (addr) = AccessControl_fr_3rd_boss_contract.read()
+    return (addr)
+end
+
 #
 # external
 #
@@ -272,6 +286,17 @@ func setDelegateAccountRegistryContract{
     }(contract: felt):
     AccessControl_only_super_admin()
     AccessControl_delegate_account_registry_contract.write(contract)
+    return ()
+end
+
+@external
+func setFr3RdBossContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(contract: felt):
+    AccessControl_only_super_admin()
+    AccessControl_fr_3rd_boss_contract.write(contract)
     return ()
 end
 

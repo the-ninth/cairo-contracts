@@ -2,7 +2,19 @@
 
 # combat for first relic
 
-from contracts.pvp.first_relic.structs import Combat, Chest, Coordinate, Koma, Ore, ThirdStageAction, Movment
+from contracts.pvp.first_relic.structs import (
+    Combat,
+    Chest,
+    Coordinate,
+    Koma,
+    KomaEquipments,
+    KomaMiningOre,
+    Movment,
+    Ore,
+    Prop,
+    RelicGate,
+    ThirdStageAction
+)
 
 @contract_interface
 namespace IFirstRelicCombat:
@@ -66,22 +78,37 @@ namespace IFirstRelicCombat:
     func openChest(combat_id: felt, account: felt, target: Coordinate):
     end
 
+    func selectChestOption(combat_id: felt, account: felt, target: Coordinate, option: felt):
+    end
+
     func mineOre(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
     end
 
-    func recallWorks(commbat_id: felt, account: felt, target: Coordinate):
+    func recallWorkers(commbat_id: felt, account: felt, target: Coordinate):
+    end
+
+    func produceBot(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
+    end
+
+    func getKomaMiningOres(combat_id: felt, account: felt) -> (mining_ores_len: felt, mining_ores: KomaMiningOre*):
     end
 
     func attack(combat_id: felt, account: felt, target_account: felt):
     end
 
+    func getKomaProps(combat_id: felt, account: felt) -> (props_len: felt, props: Prop*):
+    end
+
+    func getProp(combat_id: felt, prop_id: felt) -> (res: (felt, Prop)):
+    end
+
+    func getKomaEquipments(combat_id: felt, account: felt) -> (equipments: KomaEquipments):
+    end
+
     func useProp(combat_id: felt, account: felt, prop_id: felt):
     end
 
-    func produceWorkers(combat_id: felt, account: felt, quantity: felt):
-    end
-
-    func produceDrones(combat_id: felt, account: felt, quantity: felt):
+    func equipProp(combat_id: felt, account: felt, prop_id: felt):
     end
 
     func getAccountActualCoordinate(account: felt) -> (coordinate: Coordinate):
@@ -92,7 +119,13 @@ namespace IFirstRelicCombat:
 
     # second stage
 
-    func enterRelicGate(account: felt, to: Coordinate):
+    func enterRelicGate(combat_id: felt, account: felt, to: Coordinate, prop_id: felt):
+    end
+
+    func getRelicGate(combat_id: felt, number: felt) -> (relic_gate: RelicGate):
+    end
+
+    func getRelicGates(combat_id: felt) -> (relic_gates_len: felt, relic_gates: RelicGate*):
     end
 
     # third stage
@@ -146,11 +179,11 @@ func PlayerArrival(combat_id: felt, account: felt, from_: Coordinate, to: Coordi
 end
 
 @event
-func PlayerAttack(combat_id: felt, account: felt, target_account: felt, hit_coordinate: felt):
+func PlayerAttack(combat_id: felt, account: felt, target_account: felt, damage: felt, koma_attacked_status: felt):
 end
 
 @event
-func PlayerDeath(combat_id: felt, account: felt, coordinate: felt):
+func PlayerDeath(combat_id: felt, account: felt):
 end
 
 @event

@@ -2,5 +2,15 @@ __pycache__/
 artifacts/
 .env
 venv/
+.venv
 localhost.accounts.json
 localhost.deployments.txt
+/node_modules/
+starknet-artifacts
+package-lock.json
+package.json
+.idea
+tsconfig.json
+script
+hardhat.config.ts
+.vscode
