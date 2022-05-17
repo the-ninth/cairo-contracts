@@ -119,7 +119,7 @@ func FirstRelicCombat_select_chest_option{
 
     let (chest) = FirstRelicCombat_chests.read(combat_id, target)
     with_attr error_message("FirstRelicCombat: invalid chest"):
-        assert_not_zero(chest.coordinate.x * chest.coordinate.y)
+        assert_not_zero(chest.id)
     end
     with_attr error_message("FirstRelicCombat: chest option selected"):
         assert chest.option_selected = 0
