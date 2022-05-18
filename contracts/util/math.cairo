@@ -1,7 +1,8 @@
 %lang starknet
 
 from starkware.cairo.common.bool import TRUE, FALSE
-from starkware.cairo.common.math import sign, unsigned_div_rem
+from starkware.cairo.common.math import abs_value, sign, unsigned_div_rem, assert_lt_felt
+from contracts.pvp.first_relic.structs import Coordinate
 
 func min{
         range_check_ptr
@@ -41,4 +42,46 @@ func in_on_oval{
     # else:
     #     return (TRUE)
     # end
+end
+
+# check if target in or on layer x out of p
+func in_on_layer{
+        range_check_ptr
+    }(p: Coordinate, target: Coordinate, layer: felt) -> (res: felt):
+    alloc_locals
+
+    assert_lt_felt(0, layer)
+    let (x_distance) = abs_value(p.x - target.x)
+    let (y_distance) = abs_value(p.y - target.y)
+    let (x_valid) = felt_le(x_distance, layer)
+    let (y_valid) = felt_le(y_distance, layer)
+    if x_valid * y_valid == 0:
+        return (FALSE)
+    else:
+        return (TRUE)
+    end
+end
+
+# check if a is lower than or equal to b
+func felt_le{
+        range_check_ptr
+    }(a: felt, b: felt) -> (res: felt):
+    let (res) = sign(a - b)
+    if res == 1:
+        return (FALSE)
+    else:
+        return (TRUE)
+    end
+end
+
+# check if a is lower than b
+func felt_lt{
+        range_check_ptr
+    }(a: felt, b: felt) -> (res: felt):
+    let res = sign(a - b)
+    if res == -1:
+        return (TRUE)
+    else:
+        return (FALSE)
+    end
 end

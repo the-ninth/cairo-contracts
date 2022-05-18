@@ -23,9 +23,7 @@ from contracts.pvp.first_relic.constants import (
     PROP_CREATURE_DRILL,
     PROP_CREATURE_ARMOR,
     PROP_WEIGHT_EQUIPMENTS,
-    PROP_WEIGHT_OTHERS,
-    ACTION_RADIUS_A,
-    ACTION_RADIUS_B
+    PROP_WEIGHT_OTHERS
 )
 from contracts.pvp.first_relic.structs import (
     Chest,
@@ -50,7 +48,7 @@ from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_koma_equipments
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma_actual_coordinate
-from contracts.util.math import max, min, in_on_oval
+from contracts.util.math import max, min, in_on_layer
 from contracts.util.array import felt_in_array
 from contracts.util.random import get_random_number_and_seed
 
@@ -139,7 +137,7 @@ func FirstRelicCombat_select_chest_option{
     end
 
     let (_, koma_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
-    let (in_range) = in_on_oval(koma_actual_at.x, koma_actual_at.y, chest.coordinate.x, chest.coordinate.y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    let (in_range) = in_on_layer(koma_actual_at, chest.coordinate, koma.action_radius)
     with_attr error_message("FirstRelicCombat: action out of range"):
         assert in_range = TRUE
     end

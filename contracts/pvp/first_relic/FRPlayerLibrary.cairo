@@ -141,7 +141,7 @@ func FirstRelicCombat_init_player{
     let koma = Koma(
         account=account, coordinate=coordinate, status=KOMA_STATUS_STATIC, health=100, max_health=100, agility=7,
         move_speed=KOMA_MOVING_SPEED, props_weight=0, props_max_weight=1000, workers_count=3, mining_workers_count=0,
-        drones_count=3, action_radius=5, element=0, ore_amount=10000000, atk=KOMA_ATK, defense=KOMA_DEFENSE, worker_mining_speed=WORKER_MINING_SPEED
+        drones_count=3, action_radius=1, element=0, ore_amount=10000000, atk=KOMA_ATK, defense=KOMA_DEFENSE, worker_mining_speed=WORKER_MINING_SPEED
     )
 
 

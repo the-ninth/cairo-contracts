@@ -40,8 +40,6 @@ from contracts.pvp.first_relic.constants import (
     PROP_CREATURE_SHIELD,
     PROP_CREATURE_ATTACK_UP_30P,
     PROP_CREATURE_DAMAGE_DOWN_30P,
-    ACTION_RADIUS_A,
-    ACTION_RADIUS_B,
     get_relic_gate_key_ids,
     get_inner_coordinates,
     get_outer_coordinates
@@ -70,7 +68,7 @@ from contracts.pvp.first_relic.storages import (
 )
 from contracts.pvp.first_relic.FRPlayerLibrary import FirstRelicCombat_get_koma_actual_coordinate
 from contracts.util.random import get_random_number_and_seed
-from contracts.util.math import min, in_on_oval
+from contracts.util.math import min, in_on_layer
 from contracts.pvp.first_relic.IFirstRelicCombat import PlayerAttack
 
 func FirstRelicCombat_get_combat_count{
@@ -196,7 +194,7 @@ func FirstRelicCombat_mine_ore{
     end
 
     let (_, koma_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
-    let (in_range) = in_on_oval(koma_actual_at.x, koma_actual_at.y, ore.coordinate.x, ore.coordinate.y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    let (in_range) = in_on_layer(koma_actual_at, ore.coordinate, koma.action_radius)
     with_attr error_message("FirstRelicCombat: action out of range"):
         assert in_range = TRUE
     end
@@ -331,7 +329,7 @@ func FirstRelicCombat_attack{
 
     let (_, koma_attacker_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma_attacker)
     let (_, koma_attacked_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma_attacked)
-    let (in_range) = in_on_oval(koma_attacker_actual_at.x, koma_attacker_actual_at.y, koma_attacked_actual_at.x, koma_attacked_actual_at.y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    let (in_range) = in_on_layer(koma_attacker_actual_at, koma_attacked_actual_at, koma_attacker.action_radius)
     with_attr error_message("FirstRelicCombat: action out of range"):
         assert in_range = TRUE
     end
@@ -585,7 +583,7 @@ func FirstRelicCombat_enter_relic_gate{
     let gate_y = relic_gate.coordinate.y
     let (koma) = FirstRelicCombat_komas.read(combat_id, account)
     let (_, koma_actual_at) = FirstRelicCombat_get_koma_actual_coordinate(combat_id, account, koma)
-    let (in_range) = in_on_oval(koma_actual_at.x, koma_actual_at.y, gate_x, gate_y, ACTION_RADIUS_A, ACTION_RADIUS_B)
+    let (in_range) = in_on_layer(koma_actual_at, relic_gate.coordinate, koma.action_radius)
     with_attr error_message("FirstRelicCombat: action out of range"):
         assert in_range = TRUE
     end
