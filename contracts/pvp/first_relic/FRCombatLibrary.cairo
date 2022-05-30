@@ -35,7 +35,6 @@ from contracts.pvp.first_relic.constants import (
     PREPARE_TIME,
     FIRST_STAGE_DURATION,
     SECOND_STAGE_DURATION,
-    WORKER_MINING_SPEED,
     BOT_TYPE_WORKER,
     PROP_CREATURE_SHIELD,
     PROP_CREATURE_ATTACK_UP_30P,
@@ -203,12 +202,18 @@ func FirstRelicCombat_mine_ore{
     # retreive mined ores if have workers before
     let (mining_ore) = FirstRelicCombat_koma_mining_ores.read(combat_id, account, target)
     let (retreive_amount) = _retreive_mining_ore(mining_ore, ore.empty_time)
-    let new_mining_ore = KomaMiningOre(target, mining_ore.mining_workers_count + workers_count, block_timestamp)
+    let new_mining_ore = KomaMiningOre(target, mining_ore.mining_workers_count + workers_count, koma.worker_mining_speed, block_timestamp)
 
     let mining_workers_count = ore.mining_workers_count + workers_count
-    let (empty_time_need, _) = unsigned_div_rem(remaining, mining_workers_count * koma.worker_mining_speed)
+    # mining_speed: how much ore mined per second by all workers on this ore
+    let mining_speed = ore.mining_speed + koma.worker_mining_speed * workers_count
+    # may have some ore left in the ore
+    let (empty_time_need, _) = unsigned_div_rem(remaining, mining_workers_count * mining_speed)
+    with_attr error_message("FirstRelicCombat: too little ore to mine"):
+        assert_not_zero(empty_time_need)
+    end
     let empty_time = block_timestamp + empty_time_need
-    let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply, mining_workers_count, block_timestamp, empty_time)
+    let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply, mining_workers_count, mining_speed, block_timestamp, empty_time)
 
     let new_koma = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
@@ -254,14 +259,14 @@ func FirstRelicCombat_recall_workers{
     let (block_timestamp) = get_block_timestamp()
     let (retreive_amount) = _retreive_mining_ore(mining_ore, ore.empty_time)
     let mining_ore_mining_workers_count = mining_ore.mining_workers_count - workers_count
-    let new_mining_ore = KomaMiningOre(target, mining_ore_mining_workers_count, block_timestamp)
-
     let (koma) = FirstRelicCombat_komas.read(combat_id, account)
+    let new_mining_ore = KomaMiningOre(target, mining_ore_mining_workers_count, koma.worker_mining_speed, block_timestamp)
 
     let mining_workers_count = ore.mining_workers_count - workers_count
-    let (empty_timestamp) = _get_ore_empty_timestamp(mining_workers_count, remaining, block_timestamp)
+    let mining_speed = ore.mining_speed - mining_ore.worker_mining_speed * workers_count
+    let (empty_timestamp) = _get_ore_empty_timestamp(remaining, mining_speed, block_timestamp)
 
-    let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply, mining_workers_count, block_timestamp, empty_timestamp)
+    let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply, mining_workers_count, mining_speed, block_timestamp, empty_timestamp)
 
     let new_koma = Koma(
         koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
@@ -691,7 +696,7 @@ func _init_ores{
         return (seed)
     end
     let (coordinate, next_seed) = _fetch_outer_empty_coordinate(combat_id, seed)
-    let ore = Ore(coordinate=coordinate, total_supply=1000000, mined_supply=0, mining_workers_count=0, start_time=0, empty_time=0)
+    let ore = Ore(coordinate=coordinate, total_supply=1000000, mined_supply=0, mining_workers_count=0, mining_speed=0, start_time=0, empty_time=0)
     let (ore_len) = FirstRelicCombat_ore_coordinates_len.read(combat_id)
     FirstRelicCombat_ores.write(combat_id, coordinate, ore)
     FirstRelicCombat_ore_coordinate_by_index.write(combat_id, ore_len, coordinate)
@@ -779,7 +784,7 @@ func _retreive_mining_ore{
     end
     let (block_timestamp) = get_block_timestamp()
     let (end_time) = min(block_timestamp, ore_empty_time)
-    let retreive_amount = (end_time - mining_ore.start_time) * mining_ore.mining_workers_count * WORKER_MINING_SPEED
+    let retreive_amount = (end_time - mining_ore.start_time) * mining_ore.mining_workers_count * mining_ore.worker_mining_speed
     return (retreive_amount)
 end
 
@@ -805,12 +810,15 @@ func _get_ore_empty_timestamp{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(mining_workers_count: felt, remaining: felt, start_time: felt) -> (empty_time):
-    if mining_workers_count == 0:
+    }(remaining: felt, mining_speed: felt, start_time: felt) -> (empty_time):
+    if remaining == 0:
+        return (0)
+    end
+    if mining_speed == 0:
         return (0)
     else:
-        let (empty_time_need, _) = unsigned_div_rem(remaining, mining_workers_count * WORKER_MINING_SPEED)
-        let empty_timestamp = start_time + empty_time_need + 1
+        let (empty_time_need, _) = unsigned_div_rem(remaining, mining_speed)
+        let empty_timestamp = start_time + empty_time_need
         return (empty_timestamp)
     end
 end
@@ -853,25 +861,19 @@ func _clear_mining_ores{
     let (ore) = FirstRelicCombat_ores.read(combat_id, mining_ore_coordinate)
     let (block_timestamp) = get_block_timestamp()
     let (end_time) = min(block_timestamp, ore.empty_time)
-
-    let ore_mined_amount = ore.mining_workers_count * (end_time - ore.start_time) * WORKER_MINING_SPEED + ore.mined_supply
-    let remaining_amount = ore.total_supply - ore_mined_amount
+    let ore_mined_amount = (end_time - ore.start_time) * ore.mining_speed + ore.mined_supply
+    let (remaining_amount) = min(ore.total_supply - ore_mined_amount, 0)
     let mining_workers_count = ore.mining_workers_count - mining_ore.mining_workers_count
-    local empty_time_need
-    if mining_workers_count == 0:
-        empty_time_need = 0
-    else:
-        let (q, _) = unsigned_div_rem(remaining_amount, mining_workers_count * WORKER_MINING_SPEED)
-        empty_time_need = q
-    end
-    let empty_time = block_timestamp + empty_time_need + 1
+    let mining_speed = ore.mining_speed - mining_ore.worker_mining_speed * mining_ore.mining_workers_count
+    let (empty_timestamp) = _get_ore_empty_timestamp(remaining_amount, mining_speed, block_timestamp)
     let ore_updated = Ore(
         coordinate=ore.coordinate,
         total_supply=ore.total_supply,
         mined_supply=ore.mined_supply,
         mining_workers_count=mining_workers_count,
+        mining_speed=mining_speed,
         start_time=block_timestamp,
-        empty_time=empty_time
+        empty_time=empty_timestamp
     )
     FirstRelicCombat_ores.write(combat_id, ore.coordinate, ore_updated)
 

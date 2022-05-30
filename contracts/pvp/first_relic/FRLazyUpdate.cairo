@@ -16,7 +16,6 @@ from contracts.pvp.first_relic.structs import (
     COMBAT_STATUS_FIRST_STAGE,
     COMBAT_STATUS_SECOND_STAGE
 )
-from contracts.pvp.first_relic.constants import WORKER_MINING_SPEED
 from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_combats,
     FirstRelicCombat_ores,
@@ -183,8 +182,9 @@ func LazyUpdate_update_ore{
     end
     let (block_timestamp) = get_block_timestamp()
     let (end_time) = min(block_timestamp, ore.empty_time)
-    let mined_amount = (end_time - ore.start_time) * ore.mining_workers_count * WORKER_MINING_SPEED
-    let new_ore = Ore(ore.coordinate, ore.total_supply, ore.mined_supply + mined_amount, ore.mining_workers_count, block_timestamp, ore.empty_time)
+    let mined_amount = (end_time - ore.start_time) * ore.mining_speed
+    let (total_mined_amount) = min(ore.total_supply, ore.mined_supply + mined_amount)
+    let new_ore = Ore(ore.coordinate, ore.total_supply, total_mined_amount, ore.mining_workers_count, ore.mining_speed, block_timestamp, ore.empty_time)
     FirstRelicCombat_ores.write(combat_id, ore_coordinate, new_ore)
 
     return ()
@@ -227,10 +227,10 @@ func _retreive_mining_ores{
 
     let (block_timestamp) = get_block_timestamp()
     let (end_time) = min(block_timestamp, ore.empty_time)
-    let current_retreive_amount = (end_time - mining_ore.start_time) * mining_ore.mining_workers_count * WORKER_MINING_SPEED
+    let current_retreive_amount = (end_time - mining_ore.start_time) * mining_ore.mining_workers_count * mining_ore.worker_mining_speed
 
     let mining_ore_updated = KomaMiningOre(
-        mining_ore.coordinate, mining_ore.mining_workers_count, block_timestamp
+        mining_ore.coordinate, mining_ore.mining_workers_count, mining_ore.worker_mining_speed, block_timestamp
     )
     FirstRelicCombat_koma_mining_ores.write(combat_id, account, mining_ore_coordinate, mining_ore_updated)
 

@@ -82,6 +82,7 @@ struct Ore:
     member total_supply: felt
     member mined_supply: felt
     member mining_workers_count: felt
+    member mining_speed: felt # how much ore mined per second by all workers on this ore
     member start_time: felt
     member empty_time: felt
 end
@@ -111,6 +112,7 @@ end
 struct KomaMiningOre:
     member coordinate: Coordinate
     member mining_workers_count: felt
+    member worker_mining_speed: felt
     member start_time: felt
 end
 
