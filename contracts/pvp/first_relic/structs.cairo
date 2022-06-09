@@ -80,9 +80,13 @@ end
 struct Ore:
     member coordinate: Coordinate
     member total_supply: felt
-    member mined_supply: felt
+    member current_supply: felt
+    member collectable_supply: felt
+    member mining_account: felt
     member mining_workers_count: felt
     member mining_speed: felt # how much ore mined per second by all workers on this ore
+    member structure_hp: felt
+    member structure_max_hp: felt
     member start_time: felt
     member empty_time: felt
 end
@@ -107,13 +111,6 @@ struct Movment:
     member to: Coordinate
     member start_time: felt # timestamp starting to move
     member reach_time: felt # timestamp reaching the target location
-end
-
-struct KomaMiningOre:
-    member coordinate: Coordinate
-    member mining_workers_count: felt
-    member worker_mining_speed: felt
-    member start_time: felt
 end
 
 struct KomaEquipments:

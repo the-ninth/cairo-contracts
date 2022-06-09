@@ -30,7 +30,6 @@ from contracts.pvp.first_relic.structs import (
     Coordinate,
     Koma,
     KomaEquipments,
-    KomaMiningOre,
     Movment,
     Ore,
     Prop,
@@ -44,14 +43,12 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_init_chests,
     FirstRelicCombat_in_moving_stage,
     FirstRelicCombat_init_ores,
-    FirstRelicCombat_mine_ore,
     FirstRelicCombat_new_combat,
     FirstRelicCombat_get_combat,
     FirstRelicCombat_get_combat_count,
     FirstRelicCombat_get_chest_count,
     FirstRelicCombat_get_chests,
     FirstRelicCombat_get_chest_by_coordinate,
-    FirstRelicCombat_get_koma_mining_ores,
     FirstRelicCombat_get_ore_count,
     FirstRelicCombat_get_ores,
     FirstRelicCombat_get_ore_by_coordinate,
@@ -59,7 +56,6 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_recall_workers,
     FirstRelicCombat_produce_bot,
     FirstRelicCombat_attack,
-    FirstRelicCombat_clear_mining_ores,
     FirstRelicCombat_get_relic_gate,
     FirstRelicCombat_get_relic_gates,
     FirstRelicCombat_enter_relic_gate
@@ -83,7 +79,8 @@ from contracts.pvp.first_relic.FRPropLibrary import (
     FirstRelicCombat_equip_prop,
     FirstRelicCombat_get_koma_prop_effect_creature_ids
 )
-from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore, LazyUpdate_update_koma_mining
+from contracts.pvp.first_relic.FROreLibrary import OreLibrary
+from contracts.pvp.first_relic.FRLazyUpdate import LazyUpdate_update_combat_status, LazyUpdate_update_ore
 from contracts.pvp.first_relic.IFirstRelicCombat import PlayerDeath
 from contracts.pvp.first_relic.third_stage.interfaces.IFR3rd import IFR3rd
 
@@ -254,16 +251,6 @@ func getKomasMovments{
 end
 
 @view
-func getKomaMiningOres{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt) -> (mining_ores_len: felt, mining_ores: KomaMiningOre*):
-    let (mining_ores_len, mining_ores) = FirstRelicCombat_get_koma_mining_ores(combat_id, account)
-    return (mining_ores_len, mining_ores)
-end
-
-@view
 func getKomaProps{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
@@ -404,7 +391,7 @@ func mineOre{
     player_can_action(combat_id, account)
     LazyUpdate_update_ore(combat_id, target)
 
-    FirstRelicCombat_mine_ore(combat_id, account, target, workers_count)
+    OreLibrary.mine_ore(combat_id, account, target, workers_count)
 
     return()
 end
@@ -434,7 +421,6 @@ func produceBot{
     authorized_call(account, ACTION_FR_COMBAT_PRODUCE_BOT)
     LazyUpdate_update_combat_status(combat_id)
     player_can_action(combat_id, account)
-    LazyUpdate_update_koma_mining(combat_id, account)
 
     FirstRelicCombat_produce_bot(combat_id, account, bot_type, quantity)
 
@@ -455,7 +441,7 @@ func attack{
 
     let (koma_attacked_status) = FirstRelicCombat_attack(combat_id, account, target_account)
     if koma_attacked_status == KOMA_STATUS_DEAD:
-        FirstRelicCombat_clear_mining_ores(combat_id, target_account)
+        OreLibrary.clear_koma_ores(combat_id, target_account)
         PlayerDeath.emit(combat_id, target_account)
         tempvar syscall_ptr = syscall_ptr
         tempvar pedersen_ptr = pedersen_ptr

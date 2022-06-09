@@ -5,7 +5,6 @@ from contracts.pvp.first_relic.structs import (
     Combat,
     Coordinate,
     Koma,
-    KomaMiningOre, 
     Movment,
     Ore,
     Prop,
@@ -75,15 +74,11 @@ func FirstRelicCombat_ore_coordinate_by_index(combat_id:felt, index: felt) -> (c
 end
 
 @storage_var
-func FirstRelicCombat_koma_mining_ore_coordinates_len(combat_id: felt, account: felt) -> (len: felt):
+func FirstRelicCombat_koma_ore_coordinates_len(combat_id: felt, account: felt) -> (len: felt):
 end
 
 @storage_var
-func FirstRelicCombat_koma_mining_ore_coordinates_by_index(combat_id: felt, account: felt, index: felt) -> (coordinate: Coordinate):
-end
-
-@storage_var
-func FirstRelicCombat_koma_mining_ores(combat_id: felt, account: felt, coordinate: Coordinate) -> (minging_ore: KomaMiningOre):
+func FirstRelicCombat_koma_ore_coordinates_by_index(combat_id: felt, account: felt, index: felt) -> (coordinnate: Coordinate):
 end
 
 # prop storages
