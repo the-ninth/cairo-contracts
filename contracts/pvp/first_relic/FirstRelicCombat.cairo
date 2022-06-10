@@ -53,7 +53,6 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_ores,
     FirstRelicCombat_get_ore_by_coordinate,
     FirstRelicCombat_prepare_combat,
-    FirstRelicCombat_recall_workers,
     FirstRelicCombat_produce_bot,
     FirstRelicCombat_attack,
     FirstRelicCombat_get_relic_gate,
@@ -407,8 +406,7 @@ func recallWorkers{
     player_can_action(combat_id, account)
     LazyUpdate_update_ore(combat_id, target)
 
-    FirstRelicCombat_recall_workers(combat_id, account, target, workers_count)
-
+    OreLibrary.recall_workers(combat_id, account, target, workers_count)
     return ()
 end
 

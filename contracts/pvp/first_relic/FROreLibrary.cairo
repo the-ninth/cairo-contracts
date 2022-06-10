@@ -7,6 +7,8 @@ from starkware.cairo.common.math import assert_not_zero, assert_le_felt, assert_
 
 from starkware.starknet.common.syscalls import get_caller_address, get_block_number, get_block_timestamp
 
+from contracts.util.math import min
+
 from contracts.pvp.first_relic.constants import (
     ORE_STRUCTURE_HP_PER_WORKER
 )
@@ -94,9 +96,71 @@ namespace OreLibrary:
             FirstRelicCombat_koma_ore_coordinates_by_index.write(combat_id, account, len, target)
             FirstRelicCombat_koma_ore_coordinates_len.write(combat_id, account, len + 1)
         end
-
         return ()
     end
+
+    func recall_workers{
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+    }(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
+        alloc_locals
+
+        let (ore) = FirstRelicCombat_ores.read(combat_id, target)
+        with_attr error_message("FirstRelicCombat: invalid ore"):
+            assert_not_zero(ore.total_supply)
+        end
+        with_attr error_message("FirstRelicCombat: invalid workers"):
+            assert_lt_felt(0, workers_count)
+        end
+        with_attr error_message("FirstRelicCombat: not enough workers"):
+            assert_le_felt(workers_count, ore.mining_workers_count)
+        end
+
+        let (block_timestamp) = get_block_timestamp()
+        let (koma) = FirstRelicCombat_komas.read(combat_id, account)
+        let mining_workers_count = ore.mining_workers_count - workers_count
+        let mining_speed = mining_workers_count * koma.worker_mining_speed
+        let (empty_time) = _get_ore_empty_timestamp(ore.current_supply, mining_speed, block_timestamp)
+        let structure_max_hp = mining_workers_count * ORE_STRUCTURE_HP_PER_WORKER
+        let (structure_hp) = min(structure_max_hp, ore.structure_hp)
+        local mining_account
+        if mining_workers_count == 0:
+            mining_account = 0
+        else:
+            mining_account = ore.mining_account
+        end
+
+        let new_ore = Ore(
+            coordinate=ore.coordinate, total_supply=ore.total_supply, current_supply=ore.current_supply, collectable_supply=ore.collectable_supply,
+            mining_account=mining_account, mining_workers_count=mining_workers_count, mining_speed=mining_speed, structure_hp=structure_hp,
+            structure_max_hp=structure_max_hp, start_time=block_timestamp, empty_time=empty_time
+        )
+        let new_koma = Koma(
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility, koma.move_speed,
+            koma.props_weight, koma.props_max_weight, koma.workers_count, koma.mining_workers_count+workers_count,
+            koma.drones_count, koma.action_radius, koma.element, koma.ore_amount, koma.atk, koma.defense, koma.worker_mining_speed
+        )
+
+        FirstRelicCombat_komas.write(combat_id, account, new_koma)
+        FirstRelicCombat_ores.write(combat_id, target, new_ore)
+        if mining_workers_count == 0:
+            # remove from koma ore list
+            let (len) = FirstRelicCombat_koma_ore_coordinates_len.read(combat_id, account)
+            let (removed) = _remove_koma_ore_from_list(combat_id, account, target, 0, len)
+            with_attr error_message("FirstRelicCombat: remove koma ore failed"):
+                assert removed = TRUE
+            end
+            tempvar syscall_ptr = syscall_ptr
+            tempvar pedersen_ptr = pedersen_ptr
+            tempvar range_check_ptr = range_check_ptr
+        else:
+            tempvar syscall_ptr = syscall_ptr
+            tempvar pedersen_ptr = pedersen_ptr
+            tempvar range_check_ptr = range_check_ptr
+        end
+        return ()
+    end    
 
     func clear_koma_ores{
         syscall_ptr : felt*, 
@@ -198,4 +262,34 @@ func _clear_koma_ores{
     # _clear_mining_ores(combat_id, account, index + 1, mining_ore_coordinates_len)
 
     return ()
+end
+
+func _remove_koma_ore_from_list{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, target: Coordinate, index: felt, len: felt) -> (removed: felt):
+    if index == len:
+        return (FALSE)
+    end
+    let (coordinate_by_index) = FirstRelicCombat_koma_ore_coordinates_by_index.read(combat_id, account, index)
+    if target.x - coordinate_by_index.x + target.y - coordinate_by_index.y == 0:
+        FirstRelicCombat_koma_ore_coordinates_len.write(combat_id, account, len - 1)
+        # do not do value swapping if it's the last index
+        if index != len - 1:
+            let (last_ore_coordinate) = FirstRelicCombat_koma_ore_coordinates_by_index.read(combat_id, account, len - 1)
+            FirstRelicCombat_koma_ore_coordinates_by_index.write(combat_id, account, index, last_ore_coordinate)
+            tempvar syscall_ptr = syscall_ptr
+            tempvar pedersen_ptr = pedersen_ptr
+            tempvar range_check_ptr = range_check_ptr
+        else:
+            tempvar syscall_ptr = syscall_ptr
+            tempvar pedersen_ptr = pedersen_ptr
+            tempvar range_check_ptr = range_check_ptr
+        end
+        return (TRUE)
+    end
+    let (removed) = _remove_koma_ore_from_list(combat_id, account, target, index + 1, len)
+    
+    return (removed)
 end
