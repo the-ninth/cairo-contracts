@@ -10,7 +10,8 @@ from starkware.starknet.common.syscalls import get_caller_address, get_block_num
 from contracts.util.math import min
 
 from contracts.pvp.first_relic.constants import (
-    ORE_STRUCTURE_HP_PER_WORKER
+    ORE_STRUCTURE_HP_PER_WORKER,
+    BOT_TYPE_WORKER
 )
 from contracts.pvp.first_relic.structs import (
     Coordinate,
@@ -24,8 +25,10 @@ from contracts.pvp.first_relic.structs import (
     KOMA_STATUS_DEAD
 )
 from contracts.pvp.first_relic.storages import (
-    FirstRelicCombat_ores,
     FirstRelicCombat_combats,
+    FirstRelicCombat_ores,
+    FirstRelicCombat_ore_coordinates_len,
+    FirstRelicCombat_ore_coordinate_by_index,
     FirstRelicCombat_komas,
     FirstRelicCombat_koma_ore_coordinates_len,
     FirstRelicCombat_koma_ore_coordinates_by_index
@@ -160,17 +163,110 @@ namespace OreLibrary:
             tempvar range_check_ptr = range_check_ptr
         end
         return ()
-    end    
+    end
+
+    func produce_bot{
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+    }(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
+        alloc_locals
+
+        let (koma) = FirstRelicCombat_komas.read(combat_id, account)
+        let bots_count = koma.workers_count + koma.drones_count
+        let (ore_required) = _get_produce_bot_required_ore_amount(bots_count, quantity, 0)
+        with_attr error_message("FirstRelicCombat: insufficient ores"):
+            assert_le_felt(ore_required, koma.ore_amount)
+        end
+        let remaining_amount = koma.ore_amount - ore_required
+        local workers_count
+        local drones_count
+        if bot_type == BOT_TYPE_WORKER:
+            workers_count = koma.workers_count + quantity
+            drones_count = koma.drones_count
+        else:
+            workers_count = koma.workers_count
+            drones_count = koma.drones_count + quantity
+        end
+        let koma_updated = Koma(
+            koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility,
+            koma.move_speed, koma.props_weight, koma.props_max_weight, workers_count, koma.mining_workers_count,
+            drones_count, koma.action_radius, koma.element, remaining_amount, koma.atk, koma.defense, koma.worker_mining_speed
+        )
+        FirstRelicCombat_komas.write(combat_id, account, koma_updated)
+
+        return ()
+    end
+
+    func get_ore_count{
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+        }(combat_id: felt) -> (count: felt):
+        let (count) = FirstRelicCombat_ore_coordinates_len.read(combat_id)
+        return (count)
+    end
+
+    func get_ores{
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+        }(combat_id: felt, index: felt, length: felt) -> (ores_len: felt, ores: Ore*):
+        alloc_locals
+
+        assert_le_felt(0, index)
+        assert_lt_felt(0, length)
+
+        let (local data: Ore*) = alloc()
+        let (data_len, data) = _get_ores(combat_id, index, length, 0, data)
+        return (data_len, data)
+    end
+
+    func get_ore_by_coordinate{
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+        }(combat_id: felt, coordinate: Coordinate) -> (ore: Ore):
+        let (ore) = FirstRelicCombat_ores.read(combat_id, coordinate)
+        return (ore)
+    end
 
     func clear_koma_ores{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt):
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+        }(combat_id: felt, account: felt):
         let (koma_ores_len) = FirstRelicCombat_koma_ore_coordinates_len.read(combat_id, account)
         _clear_koma_ores(combat_id, account, 0, koma_ores_len)
         FirstRelicCombat_koma_ore_coordinates_len.write(combat_id, account, 0)
         return ()
+    end
+
+    # update ore current_supply and return updated ore data
+    func update_ore{
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+        }(combat_id: felt, ore_coordinate: Coordinate) -> (ore: Ore):
+        alloc_locals
+
+        let (ore) = FirstRelicCombat_ores.read(combat_id, ore_coordinate)
+        if ore.mining_workers_count == 0:
+            return (ore)
+        end
+        let (block_timestamp) = get_block_timestamp()
+        let (end_time) = min(block_timestamp, ore.empty_time)
+        let (mined_amount) = min(ore.current_supply, (end_time - ore.start_time) * ore.mining_speed)
+        let current_supply = ore.current_supply - mined_amount
+        let collectable_supply = ore.collectable_supply + mined_amount
+        let new_ore = Ore(
+            coordinate=ore.coordinate, total_supply=ore.total_supply, current_supply=current_supply, collectable_supply=collectable_supply,
+            mining_account=ore.mining_account, mining_workers_count=ore.mining_workers_count, mining_speed=ore.mining_speed,
+            structure_hp=ore.structure_hp, structure_max_hp=ore.structure_max_hp, start_time=block_timestamp, empty_time=ore.empty_time
+        )
+        FirstRelicCombat_ores.write(combat_id, ore_coordinate, new_ore)
+
+        return (new_ore)
     end
 
 end
@@ -231,36 +327,19 @@ func _clear_koma_ores{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, account: felt, index: felt, ore_coordinates_len: felt):
-    # alloc_locals
+    alloc_locals
 
-    # if index == mining_ore_coordinates_len:
-    #     return ()
-    # end
-    # let (mining_ore_coordinate) = FirstRelicCombat_koma_mining_ore_coordinates_by_index.read(combat_id, account, index)
-    # let (mining_ore) = FirstRelicCombat_koma_mining_ores.read(combat_id, account, mining_ore_coordinate)
-    # let (ore) = FirstRelicCombat_ores.read(combat_id, mining_ore_coordinate)
-    # let (block_timestamp) = get_block_timestamp()
-    # let (end_time) = min(block_timestamp, ore.empty_time)
-    # let ore_mined_amount = (end_time - ore.start_time) * ore.mining_speed + ore.mined_supply
-    # let (remaining_amount) = min(ore.total_supply - ore_mined_amount, 0)
-    # let mining_workers_count = ore.mining_workers_count - mining_ore.mining_workers_count
-    # let mining_speed = ore.mining_speed - mining_ore.worker_mining_speed * mining_ore.mining_workers_count
-    # let (empty_timestamp) = _get_ore_empty_timestamp(remaining_amount, mining_speed, block_timestamp)
-    # let ore_updated = Ore(
-    #     coordinate=ore.coordinate,
-    #     total_supply=ore.total_supply,
-    #     mined_supply=ore.mined_supply,
-    #     mining_workers_count=mining_workers_count,
-    #     mining_speed=mining_speed,
-    #     start_time=block_timestamp,
-    #     empty_time=empty_timestamp
-    # )
-    # FirstRelicCombat_ores.write(combat_id, ore.coordinate, ore_updated)
-
-    # # ignore modifying mining ore storage becuase it's not necessary
-
-    # _clear_mining_ores(combat_id, account, index + 1, mining_ore_coordinates_len)
-
+    if index == ore_coordinates_len:
+        return ()
+    end
+    let (ore_coordinate) = FirstRelicCombat_koma_ore_coordinates_by_index.read(combat_id, account, index)
+    let (ore) = OreLibrary.update_ore(combat_id, ore_coordinate)
+    let ore_updated = Ore(
+        coordinate=ore.coordinate, total_supply=ore.total_supply, current_supply=ore.current_supply, collectable_supply=ore.collectable_supply,
+        mining_account=0, mining_workers_count=0, mining_speed=0, structure_hp=0, structure_max_hp=0, start_time=0, empty_time=0
+    )
+    FirstRelicCombat_ores.write(combat_id, ore.coordinate, ore_updated)
+    _clear_koma_ores(combat_id, account, index + 1, ore_coordinates_len)
     return ()
 end
 
@@ -292,4 +371,40 @@ func _remove_koma_ore_from_list{
     let (removed) = _remove_koma_ore_from_list(combat_id, account, target, index + 1, len)
     
     return (removed)
+end
+
+func _get_produce_bot_required_ore_amount{
+        range_check_ptr
+    }(quantity_now: felt, quantity_produce: felt, ore_amount: felt) -> (ore_amount: felt):
+    assert_le_felt(quantity_now, quantity_produce + quantity_now)
+    if quantity_produce == 0:
+        return (ore_amount)
+    end
+
+    let bots_count = quantity_now + 1
+    let (ore_required, _) = unsigned_div_rem(bots_count * (bots_count + 1) * 1000, 2)
+
+    return _get_produce_bot_required_ore_amount(quantity_now + 1, quantity_produce - 1, ore_amount + ore_required)
+end
+
+# recursively get ore struct array 
+func _get_ores{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, index: felt, length: felt, data_len: felt, data: Ore*) -> (data_len: felt, data: Ore*):
+    if length == 0:
+        return (data_len, data)
+    end
+
+    let (ores_count) = FirstRelicCombat_ore_coordinates_len.read(combat_id)
+    if index == ores_count:
+        return (data_len, data)
+    end
+
+    let (coordinate) = FirstRelicCombat_ore_coordinate_by_index.read(combat_id, index)
+    let (chest) = FirstRelicCombat_ores.read(combat_id, coordinate)
+    assert data[data_len] = chest
+
+    return _get_ores(combat_id, index+1, length-1, data_len+1, data)
 end

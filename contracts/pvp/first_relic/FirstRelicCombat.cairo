@@ -49,11 +49,7 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_get_chest_count,
     FirstRelicCombat_get_chests,
     FirstRelicCombat_get_chest_by_coordinate,
-    FirstRelicCombat_get_ore_count,
-    FirstRelicCombat_get_ores,
-    FirstRelicCombat_get_ore_by_coordinate,
     FirstRelicCombat_prepare_combat,
-    FirstRelicCombat_produce_bot,
     FirstRelicCombat_attack,
     FirstRelicCombat_get_relic_gate,
     FirstRelicCombat_get_relic_gates,
@@ -175,7 +171,7 @@ func getOreCount{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt) -> (count: felt):
-    let (count) = FirstRelicCombat_get_ore_count(combat_id)
+    let (count) = OreLibrary.get_ore_count(combat_id)
     return (count)
 end
 
@@ -185,7 +181,7 @@ func getOres{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, offset: felt, length: felt) -> (ores_len: felt, ores: Ore*):
-    let (ores_len, ores) = FirstRelicCombat_get_ores(combat_id, offset, length)
+    let (ores_len, ores) = OreLibrary.get_ores(combat_id, offset, length)
     return (ores_len, ores)
 end
 
@@ -195,7 +191,7 @@ func getOreByCoordinate{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, coordinate: Coordinate) -> (ore: Ore):
-    let (ore) = FirstRelicCombat_get_ore_by_coordinate(combat_id, coordinate)
+    let (ore) = OreLibrary.get_ore_by_coordinate(combat_id, coordinate)
     return (ore)
 end
 
@@ -306,7 +302,7 @@ func getAll{
     }(combat_id: felt, offset: felt, length: felt) -> (komas_len: felt, komas: Koma*, chests_len: felt, chests: Chest*, ores_len: felt, ores: Ore*):
     alloc_locals
     
-    let (ores_len, ores) = FirstRelicCombat_get_ores(combat_id, offset, length)
+    let (ores_len, ores) = OreLibrary.get_ores(combat_id, offset, length)
     let (chests_len, chests) = FirstRelicCombat_get_chests(combat_id, offset, length)
     let (accounts_len, accounts) = FirstRelicCombat_get_players(combat_id, offset, length)
     let (komas_len, komas) = FirstRelicCombat_get_komas(combat_id, accounts_len, accounts)
@@ -420,7 +416,7 @@ func produceBot{
     LazyUpdate_update_combat_status(combat_id)
     player_can_action(combat_id, account)
 
-    FirstRelicCombat_produce_bot(combat_id, account, bot_type, quantity)
+    OreLibrary.produce_bot(combat_id, account, bot_type, quantity)
 
     return ()
 end

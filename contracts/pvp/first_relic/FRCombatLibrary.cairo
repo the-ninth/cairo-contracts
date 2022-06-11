@@ -34,7 +34,6 @@ from contracts.pvp.first_relic.constants import (
     PREPARE_TIME,
     FIRST_STAGE_DURATION,
     SECOND_STAGE_DURATION,
-    BOT_TYPE_WORKER,
     PROP_CREATURE_SHIELD,
     PROP_CREATURE_ATTACK_UP_30P,
     PROP_CREATURE_DAMAGE_DOWN_30P,
@@ -48,10 +47,10 @@ from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_chests,
     FirstRelicCombat_chest_coordinates_len,
     FirstRelicCombat_chest_coordinate_by_index,
-    FirstRelicCombat_komas,
     FirstRelicCombat_ores,
     FirstRelicCombat_ore_coordinates_len,
     FirstRelicCombat_ore_coordinate_by_index,
+    FirstRelicCombat_komas,
     FirstRelicCombat_chest_options,
     FirstRelicCombat_relic_gates,
     FirstRelicCombat_relic_gate_number_by_coordinate,
@@ -117,71 +116,9 @@ func FirstRelicCombat_get_chest_by_coordinate{
     return (chest)
 end
 
-func FirstRelicCombat_get_ore_count{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt) -> (count: felt):
-    let (count) = FirstRelicCombat_ore_coordinates_len.read(combat_id)
-    return (count)
-end
 
-func FirstRelicCombat_get_ores{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, index: felt, length: felt) -> (ores_len: felt, ores: Ore*):
-    alloc_locals
 
-    assert_le_felt(0, index)
-    assert_lt_felt(0, length)
 
-    let (local data: Ore*) = alloc()
-    let (data_len, data) = _get_ores(combat_id, index, length, 0, data)
-    return (data_len, data)
-end
-
-func FirstRelicCombat_get_ore_by_coordinate{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, coordinate: Coordinate) -> (ore: Ore):
-    let (ore) = FirstRelicCombat_ores.read(combat_id, coordinate)
-    return (ore)
-end
-
-func FirstRelicCombat_produce_bot{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
-    alloc_locals
-
-    let (koma) = FirstRelicCombat_komas.read(combat_id, account)
-    let bots_count = koma.workers_count + koma.drones_count
-    let (ore_required) = _get_produce_bot_required_ore_amount(bots_count, quantity, 0)
-    with_attr error_message("FirstRelicCombat: insufficient ores"):
-        assert_le_felt(ore_required, koma.ore_amount)
-    end
-    let remaining_amount = koma.ore_amount - ore_required
-    local workers_count
-    local drones_count
-    if bot_type == BOT_TYPE_WORKER:
-        workers_count = koma.workers_count + quantity
-        drones_count = koma.drones_count
-    else:
-        workers_count = koma.workers_count
-        drones_count = koma.drones_count + quantity
-    end
-    let koma_updated = Koma(
-        koma.account, koma.coordinate, koma.status, koma.health, koma.max_health, koma.agility,
-        koma.move_speed, koma.props_weight, koma.props_max_weight, workers_count, koma.mining_workers_count,
-        drones_count, koma.action_radius, koma.element, remaining_amount, koma.atk, koma.defense, koma.worker_mining_speed
-    )
-    FirstRelicCombat_komas.write(combat_id, account, koma_updated)
-
-    return ()
-end
 
 func FirstRelicCombat_attack{
         syscall_ptr : felt*, 
@@ -576,27 +513,7 @@ func _get_chests{
     return _get_chests(combat_id, index+1, length-1, data_len+1, data)
 end
 
-# recursively get ore struct array 
-func _get_ores{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, index: felt, length: felt, data_len: felt, data: Ore*) -> (data_len: felt, data: Ore*):
-    if length == 0:
-        return (data_len, data)
-    end
 
-    let (ores_count) = FirstRelicCombat_ore_coordinates_len.read(combat_id)
-    if index == ores_count:
-        return (data_len, data)
-    end
-
-    let (coordinate) = FirstRelicCombat_ore_coordinate_by_index.read(combat_id, index)
-    let (chest) = FirstRelicCombat_ores.read(combat_id, coordinate)
-    assert data[data_len] = chest
-
-    return _get_ores(combat_id, index+1, length-1, data_len+1, data)
-end
 
 # func _retreive_mining_ore{
 #         syscall_ptr : felt*, 
@@ -735,16 +652,3 @@ func _use_prop_effect_damage_down{
     end
 end
 
-func _get_produce_bot_required_ore_amount{
-        range_check_ptr
-    }(quantity_now: felt, quantity_produce: felt, ore_amount: felt) -> (ore_amount: felt):
-    assert_le_felt(quantity_now, quantity_produce + quantity_now)
-    if quantity_produce == 0:
-        return (ore_amount)
-    end
-
-    let bots_count = quantity_now + 1
-    let (ore_required, _) = unsigned_div_rem(bots_count * (bots_count + 1) * 1000, 2)
-
-    return _get_produce_bot_required_ore_amount(quantity_now + 1, quantity_produce - 1, ore_amount + ore_required)
-end

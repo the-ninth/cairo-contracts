@@ -25,6 +25,7 @@ from contracts.pvp.first_relic.FRCombatLibrary import (
     FirstRelicCombat_change_to_second_stage,
     FirstRelicCombat_change_to_third_stage
 )
+from contracts.pvp.first_relic.FROreLibrary import OreLibrary
 from contracts.util.math import min
 
 
@@ -170,23 +171,6 @@ func LazyUpdate_update_ore{
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
     }(combat_id: felt, ore_coordinate: Coordinate):
-    alloc_locals
-
-    let (ore) = FirstRelicCombat_ores.read(combat_id, ore_coordinate)
-    if ore.mining_workers_count == 0:
-        return ()
-    end
-    let (block_timestamp) = get_block_timestamp()
-    let (end_time) = min(block_timestamp, ore.empty_time)
-    let (mined_amount) = min(ore.current_supply, (end_time - ore.start_time) * ore.mining_speed)
-    let current_supply = ore.current_supply - mined_amount
-    let collectable_supply = ore.collectable_supply + mined_amount
-    let new_ore = Ore(
-        coordinate=ore.coordinate, total_supply=ore.total_supply, current_supply=current_supply, collectable_supply=collectable_supply,
-        mining_account=ore.mining_account, mining_workers_count=ore.mining_workers_count, mining_speed=ore.mining_speed,
-        structure_hp=ore.structure_hp, structure_max_hp=ore.structure_max_hp, start_time=block_timestamp, empty_time=ore.empty_time
-    )
-    FirstRelicCombat_ores.write(combat_id, ore_coordinate, new_ore)
-
+    OreLibrary.update_ore(combat_id, ore_coordinate)
     return ()
 end
