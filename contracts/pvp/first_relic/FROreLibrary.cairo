@@ -198,6 +198,36 @@ namespace OreLibrary:
         return ()
     end
 
+    func collect_ore{
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+        }(combat_id: felt, account: felt, target: Coordinate):
+        let (ore) = FirstRelicCombat_ores.read(combat_id, target)
+        with_attr error_message("FirstRelicCombat: invalid ore"):
+            assert_not_zero(ore.total_supply)
+        end
+        let (koma) = FirstRelicCombat_komas.read(combat_id, account)
+        with_attr error_message("FirstRelicCombat: not your ore"):
+            assert ore.mining_account = account
+        end
+        let ore_updated = Ore(
+            coordinate=ore.coordinate, total_supply=ore.total_supply, current_supply=ore.current_supply, collectable_supply=0,
+            mining_account=ore.mining_account, mining_workers_count=ore.mining_workers_count, mining_speed=ore.mining_speed, structure_hp=ore.structure_hp,
+            structure_max_hp=ore.structure_max_hp, start_time=ore.start_time, empty_time=ore.empty_time
+        )
+        let koma_updated = Koma(
+            account=koma.account, coordinate=koma.coordinate, status=koma.status, health=koma.health, max_health=koma.max_health,
+            agility=koma.agility, move_speed=koma.move_speed, props_weight=koma.props_weight, props_max_weight=koma.props_max_weight,
+            workers_count=koma.workers_count, mining_workers_count=koma.mining_workers_count, drones_count=koma.drones_count,
+            action_radius=koma.action_radius, element=koma.element, ore_amount=koma.ore_amount+ore.collectable_supply, atk=koma.atk,
+            defense=koma.defense, worker_mining_speed=koma.worker_mining_speed
+        )
+        FirstRelicCombat_ores.write(combat_id, target, ore_updated)
+        FirstRelicCombat_komas.write(combat_id, account, koma_updated)
+        return ()
+    end
+
     func get_ore_count{
             syscall_ptr : felt*, 
             pedersen_ptr : HashBuiltin*,
