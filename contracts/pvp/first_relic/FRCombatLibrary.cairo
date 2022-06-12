@@ -151,7 +151,7 @@ func FirstRelicCombat_attack{
     
     let (damage, _) = unsigned_div_rem(atk * atk, atk + koma_attacked.defense)
     # reduce damage
-    let (damage) = _use_prop_effect_damage_down(damage, combat_id, account)
+    let (damage) = _use_prop_effect_damage_down(damage, combat_id, target_account)
 
     let remain_health = koma_attacked.health - damage
     let (health_sign) = sign(remain_health)

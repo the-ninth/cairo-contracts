@@ -15,6 +15,7 @@ const PREPARE_TIME = 60 # how much time for preparation time
 const FIRST_STAGE_DURATION = 900
 const SECOND_STAGE_DURATION = 300
 const ORE_STRUCTURE_HP_PER_WORKER = 100
+const ORE_STRUCTURE_DEFENSE = 7
 
 const KOMA_MOVING_SPEED = 20
 const KOMA_ATK = 7

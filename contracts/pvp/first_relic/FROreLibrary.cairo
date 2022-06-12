@@ -7,11 +7,12 @@ from starkware.cairo.common.math import assert_not_zero, assert_le_felt, assert_
 
 from starkware.starknet.common.syscalls import get_caller_address, get_block_number, get_block_timestamp
 
-from contracts.util.math import min
+from contracts.util.math import min, felt_le
 
 from contracts.pvp.first_relic.constants import (
     ORE_STRUCTURE_HP_PER_WORKER,
-    BOT_TYPE_WORKER
+    BOT_TYPE_WORKER,
+    ORE_STRUCTURE_DEFENSE
 )
 from contracts.pvp.first_relic.structs import (
     Coordinate,
@@ -226,6 +227,58 @@ namespace OreLibrary:
         FirstRelicCombat_ores.write(combat_id, target, ore_updated)
         FirstRelicCombat_komas.write(combat_id, account, koma_updated)
         return ()
+    end
+
+    func attack_ore{
+            syscall_ptr : felt*, 
+            pedersen_ptr : HashBuiltin*,
+            range_check_ptr
+        }(combat_id: felt, account: felt, target: Coordinate):
+        alloc_locals
+
+        let (ore) = FirstRelicCombat_ores.read(combat_id, target)
+        with_attr error_message("FirstRelicCombat: invalid target"):
+            assert_not_zero( (ore.mining_account-account) * ore.mining_account)
+        end
+        let (koma) = FirstRelicCombat_komas.read(combat_id, account)
+        let (damage, _) = unsigned_div_rem(koma.atk * koma.atk, koma.atk + ORE_STRUCTURE_DEFENSE)
+        let structure_hp = ore.structure_hp - damage
+        let (destroyed) = felt_le(structure_hp, 0)
+        if destroyed == TRUE:
+            let (ore) = update_ore(combat_id, target)
+            let (koma_miner) = FirstRelicCombat_komas.read(combat_id, ore.mining_account)
+            let koma_miner_updated = Koma(
+                account=koma_miner.account, coordinate=koma_miner.coordinate, status=koma_miner.status, health=koma_miner.health, max_health=koma_miner.max_health,
+                agility=koma_miner.agility, move_speed=koma_miner.move_speed, props_weight=koma_miner.props_weight, props_max_weight=koma_miner.props_max_weight,
+                workers_count=koma_miner.workers_count-ore.mining_workers_count, mining_workers_count=koma_miner.mining_workers_count-ore.mining_workers_count, drones_count=koma_miner.drones_count,
+                action_radius=koma_miner.action_radius, element=koma_miner.element, ore_amount=koma_miner.ore_amount, atk=koma_miner.atk,
+                defense=koma_miner.defense, worker_mining_speed=koma_miner.worker_mining_speed
+            )
+            FirstRelicCombat_komas.write(combat_id, koma_miner.account, koma_miner_updated)
+            let ore_updated = Ore(
+                coordinate=ore.coordinate, total_supply=ore.total_supply, current_supply=ore.current_supply, collectable_supply=0,
+                mining_account=0, mining_workers_count=0, mining_speed=0, structure_hp=0, structure_max_hp=0, start_time=0, empty_time=0
+            )
+            FirstRelicCombat_ores.write(combat_id, ore.coordinate, ore_updated)
+            let koma_updated = Koma(
+                account=koma.account, coordinate=koma.coordinate, status=koma.status, health=koma.health, max_health=koma.max_health,
+                agility=koma.agility, move_speed=koma.move_speed, props_weight=koma.props_weight, props_max_weight=koma.props_max_weight,
+                workers_count=koma.workers_count, mining_workers_count=koma.mining_workers_count, drones_count=koma.drones_count,
+                action_radius=koma.action_radius, element=koma.element, ore_amount=koma.ore_amount+ore.collectable_supply, atk=koma.atk,
+                defense=koma.defense, worker_mining_speed=koma.worker_mining_speed
+            )
+            FirstRelicCombat_komas.write(combat_id, koma.account, koma_updated)
+            return ()
+        else:
+            let ore_updated = Ore(
+                coordinate=ore.coordinate, total_supply=ore.total_supply, current_supply=ore.current_supply, collectable_supply=ore.collectable_supply,
+                mining_account=ore.mining_account, mining_workers_count=ore.mining_workers_count, mining_speed=ore.mining_speed, structure_hp=structure_hp,
+                structure_max_hp=ore.structure_max_hp, start_time=ore.start_time, empty_time=ore.empty_time
+            )
+            FirstRelicCombat_ores.write(combat_id, target, ore_updated)
+            return ()
+        end
+        
     end
 
     func get_ore_count{

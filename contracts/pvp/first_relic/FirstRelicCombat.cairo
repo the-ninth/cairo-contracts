@@ -438,6 +438,22 @@ func collectOre{
 end
 
 @external
+func attackOre{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(combat_id: felt, account: felt, target: Coordinate):
+    alloc_locals
+
+    authorized_call(account, ACTION_FR_COMBAT_MINE_ORE)
+    LazyUpdate_update_combat_status(combat_id)
+    player_can_action(combat_id, account)
+
+    OreLibrary.attack_ore(combat_id, account, target)
+    return ()
+end
+
+@external
 func attack{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
