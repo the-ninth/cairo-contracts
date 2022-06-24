@@ -14,3 +14,6 @@ tsconfig.json
 script
 hardhat.config.ts
 .vscode
+goerli.accounts.json
+goerli.deployments.txt
+node.json

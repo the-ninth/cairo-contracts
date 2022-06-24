@@ -13,6 +13,7 @@ from openzeppelin.token.ERC20.interfaces.IERC20 import IERC20
 from openzeppelin.security.safemath import uint256_checked_add
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
+from contracts.access.library import NINTH_CONTRACT, FR_COMBAT_CONTRACT
 from contracts.pvp.first_relic.IFirstRelicCombat import IFirstRelicCombat
 
 
@@ -48,7 +49,7 @@ func register{
     let (caller) = get_caller_address()
     let (self) = get_contract_address()
     let (access_contract_address) = access_contract.read()
-    let (ninth_contract_address) = IAccessControl.ninthContract(contract_address=access_contract_address)
+    let (ninth_contract_address) = IAccessControl.getContractAddress(contract_address=access_contract_address, contract_name=NINTH_CONTRACT)
     let register_fee = Uint256(REGISTER_FEE, 0)
     let (res) = IERC20.transferFrom(contract_address=ninth_contract_address, sender=caller, recipient=self, amount=register_fee)
     assert res = TRUE
@@ -56,7 +57,7 @@ func register{
     let (new_total) = uint256_checked_add(total, register_fee)
     combat_register_fee.write(combat_id, new_total)
 
-    let (combat_contract_address) = IAccessControl.frCombatContract(contract_address=access_contract_address)
+    let (combat_contract_address) = IAccessControl.getContractAddress(contract_address=access_contract_address, contract_name=FR_COMBAT_CONTRACT)
     IFirstRelicCombat.initPlayer(contract_address=combat_contract_address, combat_id=combat_id, account=caller)
 
     return ()

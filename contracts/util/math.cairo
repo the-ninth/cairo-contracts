@@ -78,7 +78,7 @@ end
 func felt_lt{
         range_check_ptr
     }(a: felt, b: felt) -> (res: felt):
-    let res = sign(a - b)
+    let (res) = sign(a - b)
     if res == -1:
         return (TRUE)
     else:

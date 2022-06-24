@@ -33,44 +33,9 @@ end
 #
 
 @storage_var
-func AccessControl_noah_contract() -> (res: felt):
+func AccessControl_contract_address(contract_name: felt) -> (contract_address: felt):
 end
 
-@storage_var
-func AccessControl_ninth_contract() -> (res: felt):
-end
-
-@storage_var
-func AccessControl_stone_contract() -> (res: felt):
-end
-
-@storage_var
-func AccessControl_farmer_contract() -> (res: felt):
-end
-
-@storage_var
-func AccessControl_land_contract() -> (res: felt):
-end
-
-@storage_var
-func AccessControl_random_producer_contract() -> (res: felt):
-end
-
-@storage_var
-func AccessControl_fr_combat_register_contract() -> (res: felt):
-end
-
-@storage_var
-func AccessControl_fr_combat_contract() -> (res: felt):
-end
-
-@storage_var
-func AccessControl_delegate_account_registry_contract() -> (res: felt):
-end
-
-@storage_var
-func AccessControl_fr_3rd_boss_contract() -> (res: felt):
-end
 
 #
 # View
@@ -87,102 +52,12 @@ func hasRole{
 end
 
 @view
-func noahContract{
+func getContractAddress{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_noah_contract.read()
-    return (addr)
-end
-
-@view
-func ninthContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_ninth_contract.read()
-    return (addr)
-end
-
-@view
-func stoneContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_stone_contract.read()
-    return (addr)
-end
-
-@view
-func farmerContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_farmer_contract.read()
-    return (addr)
-end
-
-@view
-func landContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_land_contract.read()
-    return (addr)
-end
-
-@view
-func randomProducerContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_random_producer_contract.read()
-    return (addr)
-end
-
-@view
-func frCombatRegisterContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_fr_combat_register_contract.read()
-    return (addr)
-end
-
-@view
-func frCombatContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_fr_combat_contract.read()
-    return (addr)
-end
-
-@view
-func delegateAccountRegistryContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_delegate_account_registry_contract.read()
-    return (addr)
-end
-
-@view
-func fr3RdBossContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (contract: felt):
-    let (addr) = AccessControl_fr_3rd_boss_contract.read()
+    }(contract_name: felt) -> (contract_address: felt):
+    let (addr) = AccessControl_contract_address.read(contract_name)
     return (addr)
 end
 
@@ -191,112 +66,13 @@ end
 #
 
 @external
-func setNoahContract{
+func setContractAddress{
         syscall_ptr : felt*, 
         pedersen_ptr : HashBuiltin*,
         range_check_ptr
-    }(contract: felt):
+    }(contract_name: felt, contract_address: felt):
     AccessControl_only_super_admin()
-    AccessControl_noah_contract.write(contract)
-    return ()
-end
-
-@external
-func setNinthContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_ninth_contract.write(contract)
-    return ()
-end
-
-@external
-func setStoneContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_stone_contract.write(contract)
-    return ()
-end
-
-@external
-func setFarmerContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_farmer_contract.write(contract)
-    return ()
-end
-
-@external
-func setLandContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_land_contract.write(contract)
-    return ()
-end
-
-@external
-func setRandomProducerContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_random_producer_contract.write(contract)
-    return ()
-end
-
-@external
-func setFrCombatRegisterContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_fr_combat_register_contract.write(contract)
-    return ()
-end
-
-@external
-func setFrCombatContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_fr_combat_contract.write(contract)
-    return ()
-end
-
-@external
-func setDelegateAccountRegistryContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_delegate_account_registry_contract.write(contract)
-    return ()
-end
-
-@external
-func setFr3RdBossContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(contract: felt):
-    AccessControl_only_super_admin()
-    AccessControl_fr_3rd_boss_contract.write(contract)
+    AccessControl_contract_address.write(contract_name, contract_address)
     return ()
 end
 

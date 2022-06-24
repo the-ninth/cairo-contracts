@@ -44,7 +44,7 @@ from contracts.ERC721_Enumerable_AutoId.library import (
 )
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
-from contracts.access.library import ROLE_FARMER_MINTER
+from contracts.access.library import ROLE_FARMER_MINTER, FARMER_CONTRACT
 
 struct Farmer:
     member capacity : felt
@@ -306,7 +306,7 @@ func getToWork{
     # transfer farmer to the land contract
     # todo: assert the caller own the farmer and land token
     let (access_contract) = Farmer_access_contract.read()
-    let (farmer_contract) = IAccessControl.farmerContract(contract_address=access_contract)
+    let (farmer_contract) = IAccessControl.getContractAddress(contract_address=access_contract, contract_name=FARMER_CONTRACT)
     IERC721.transferFrom(contract_address=self, from_=caller, to=farmer_contract, tokenId=farmerTokenId)
     return ()
 end

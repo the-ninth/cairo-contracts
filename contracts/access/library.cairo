@@ -35,6 +35,15 @@ const ROLE_KOMA_MINTER = 0x17a1d03badb9194b7cd7c85e4c945d8ec414a6831c6eb4fe03fd0
 # permission to create first relic combat, keccak224('ROLE_FRCOMBAT_CREATOR')
 const ROLE_FRCOMBAT_CREATOR = 0xf0845edbfd13ab09e214c98fdbf5ae36408448178802e82e04d85d98
 
+#
+const NOAH_CONTRACT = 'NoahContract'
+const NINTH_CONTRACT = 'NinthContract'
+const FARMER_CONTRACT = 'FarmerContract'
+const LAND_CONTRACT = 'LandContract'
+const RANDOM_PRODUCER_CONTRACT = 'RandomProducerContract'
+const FR_COMBAT_CONTRACT = 'FrCombatContract'
+const DELEGATE_ACCOUNT_REGISTRY_CONTRACT = 'DelegateAccountRegistryContract'
+const KOMA_CONTRACT = 'KomaContract'
 
 @storage_var
 func AccessControl_role_accounts(role: felt, account: felt) -> (res: felt):

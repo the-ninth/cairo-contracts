@@ -7,7 +7,7 @@ from starkware.cairo.common.math import assert_not_zero, assert_not_equal
 from starkware.starknet.common.syscalls import get_caller_address
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
-from contracts.access.library import ROLE_FRCOMBAT_CREATOR
+from contracts.access.library import ROLE_FRCOMBAT_CREATOR, RANDOM_PRODUCER_CONTRACT, DELEGATE_ACCOUNT_REGISTRY_CONTRACT
 
 from contracts.delegate_account.interfaces.IDelegateAccountRegistry import IDelegateAccountRegistry
 from contracts.delegate_account.actions import (
@@ -321,9 +321,6 @@ func initPlayer{
     # only register contract could call
     let (access_contract_address) = access_contract.read()
     let (caller) = get_caller_address()
-    let (register_contract_address) = IAccessControl.frCombatRegisterContract(contract_address=access_contract_address)
-    assert_not_zero(caller)
-    assert caller = register_contract_address
 
     let (next_seed) = FirstRelicCombat_init_player(combat_id, account)
     # generate chests and ores
@@ -541,23 +538,23 @@ func equipProp{
     return ()
 end
 
-@external
-func enterRelicGate{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(combat_id: felt, account: felt, to: Coordinate, prop_id: felt):
-    authorized_call(account, ACTION_FR_COMBAT_ENTER_GATE)
-    LazyUpdate_update_combat_status(combat_id)
-    player_can_action(combat_id, account)
+# @external
+# func enterRelicGate{
+#         syscall_ptr : felt*, 
+#         pedersen_ptr : HashBuiltin*,
+#         range_check_ptr
+#     }(combat_id: felt, account: felt, to: Coordinate, prop_id: felt):
+#     authorized_call(account, ACTION_FR_COMBAT_ENTER_GATE)
+#     LazyUpdate_update_combat_status(combat_id)
+#     player_can_action(combat_id, account)
 
-    FirstRelicCombat_enter_relic_gate(combat_id, account, to, prop_id)
-    let (access_contract_address) = access_contract.read()
-    let (fr_3rd_contract_address) = IAccessControl.fr3RdBossContract(contract_address=access_contract_address)
-    IFR3rd.join(contract_address=fr_3rd_contract_address, combat_id=combat_id, address=account)
+#     FirstRelicCombat_enter_relic_gate(combat_id, account, to, prop_id)
+#     let (access_contract_address) = access_contract.read()
+#     let (fr_3rd_contract_address) = IAccessControl.fr3RdBossContract(contract_address=access_contract_address)
+#     IFR3rd.join(contract_address=fr_3rd_contract_address, combat_id=combat_id, address=account)
     
-    return ()
-end
+#     return ()
+# end
 
 @external
 func fulfillRandom{
@@ -567,7 +564,7 @@ func fulfillRandom{
     }(request_id: felt, random: felt):
     let (caller) = get_caller_address()
     let (access_contract_address) = access_contract.read()
-    let (producer_address) = IAccessControl.randomProducerContract(contract_address=access_contract_address)
+    let (producer_address) = IAccessControl.getContractAddress(contract_address=access_contract_address, contract_name=RANDOM_PRODUCER_CONTRACT)
 
     with_attr error_message("FirstRelicCombat: random fulfill invalid producer"):
         assert caller = producer_address
@@ -596,7 +593,7 @@ func authorized_call{
     end
 
     let (access_contract_address) = access_contract.read()
-    let (delegate_registry_contract_address) = IAccessControl.delegateAccountRegistryContract(contract_address=access_contract_address)
+    let (delegate_registry_contract_address) = IAccessControl.getContractAddress(contract_address=access_contract_address, contract_name=DELEGATE_ACCOUNT_REGISTRY_CONTRACT)
     let (res) = IDelegateAccountRegistry.authorized(contract_address=delegate_registry_contract_address, account=account, delegate_account=caller, action=action)
     with_attr error_message("FirstRelicCombat: unauthorized call"):
         assert res = TRUE

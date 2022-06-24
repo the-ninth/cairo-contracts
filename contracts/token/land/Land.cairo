@@ -43,7 +43,7 @@ from contracts.token.land.library_building import Land_build, Land, Land_getLand
 from contracts.token.interfaces.IFarmer import IFarmer
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
-from contracts.access.library import ROLE_ADMIN, ROLE_LAND_MINTER
+from contracts.access.library import ROLE_ADMIN, ROLE_LAND_MINTER, NINTH_CONTRACT, NOAH_CONTRACT, FARMER_CONTRACT
 
 #
 # Storage
@@ -298,7 +298,7 @@ func buyLand{
     let (caller) = get_caller_address()
     let (self) = get_contract_address()
     let (access_contract) = Land_access_contract.read()
-    let (ninth_contract) = IAccessControl.ninthContract(contract_address=access_contract)
+    let (ninth_contract) = IAccessControl.getContractAddress(contract_address=access_contract, contract_name=NINTH_CONTRACT)
     let (res) = IERC20.transferFrom(contract_address=ninth_contract, sender=caller, recipient=self, amount=Uint256(low=1000000000000000000000, high=0))
     assert res = 1
     _mint(caller, tokenId)
@@ -317,7 +317,7 @@ func build{
     let (caller) = get_caller_address()
     let (self) = get_contract_address()
     let (access_contract) = Land_access_contract.read()
-    let (noah_contract) = IAccessControl.noahContract(contract_address=access_contract)
+    let (noah_contract) = IAccessControl.getContractAddress(contract_address=access_contract, contract_name=NOAH_CONTRACT)
     let (res) = IERC20.transferFrom(contract_address=noah_contract, sender=caller, recipient=self, amount=Uint256(low=1000000000000000000000, high=0))
     assert res = 1
 
@@ -338,8 +338,8 @@ func _mint{
     # mint a farmer, assign to the land contract
     # todo: record the farmers on a land
     let (access_contract) = Land_access_contract.read()
-    let (farmer_contract) = IAccessControl.farmerContract(contract_address=access_contract)
-    let (land_contract) = IAccessControl.landContract(contract_address=access_contract)
+    let (farmer_contract) = IAccessControl.getContractAddress(contract_address=access_contract, contract_name=FARMER_CONTRACT)
+    let (land_contract) = get_contract_address()
     let (farmer_token_id) = IFarmer.mint(contract_address=farmer_contract, to=land_contract)
     return ()
 end
