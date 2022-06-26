@@ -4,6 +4,9 @@ from starkware.cairo.common.registers import get_label_location
 
 from contracts.pvp.first_relic.structs import Coordinate, CoordinateRange
 
+const REGISTER_FEE = 5000000000000000000
+const MANAGEMENT_FEE_RATE = 50
+
 const MAP_WIDTH = 40
 const MAP_HEIGHT = 25
 const MAP_INNER_AREA_WIDTH = 10
@@ -11,7 +14,7 @@ const MAP_INNER_AREA_HEIGHT = 10
 const CHEST_PER_PLAYER = 3
 const ORE_PER_PLAYER = 3
 const MAX_PLAYERS = 2
-const PREPARE_TIME = 60 # how much time for preparation time
+const PREPARE_TIME = 60  # how much time for preparation time
 const FIRST_STAGE_DURATION = 900
 const SECOND_STAGE_DURATION = 300
 const ORE_STRUCTURE_HP_PER_WORKER = 100
@@ -36,10 +39,10 @@ const PROP_WEIGHT_EQUIPMENTS = 30
 const PROP_WEIGHT_OTHERS = 20
 
 # useable props
-const PROP_CREATURE_SHIELD           = 100000001
-const PROP_CREATURE_ATTACK_UP_30P    = 100000002
-const PROP_CREATURE_DAMAGE_DOWN_30P  = 100000003
-const PROP_CREATURE_HEALTH_KIT       = 100000004
+const PROP_CREATURE_SHIELD = 100000001
+const PROP_CREATURE_ATTACK_UP_30P = 100000002
+const PROP_CREATURE_DAMAGE_DOWN_30P = 100000003
+const PROP_CREATURE_HEALTH_KIT = 100000004
 const PROP_CREATURE_MAX_HEALTH_UP_10 = 100000005
 
 # unuseable props
@@ -54,19 +57,18 @@ const PROP_CREATURE_STAGE2_KEY8 = 200000008
 const PROP_CREATURE_STAGE2_KEY9 = 200000009
 
 # equipments
-const PROP_CREATURE_ENGINE    = 310000001
-const PROP_CREATURE_SHOE      = 320000001
+const PROP_CREATURE_ENGINE = 310000001
+const PROP_CREATURE_SHOE = 320000001
 const PROP_CREATURE_LASER_GUN = 330000001
-const PROP_CREATURE_DRILL     = 330000002
-const PROP_CREATURE_ARMOR     = 340000001
+const PROP_CREATURE_DRILL = 330000002
+const PROP_CREATURE_ARMOR = 340000001
 
 const PROP_EQUIPMENT_PART_ENGINE = 1
-const PROP_EQUIPMENT_PART_SHOE   = 2
+const PROP_EQUIPMENT_PART_SHOE = 2
 const PROP_EQUIPMENT_PART_WEAPON = 3
-const PROP_EQUIPMENT_PART_ARMOR  = 4
+const PROP_EQUIPMENT_PART_ARMOR = 4
 
-func get_props_pool() -> (props_pool_len: felt, props_pool: felt*):
-
+func get_props_pool() -> (props_pool_len : felt, props_pool : felt*):
     let (pool_address) = get_label_location(props_pool)
 
     return (19, cast(pool_address, felt*))
@@ -93,7 +95,7 @@ func get_props_pool() -> (props_pool_len: felt, props_pool: felt*):
     dw PROP_CREATURE_ARMOR
 end
 
-func get_equipments() -> (equipments_len: felt, equipments: felt*):
+func get_equipments() -> (equipments_len : felt, equipments : felt*):
     let (equipments_address) = get_label_location(equipments)
 
     return (5, cast(equipments_address, felt*))
@@ -106,7 +108,7 @@ func get_equipments() -> (equipments_len: felt, equipments: felt*):
     dw PROP_CREATURE_ARMOR
 end
 
-func get_relic_gate_key_ids() -> (key_ids_len: felt, key_ids: felt*):
+func get_relic_gate_key_ids() -> (key_ids_len : felt, key_ids : felt*):
     let (ids_address) = get_label_location(gate_ids)
 
     return (9, cast(ids_address, felt*))
@@ -123,7 +125,7 @@ func get_relic_gate_key_ids() -> (key_ids_len: felt, key_ids: felt*):
     dw PROP_CREATURE_STAGE2_KEY9
 end
 
-func get_outer_coordinate_ranges() -> (ranges_len: felt, ranges: CoordinateRange*):
+func get_outer_coordinate_ranges() -> (ranges_len : felt, ranges : CoordinateRange*):
     let (ranges_address) = get_label_location(coordinate_ranges)
 
     return (8, cast(ranges_address, CoordinateRange*))
@@ -167,10 +169,11 @@ func get_outer_coordinate_ranges() -> (ranges_len: felt, ranges: CoordinateRange
     dw 11900
 end
 
-func get_valid_coordinates() -> (data_len: felt, data: Coordinate*):
+func get_valid_coordinates() -> (data_len : felt, data : Coordinate*):
     let (coordinates_address) = get_label_location(coordinates)
 
     return (483, cast(coordinates_address, Coordinate*))
+
     coordinates:
     dw 0
     dw 0
@@ -1140,10 +1143,11 @@ func get_valid_coordinates() -> (data_len: felt, data: Coordinate*):
     dw 24
 end
 
-func get_outer_coordinates() -> (data_len: felt, data: Coordinate*):
+func get_outer_coordinates() -> (data_len : felt, data : Coordinate*):
     let (coordinates_address) = get_label_location(outer_coordinates)
 
     return (338, cast(coordinates_address, Coordinate*))
+
     outer_coordinates:
     dw 0
     dw 0
@@ -1823,10 +1827,11 @@ func get_outer_coordinates() -> (data_len: felt, data: Coordinate*):
     dw 16
 end
 
-func get_inner_coordinates() -> (data_len: felt, data: Coordinate*):
+func get_inner_coordinates() -> (data_len : felt, data : Coordinate*):
     let (coordinates_address) = get_label_location(inner_coordinates)
 
     return (145, cast(coordinates_address, Coordinate*))
+
     inner_coordinates:
     dw 0
     dw 22
