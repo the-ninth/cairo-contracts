@@ -25,8 +25,8 @@ func FirstRelicCombat_register_fee(combat_id : felt) -> (total : Uint256):
 end
 
 @storage_var
-func FirstRelicCombat_combat_account_koma_ids(combat_id : felt, account : felt) -> (
-    koma_id : Uint256
+func FirstRelicCombat_combat_account_koma_tokens(combat_id : felt, account : felt) -> (
+    koma_token_id : Uint256
 ):
 end
 

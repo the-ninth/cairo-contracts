@@ -17,13 +17,13 @@ from contracts.pvp.first_relic.IFirstRelicCombat import IFirstRelicCombat
 from contracts.pvp.first_relic.constants import REGISTER_FEE
 from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_access_contract,
-    FirstRelicCombat_combat_account_koma_ids,
+    FirstRelicCombat_combat_account_koma_tokens,
     FirstRelicCombat_register_fee,
 )
 
 namespace ManageLibrary:
     func register{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        combat_id : felt, account : felt, koma_id : Uint256
+        combat_id : felt, account : felt, koma_token_id : Uint256
     ):
         let (self) = get_contract_address()
         let (access_contract_address) = FirstRelicCombat_access_contract.read()
@@ -45,17 +45,17 @@ namespace ManageLibrary:
             contract_address=access_contract_address, contract_name=KOMA_CONTRACT
         )
         IERC721.transferFrom(
-            contract_address=koma_contract_address, from_=account, to=self, tokenId=koma_id
+            contract_address=koma_contract_address, from_=account, to=self, tokenId=koma_token_id
         )
-        FirstRelicCombat_combat_account_koma_ids.write(combat_id, account, koma_id)
+        FirstRelicCombat_combat_account_koma_tokens.write(combat_id, account, koma_token_id)
         FirstRelicCombat_register_fee.write(combat_id, new_total)
         return ()
     end
 
-    func get_combat_account_koma_id{
+    func get_combat_account_koma_token{
         syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(combat_id : felt, account : felt) -> (koma_id : Uint256):
-        let (koma_id) = FirstRelicCombat_combat_account_koma_ids.read(combat_id, account)
-        return (koma_id)
+    }(combat_id : felt, account : felt) -> (koma_token_id : Uint256):
+        let (koma_token_id) = FirstRelicCombat_combat_account_koma_tokens.read(combat_id, account)
+        return (koma_token_id)
     end
 end

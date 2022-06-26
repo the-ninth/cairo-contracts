@@ -287,9 +287,9 @@ end
 @view
 func getCombatAccountKomaId{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     combat_id : felt, account : felt
-) -> (koma_id : Uint256):
-    let (koma_id) = ManageLibrary.get_combat_account_koma_id(combat_id, account)
-    return (koma_id)
+) -> (koma_token_id : Uint256):
+    let (koma_token_id) = ManageLibrary.get_combat_account_koma_token(combat_id, account)
+    return (koma_token_id)
 end
 
 @external
@@ -303,12 +303,12 @@ end
 
 @external
 func register{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt, koma_id : Uint256
+    combat_id : felt, koma_token_id : Uint256
 ) -> ():
     alloc_locals
 
     let (account) = get_caller_address()
-    ManageLibrary.register(combat_id, account, koma_id)
+    ManageLibrary.register(combat_id, account, koma_token_id)
     let (next_seed) = FirstRelicCombat_init_player(combat_id, account)
     # generate chests and ores
     let (next_seed) = FirstRelicCombat_init_chests(combat_id, CHEST_PER_PLAYER, next_seed)
