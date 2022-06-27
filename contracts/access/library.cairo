@@ -37,32 +37,28 @@ const ROLE_FRCOMBAT_CREATOR = 0xf0845edbfd13ab09e214c98fdbf5ae36408448178802e82e
 
 #
 const NOAH_CONTRACT = 'NoahContract'
-const NINTH_CONTRACT = 'NinthContract'
+const NINTH_CONTRACT = 'NinthContract'  # 0x4e696e7468436f6e7472616374
 const FARMER_CONTRACT = 'FarmerContract'
 const LAND_CONTRACT = 'LandContract'
 const RANDOM_PRODUCER_CONTRACT = 'RandomProducerContract'
 const FR_COMBAT_CONTRACT = 'FrCombatContract'
 const DELEGATE_ACCOUNT_REGISTRY_CONTRACT = 'DelegateAccountRegistryContract'
-const KOMA_CONTRACT = 'KomaContract'
+const KOMA_CONTRACT = 'KomaContract'  # 0x4b6f6d61436f6e7472616374
 
 @storage_var
-func AccessControl_role_accounts(role: felt, account: felt) -> (res: felt):
+func AccessControl_role_accounts(role : felt, account : felt) -> (res : felt):
 end
 
-func AccessControl_hasRole{
-        pedersen_ptr : HashBuiltin*,
-        syscall_ptr : felt*, 
-        range_check_ptr
-    }(role: felt, account: felt) -> (res: felt):
+func AccessControl_hasRole{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    role : felt, account : felt
+) -> (res : felt):
     let (res) = AccessControl_role_accounts.read(role, account)
     return (res)
 end
 
-func AccessControl_grantRole{
-        pedersen_ptr : HashBuiltin*,
-        syscall_ptr : felt*, 
-        range_check_ptr
-    }(role: felt, account: felt):
+func AccessControl_grantRole{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    role : felt, account : felt
+):
     AccessControl_role_accounts.write(role, account, 1)
     return ()
 end
@@ -72,10 +68,8 @@ end
 #
 
 func AccessControl_only_super_admin{
-        pedersen_ptr : HashBuiltin*,
-        syscall_ptr : felt*, 
-        range_check_ptr
-    }():
+    pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr
+}():
     let (caller) = get_caller_address()
     let (res) = AccessControl_hasRole(ROLE_SUPER_ADMIN, caller)
     assert res = 1
