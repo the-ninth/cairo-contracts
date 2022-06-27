@@ -29,9 +29,14 @@ async def test(contract_factory):
     await signer.send_transaction(account_contract, koma_contract.contract_address, "mint", [
         account_contract.contract_address, 1
     ])
+    await signer.send_transaction(account_contract, koma_contract.contract_address, "mint", [
+        account_contract.contract_address, 1
+    ])
     execution_info = await koma_contract.getKomaCreature(1).call()
     print(execution_info.result)
     execution_info = await koma_contract.getKoma(to_uint(1)).call()
+    print(execution_info.result)
+    execution_info = await koma_contract.getKomas(account_contract.contract_address, to_uint(0), 10).call()
     print(execution_info.result)
 
 

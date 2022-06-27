@@ -157,6 +157,14 @@ func getKoma{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
 end
 
 @view
+func getKomas{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    account : felt, index : Uint256, length : felt
+) -> (komas_len : felt, komas : Koma*):
+    let (komas_len, komas) = KomaLibrary.get_komas(account, index, length)
+    return (komas_len, komas)
+end
+
+@view
 func getKomaCreature{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
     koma_creature_id : felt
 ) -> (koma_creature : KomaCreature):
