@@ -66,7 +66,6 @@ from contracts.pvp.first_relic.structs import (
     Chest,
     Coordinate,
     Koma,
-    KomaMiningOre,
     Ore,
     ThirdStageAction,
     Movment,

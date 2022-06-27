@@ -17,3 +17,4 @@ hardhat.config.ts
 goerli.accounts.json
 goerli.deployments.txt
 node.json
+.VSCodeCounter
