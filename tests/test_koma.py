@@ -26,6 +26,9 @@ async def test(contract_factory):
     await signer.send_transaction(account_contract, koma_contract.contract_address, "setKomaCreature", [
         1, 1, 1, 3, 3, 100, 15, 7, 200
     ])
+    await signer.send_transaction(account_contract, koma_contract.contract_address, "setKomaCreatureUri", [
+        1, 2, 1, 2
+    ])
     await signer.send_transaction(account_contract, koma_contract.contract_address, "mint", [
         account_contract.contract_address, 1
     ])
@@ -38,6 +41,8 @@ async def test(contract_factory):
     print(execution_info.result)
     execution_info = await koma_contract.getKomas(account_contract.contract_address, to_uint(0), 10).call()
     print(execution_info.result)
+    execution_info = await koma_contract.tokenURI(to_uint(1)).call()
+    print(execution_info.result)
 
 
 @pytest.fixture
@@ -45,7 +50,8 @@ async def contract_factory():
     starknet = await Starknet.empty()
     account_contract = await starknet.deploy(ACCOUNT_CONTRACT_FILE, constructor_calldata=[signer.public_key])
     access_control_contract = await starknet.deploy(ACCESS_CONTROL_CONTRACT_FILE, constructor_calldata=[account_contract.contract_address])
-    koma_contract = await starknet.deploy(KOMA_CONTRACT_FILE, constructor_calldata=[access_control_contract.contract_address])
+    koma_contract = await starknet.deploy(KOMA_CONTRACT_FILE, constructor_calldata=[])
+    await signer.send_transaction(account_contract, koma_contract.contract_address, "initialize", [access_control_contract.contract_address, account_contract.contract_address])
     # set contract addresses to access control
     await signer.send_transactions(
         account_contract,

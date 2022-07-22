@@ -7,6 +7,8 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.cairo.common.math import assert_not_zero
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 
+from openzeppelin.upgrades.library import Proxy_initializer
+
 from openzeppelin.token.erc721.library import (
     ERC721_name,
     ERC721_symbol,
@@ -40,23 +42,26 @@ from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_KOMA_MINTER, ROLE_ADMIN
-from contracts.pvp.Koma.library import Koma, KomaCreature, KomaLibrary
-
-@storage_var
-func Koma_access_contract() -> (access_contract : felt):
-end
+from contracts.pvp.Koma.library import Koma, KomaCreature, KomaLibrary, Koma_access_contract
 
 #
 # Constructor
 #
 
 @constructor
-func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    access_contract_ : felt
+func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}():
+    return ()
+end
+
+@external
+func initialize{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    access_contract : felt, admin : felt
 ):
     ERC721_initializer('Ninth Koma', 'NKOMA')
     ERC721_Enumerable_initializer()
-    Koma_access_contract.write(access_contract_)
+    Koma_access_contract.write(access_contract)
+
+    Proxy_initializer(admin)
     return ()
 end
 
@@ -143,9 +148,9 @@ end
 @view
 func tokenURI{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
     tokenId : Uint256
-) -> (tokenURI : felt):
-    let (tokenURI : felt) = ERC721_tokenURI(tokenId)
-    return (tokenURI)
+) -> (token_uri_len : felt, token_uri : felt*):
+    let (token_uri_len, token_uri) = KomaLibrary.get_token_uri(tokenId)
+    return (token_uri_len, token_uri)
 end
 
 @view
@@ -209,14 +214,6 @@ func safeTransferFrom{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_ch
 end
 
 @external
-func setTokenURI{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    tokenId : Uint256, tokenURI : felt
-):
-    ERC721_setTokenURI(tokenId, tokenURI)
-    return ()
-end
-
-@external
 func setKomaCreature{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
     koma_creature_id : felt, koma_creature : KomaCreature
 ) -> ():
@@ -232,6 +229,31 @@ func mint{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
     onlyRole(ROLE_KOMA_MINTER)
     let (token_id) = KomaLibrary.mint(to, koma_creature_id)
     return (token_id)
+end
+
+@external
+func faucetClaim{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}():
+    let (caller) = get_caller_address()
+    KomaLibrary.faucet_claim(caller)
+    return ()
+end
+
+@external
+func mintMulti{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    to : felt, creature_ids_len : felt, creature_ids : felt*
+):
+    onlyRole(ROLE_KOMA_MINTER)
+    KomaLibrary.mint_multi(to, creature_ids_len, creature_ids)
+    return ()
+end
+
+@external
+func setKomaCreatureUri{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    koma_creature_id : felt, token_uri_len : felt, token_uri : felt*
+):
+    onlyRole(ROLE_ADMIN)
+    KomaLibrary.set_koma_creature_uri(koma_creature_id, token_uri_len, token_uri)
+    return ()
 end
 
 func onlyRole{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(role : felt) -> ():
