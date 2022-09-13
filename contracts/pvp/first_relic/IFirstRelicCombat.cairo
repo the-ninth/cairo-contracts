@@ -1,6 +1,6 @@
 %lang starknet
 
-# combat for first relic
+// combat for first relic
 
 from contracts.pvp.first_relic.structs import (
     Combat,
@@ -12,188 +12,200 @@ from contracts.pvp.first_relic.structs import (
     Ore,
     Prop,
     RelicGate,
-    ThirdStageAction
+    ThirdStageAction,
 )
 
 @contract_interface
-namespace IFirstRelicCombat:
+namespace IFirstRelicCombat {
+    func newCombat() -> (combat_id: felt) {
+    }
 
-    func newCombat() -> (combat_id: felt):
-    end
+    func getCombatCount() -> (count: felt) {
+    }
 
-    func getCombatCount() -> (count: felt):
-    end
+    func getCombat(combat_id: felt) -> (combat: Combat) {
+    }
 
-    func getCombat(combat_id: felt) -> (combat: Combat):
-    end
+    func initPlayer(combat_id: felt, account: felt) {
+    }
 
-    func initPlayer(combat_id: felt, account: felt):
-    end
+    func getPlayersCount() -> (combat_id: felt, count: felt) {
+    }
 
-    func getPlayersCount() -> (combat_id: felt, count: felt):
-    end
+    func getPlayers(combat_id: felt, offset: felt, length: felt) -> (
+        players_len: felt, players: felt*
+    ) {
+    }
 
-    func getPlayers(combat_id: felt, offset: felt, length: felt) -> (players_len: felt, players: felt*):
-    end
+    func getKoma(combat_id: felt, account: felt) -> (koma: Koma) {
+    }
 
-    func getKoma(combat_id: felt, account: felt) -> (koma: Koma):
-    end
+    func getKomas(combat_id: felt, accounts_len: felt, accounts: felt*) -> (
+        komas_len: felt, komas: Koma*
+    ) {
+    }
 
-    func getKomas(combat_id: felt, accounts_len: felt, accounts: felt*) -> (komas_len: felt, komas: Koma*):
-    end
+    func getPlayerScore(combat_id: felt, account: felt) -> (score: felt) {
+    }
 
-    func getPlayerScore(combat_id: felt, account: felt) -> (score: felt):
-    end
+    func getPlayersScore(combat_id: felt, offset: felt, len: felt) -> (
+        players_score_len: felt, players_score: felt*
+    ) {
+    }
 
-    func getPlayersScore(combat_id: felt, offset: felt, len: felt) -> (players_score_len: felt, players_score: felt*):
-    end
+    // first stage
 
-    # first stage
+    func getChestCount(combat_id: felt) -> (len: felt) {
+    }
 
-    func getChestCount(combat_id: felt) -> (len: felt):
-    end
+    func getChests(combat_id: felt, offset: felt, length: felt) -> (data_len: felt, data: Chest*) {
+    }
 
-    func getChests(combat_id: felt, offset: felt, length: felt) -> (data_len: felt, data: Chest*):
-    end
+    func getChestByCoordinate(combat_id, coordinate: Coordinate) -> (chest: Chest) {
+    }
 
-    func getChestByCoordinate(combat_id, coordinate: Coordinate) -> (chest: Chest):
-    end
+    func getOreCount(combat_id: felt) -> (len: felt) {
+    }
 
-    func getOreCount(combat_id: felt) -> (len: felt):
-    end
+    func getOres(combat_id: felt, offset: felt, length: felt) -> (ores_len: felt, ores: Ore*) {
+    }
 
-    func getOres(combat_id: felt, offset: felt, length: felt) -> (ores_len: felt, ores: Ore*):
-    end
+    func getOreByCoordinate(combat_id, coordinate: Coordinate) -> (ore: Ore) {
+    }
 
-    func getOreByCoordinate(combat_id, coordinate: Coordinate) -> (ore: Ore):
-    end
+    func move(combat_id: felt, account: felt, to: Coordinate) {
+    }
 
-    func move(combat_id: felt, account: felt, to: Coordinate):
-    end
+    func getKomasMovments(combat_id: felt, accounts_len: felt, accounts: felt*) -> (
+        movments_len: felt, movments: Movment*
+    ) {
+    }
 
-    func getKomasMovments(combat_id: felt, accounts_len: felt, accounts: felt*) -> (movments_len: felt, movments: Movment*):
-    end
+    func openChest(combat_id: felt, account: felt, target: Coordinate) {
+    }
 
-    func openChest(combat_id: felt, account: felt, target: Coordinate):
-    end
+    func selectChestOption(combat_id: felt, account: felt, target: Coordinate, option: felt) {
+    }
 
-    func selectChestOption(combat_id: felt, account: felt, target: Coordinate, option: felt):
-    end
+    func mineOre(combat_id: felt, account: felt, target: Coordinate, workers_count: felt) {
+    }
 
-    func mineOre(combat_id: felt, account: felt, target: Coordinate, workers_count: felt):
-    end
+    func recallWorkers(commbat_id: felt, account: felt, target: Coordinate) {
+    }
 
-    func recallWorkers(commbat_id: felt, account: felt, target: Coordinate):
-    end
+    func produceBot(combat_id: felt, account: felt, bot_type: felt, quantity: felt) {
+    }
 
-    func produceBot(combat_id: felt, account: felt, bot_type: felt, quantity: felt):
-    end
+    func attack(combat_id: felt, account: felt, target_account: felt) {
+    }
 
-    func attack(combat_id: felt, account: felt, target_account: felt):
-    end
+    func getKomaProps(combat_id: felt, account: felt) -> (props_len: felt, props: Prop*) {
+    }
 
-    func getKomaProps(combat_id: felt, account: felt) -> (props_len: felt, props: Prop*):
-    end
+    func getProp(combat_id: felt, prop_id: felt) -> (res: (felt, Prop)) {
+    }
 
-    func getProp(combat_id: felt, prop_id: felt) -> (res: (felt, Prop)):
-    end
+    func getKomaEquipments(combat_id: felt, account: felt) -> (equipments: KomaEquipments) {
+    }
 
-    func getKomaEquipments(combat_id: felt, account: felt) -> (equipments: KomaEquipments):
-    end
+    func useProp(combat_id: felt, account: felt, prop_id: felt) {
+    }
 
-    func useProp(combat_id: felt, account: felt, prop_id: felt):
-    end
+    func equipProp(combat_id: felt, account: felt, prop_id: felt) {
+    }
 
-    func equipProp(combat_id: felt, account: felt, prop_id: felt):
-    end
+    func getAccountActualCoordinate(account: felt) -> (coordinate: Coordinate) {
+    }
 
-    func getAccountActualCoordinate(account: felt) -> (coordinate: Coordinate):
-    end
+    func reachStage2Circle(account: felt, to: Coordinate) {
+    }
 
-    func reachStage2Circle(account: felt, to: Coordinate):
-    end
+    // second stage
 
-    # second stage
+    func enterRelicGate(combat_id: felt, account: felt, to: Coordinate, prop_id: felt) {
+    }
 
-    func enterRelicGate(combat_id: felt, account: felt, to: Coordinate, prop_id: felt):
-    end
+    func getRelicGate(combat_id: felt, number: felt) -> (relic_gate: RelicGate) {
+    }
 
-    func getRelicGate(combat_id: felt, number: felt) -> (relic_gate: RelicGate):
-    end
+    func getRelicGates(combat_id: felt) -> (relic_gates_len: felt, relic_gates: RelicGate*) {
+    }
 
-    func getRelicGates(combat_id: felt) -> (relic_gates_len: felt, relic_gates: RelicGate*):
-    end
+    // third stage
 
-    # third stage
+    func prepareAction(account: felt, action_hash: felt) {
+    }
 
-    func prepareAction(account: felt, action_hash: felt):
-    end
+    func confirmAction(account: felt, action: ThirdStageAction) {
+    }
+}
 
-    func confirmAction(account: felt, action: ThirdStageAction):
-    end
-
-end
-
-#
-# Events
-#
-
-@event
-func CombatCreated(combat_id: felt, timestamp: felt):
-end
-
-@event
-func CombatPreparing(combat_id: felt, timestamp: felt):
-end
+//
+// Events
+//
 
 @event
-func CombatFirstStageStart(combat_id: felt, timestamp: felt):
-end
+func CombatCreated(combat_id: felt, timestamp: felt) {
+}
 
 @event
-func CombatSecondStageStart(combat_id: felt, timestamp: felt):
-end
+func CombatPreparing(combat_id: felt, timestamp: felt) {
+}
 
 @event
-func CombatThirdStageStart(combat_id: felt, timestamp: felt):
-end
+func CombatFirstStageStart(combat_id: felt, timestamp: felt) {
+}
 
 @event
-func CombatEnd(combat_id: felt, timestamp: felt):
-end
+func CombatSecondStageStart(combat_id: felt, timestamp: felt) {
+}
 
 @event
-func PlayerInit(combat_id: felt, account: felt, coordinate: Coordinate):
-end
+func CombatThirdStageStart(combat_id: felt, timestamp: felt) {
+}
 
 @event
-func PlayerMove(combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, start_timestamp: felt):
-end
+func CombatEnd(combat_id: felt, timestamp: felt) {
+}
 
 @event
-func PlayerArrival(combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, timestamp: felt):
-end
+func PlayerInit(combat_id: felt, account: felt, coordinate: Coordinate) {
+}
 
 @event
-func PlayerAttack(combat_id: felt, account: felt, target_account: felt, damage: felt, koma_attacked_status: felt):
-end
+func PlayerMove(
+    combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, start_timestamp: felt
+) {
+}
 
 @event
-func PlayerDeath(combat_id: felt, account: felt):
-end
+func PlayerArrival(
+    combat_id: felt, account: felt, from_: Coordinate, to: Coordinate, timestamp: felt
+) {
+}
 
 @event
-func PlayerReachStage2(combat_id: felt, account: felt, hit_coordinate: felt):
-end
+func PlayerAttack(
+    combat_id: felt, account: felt, target_account: felt, damage: felt, koma_attacked_status: felt
+) {
+}
 
 @event
-func PlayerEnterRelicGate(combat_id: felt, account: felt, gate_id: felt):
-end
+func PlayerDeath(combat_id: felt, account: felt) {
+}
 
 @event
-func PlayerAction(combat_id: felt, account: felt, action_id: felt, action: ThirdStageAction):
-end
+func PlayerReachStage2(combat_id: felt, account: felt, hit_coordinate: felt) {
+}
 
 @event
-func Stage3PlayerDeath(combat_id: felt, account: felt, killed_by: felt):
-end
+func PlayerEnterRelicGate(combat_id: felt, account: felt, gate_id: felt) {
+}
+
+@event
+func PlayerAction(combat_id: felt, account: felt, action_id: felt, action: ThirdStageAction) {
+}
+
+@event
+func Stage3PlayerDeath(combat_id: felt, account: felt, killed_by: felt) {
+}

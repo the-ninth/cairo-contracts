@@ -30,7 +30,7 @@ from contracts.util.random import get_random_number
 
 from contracts.util.Uin256_felt_conv import _uint_to_felt, _felt_to_uint
 from starkware.cairo.common.bool import TRUE, FALSE
-from openzeppelin.token.erc20.interfaces.IERC20 import IERC20
+from openzeppelin.token.erc20.IERC20 import IERC20
 from contracts.pvp.first_relic.third_stage.base.structs import (
     Hero,
     Combat,
@@ -87,24 +87,24 @@ from contracts.pvp.first_relic.structs import (
     Prop,
 )
 
-#
-# getters
-#
+//
+// getters
+//
 
-# internal  check if can combat 0:false, 1 true
-func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt
-) -> (is_end : felt):
-    alloc_locals
-    # if boss dead
-    let (boss) = FR3rd_combat_hero.read(combat_id, 0)
+// internal  check if can combat 0:false, 1 true
+func FR3rd_try_clear_combat{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    combat_id: felt
+) -> (is_end: felt) {
+    alloc_locals;
+    // if boss dead
+    let (boss) = FR3rd_combat_hero.read(combat_id, 0);
 
-    if boss.health == 0:
-        FR3rd_reward_living(combat_id)
-        tempvar syscall_ptr = syscall_ptr
-        tempvar pedersen_ptr = pedersen_ptr
-        tempvar range_check_ptr = range_check_ptr
-        let (combat) = FR3rd_combat.read(combat_id)
+    if (boss.health == 0) {
+        FR3rd_reward_living(combat_id);
+        tempvar syscall_ptr = syscall_ptr;
+        tempvar pedersen_ptr = pedersen_ptr;
+        tempvar range_check_ptr = range_check_ptr;
+        let (combat) = FR3rd_combat.read(combat_id);
         FR3rd_base_update_combat(
             combat_id=combat_id,
             round=combat.round + 1,
@@ -115,15 +115,15 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
             init_hero_count=combat.init_hero_count,
             last_round_time=combat.last_round_time,
             end_info=1,
-        )
-        return (TRUE)
-    end
+        );
+        return (TRUE,);
+    }
 
-    # if all hreo dead
-    let (combat) = FR3rd_combat.read(combat_id)
-    if combat.cur_hero_count == 0:
-        FR3rd_reward_by_damage(combat_id)
-        let (combat) = FR3rd_combat.read(combat_id)
+    // if all hreo dead
+    let (combat) = FR3rd_combat.read(combat_id);
+    if (combat.cur_hero_count == 0) {
+        FR3rd_reward_by_damage(combat_id);
+        let (combat) = FR3rd_combat.read(combat_id);
         FR3rd_base_update_combat(
             combat_id=combat_id,
             round=combat.round + 1,
@@ -134,30 +134,30 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
             init_hero_count=combat.init_hero_count,
             last_round_time=combat.last_round_time,
             end_info=2,
-        )
-        return (TRUE)
-    end
+        );
+        return (TRUE,);
+    }
 
-    let (is_end) = FR3rd_base_is_round_end(combat_id)
-    let (is_last) = FR3rd_base_is_last_round(combat_id)
+    let (is_end) = FR3rd_base_is_round_end(combat_id);
+    let (is_last) = FR3rd_base_is_last_round(combat_id);
 
-    # not end
-    if is_end * is_last == FALSE:
-        return (FALSE)
-    end
+    // not end
+    if (is_end * is_last == FALSE) {
+        return (FALSE,);
+    }
 
-    let (has_damage) = is_le(1, boss.bear_from_hero)
-    if has_damage == TRUE:
-        FR3rd_reward_by_damage(combat_id)
-        tempvar syscall_ptr = syscall_ptr
-        tempvar pedersen_ptr = pedersen_ptr
-        tempvar range_check_ptr = range_check_ptr
-    else:
-        tempvar syscall_ptr = syscall_ptr
-        tempvar pedersen_ptr = pedersen_ptr
-        tempvar range_check_ptr = range_check_ptr
-    end
-    let (combat) = FR3rd_combat.read(combat_id)
+    let has_damage = is_le(1, boss.bear_from_hero);
+    if (has_damage == TRUE) {
+        FR3rd_reward_by_damage(combat_id);
+        tempvar syscall_ptr = syscall_ptr;
+        tempvar pedersen_ptr = pedersen_ptr;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        tempvar syscall_ptr = syscall_ptr;
+        tempvar pedersen_ptr = pedersen_ptr;
+        tempvar range_check_ptr = range_check_ptr;
+    }
+    let (combat) = FR3rd_combat.read(combat_id);
     FR3rd_base_update_combat(
         combat_id=combat_id,
         round=combat.round + 1,
@@ -168,98 +168,98 @@ func FR3rd_try_clear_combat{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, ra
         init_hero_count=combat.init_hero_count,
         last_round_time=combat.last_round_time,
         end_info=3,
-    )
-    return (TRUE)
-end
+    );
+    return (TRUE,);
+}
 
-func FR3rd_reward_by_damage{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt
-) -> ():
-    alloc_locals
-    # sort by damage
-    FR3rd_base_sort_by_damage_to_boss(combat_id)
-    let (combat) = FR3rd_combat.read(combat_id)
-    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-    let (local hero_indexs : felt*) = alloc()
+func FR3rd_reward_by_damage{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    combat_id: felt
+) -> () {
+    alloc_locals;
+    // sort by damage
+    FR3rd_base_sort_by_damage_to_boss(combat_id);
+    let (combat) = FR3rd_combat.read(combat_id);
+    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id);
+    let (local hero_indexs: felt*) = alloc();
     let (count) = FR3rd_get_heros_loop_by_damage(
         combat_id, combat.damage_to_boss_1st, hero_indexs, 3, 0, combat_meta.max_hero
-    )
-    if count != 0:
-        let (amount, r) = unsigned_div_rem(combat_meta.total_reward, count)
-        FR3rd_reward_loop(combat_id, amount, hero_indexs, count)
-        tempvar syscall_ptr = syscall_ptr
-        tempvar pedersen_ptr = pedersen_ptr
-        tempvar range_check_ptr = range_check_ptr
-    else:
-        tempvar syscall_ptr = syscall_ptr
-        tempvar pedersen_ptr = pedersen_ptr
-        tempvar range_check_ptr = range_check_ptr
-    end
-    return ()
-end
+    );
+    if (count != 0) {
+        let (amount, r) = unsigned_div_rem(combat_meta.total_reward, count);
+        FR3rd_reward_loop(combat_id, amount, hero_indexs, count);
+        tempvar syscall_ptr = syscall_ptr;
+        tempvar pedersen_ptr = pedersen_ptr;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        tempvar syscall_ptr = syscall_ptr;
+        tempvar pedersen_ptr = pedersen_ptr;
+        tempvar range_check_ptr = range_check_ptr;
+    }
+    return ();
+}
 
-# boss dead
-func FR3rd_reward_living{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt
-) -> ():
-    alloc_locals
-    let (combat) = FR3rd_combat.read(combat_id)
-    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id)
-    let (local hero_indexs : felt*) = alloc()
-    let (count) = FR3rd_base_find_surviving_loop(combat_id, hero_indexs, 1, combat_meta.max_hero)
-    if count != 0:
-        let (amount, r) = unsigned_div_rem(combat_meta.total_reward, count)
-        FR3rd_reward_loop(combat_id, amount, hero_indexs, count)
-        tempvar syscall_ptr = syscall_ptr
-        tempvar pedersen_ptr = pedersen_ptr
-        tempvar range_check_ptr = range_check_ptr
-    else:
-        tempvar syscall_ptr = syscall_ptr
-        tempvar pedersen_ptr = pedersen_ptr
-        tempvar range_check_ptr = range_check_ptr
-    end
-    return ()
-end
+// boss dead
+func FR3rd_reward_living{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    combat_id: felt
+) -> () {
+    alloc_locals;
+    let (combat) = FR3rd_combat.read(combat_id);
+    let (combat_meta) = FR3rd_combat_meta.read(combat.meta_id);
+    let (local hero_indexs: felt*) = alloc();
+    let (count) = FR3rd_base_find_surviving_loop(combat_id, hero_indexs, 1, combat_meta.max_hero);
+    if (count != 0) {
+        let (amount, r) = unsigned_div_rem(combat_meta.total_reward, count);
+        FR3rd_reward_loop(combat_id, amount, hero_indexs, count);
+        tempvar syscall_ptr = syscall_ptr;
+        tempvar pedersen_ptr = pedersen_ptr;
+        tempvar range_check_ptr = range_check_ptr;
+    } else {
+        tempvar syscall_ptr = syscall_ptr;
+        tempvar pedersen_ptr = pedersen_ptr;
+        tempvar range_check_ptr = range_check_ptr;
+    }
+    return ();
+}
 
 func FR3rd_get_heros_loop_by_damage{
-    syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-}(combat_id : felt, cur_index : felt, hero_indexs : felt*, max : felt, have_done : felt, left) -> (
-    len : felt
-):
-    alloc_locals
-    if left == 0:
-        return (0)
-    end
-    if cur_index == DEFAULT_NEXT_HERO_INDEX:
-        return (0)
-    end
-    let (local hero) = FR3rd_combat_hero.read(combat_id, cur_index)
-    if hero.damage_to_boss == 0:
-        return (0)
-    end
-    if have_done == max:
-        return (0)
-    end
-    assert [hero_indexs] = cur_index
+    syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+}(combat_id: felt, cur_index: felt, hero_indexs: felt*, max: felt, have_done: felt, left) -> (
+    len: felt
+) {
+    alloc_locals;
+    if (left == 0) {
+        return (0,);
+    }
+    if (cur_index == DEFAULT_NEXT_HERO_INDEX) {
+        return (0,);
+    }
+    let (local hero) = FR3rd_combat_hero.read(combat_id, cur_index);
+    if (hero.damage_to_boss == 0) {
+        return (0,);
+    }
+    if (have_done == max) {
+        return (0,);
+    }
+    assert [hero_indexs] = cur_index;
     let (len) = FR3rd_get_heros_loop_by_damage(
         combat_id, hero.damage_to_boss_next_hero, hero_indexs + 1, max, have_done + 1, left=left - 1
-    )
-    return (len + 1)
-end
+    );
+    return (len + 1,);
+}
 
-func FR3rd_reward_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-    combat_id : felt, amount : felt, hero_indexs : felt*, left
-) -> ():
-    alloc_locals
-    if left == 0:
-        return ()
-    end
-    let (hero) = FR3rd_combat_hero.read(combat_id, [hero_indexs])
-    let (contract_address) = FR3rd_reward_token.read()
-    let (uint256Amount) = _felt_to_uint(amount)
+func FR3rd_reward_loop{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    combat_id: felt, amount: felt, hero_indexs: felt*, left
+) -> () {
+    alloc_locals;
+    if (left == 0) {
+        return ();
+    }
+    let (hero) = FR3rd_combat_hero.read(combat_id, [hero_indexs]);
+    let (contract_address) = FR3rd_reward_token.read();
+    let (uint256Amount) = _felt_to_uint(amount);
     let (res) = IERC20.transfer(
         contract_address=contract_address, recipient=hero.address, amount=uint256Amount
-    )
+    );
     FR3rd_base_update_hero(
         combat_id,
         [hero_indexs],
@@ -271,7 +271,7 @@ func FR3rd_reward_loop{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_c
         hero.agility_next_hero,
         hero.damage_to_boss_next_hero,
         amount,
-    )
-    FR3rd_reward_loop(combat_id, amount, hero_indexs + 1, left - 1)
-    return ()
-end
+    );
+    FR3rd_reward_loop(combat_id, amount, hero_indexs + 1, left - 1);
+    return ();
+}

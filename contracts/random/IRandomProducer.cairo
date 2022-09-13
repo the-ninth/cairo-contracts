@@ -1,12 +1,10 @@
 %lang starknet
 
 @contract_interface
-namespace IRandomProducer:
+namespace IRandomProducer {
+    func requestRandom() -> (request_id: felt) {
+    }
 
-    func requestRandom() -> (request_id: felt):
-    end
-
-    func triggerFulfill(request_id: felt):
-    end
-
-end
+    func triggerFulfill(request_id: felt) {
+    }
+}

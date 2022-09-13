@@ -7,9 +7,9 @@ from starkware.cairo.common.uint256 import Uint256, uint256_add
 
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 
-from openzeppelin.token.ERC20.interfaces.IERC20 import IERC20
-from openzeppelin.token.erc721.interfaces.IERC721 import IERC721
-from openzeppelin.security.safemath import uint256_checked_add
+from openzeppelin.token.erc20.IERC20 import IERC20
+from openzeppelin.token.erc721.IERC721 import IERC721
+from openzeppelin.security.safemath.library import SafeUint256
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import NINTH_CONTRACT, KOMA_CONTRACT
@@ -21,41 +21,41 @@ from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_register_fee,
 )
 
-namespace ManageLibrary:
-    func register{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        combat_id : felt, account : felt, koma_token_id : Uint256
-    ):
-        let (self) = get_contract_address()
-        let (access_contract_address) = FirstRelicCombat_access_contract.read()
+namespace ManageLibrary {
+    func register{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        combat_id: felt, account: felt, koma_token_id: Uint256
+    ) {
+        let (self) = get_contract_address();
+        let (access_contract_address) = FirstRelicCombat_access_contract.read();
         let (ninth_contract_address) = IAccessControl.getContractAddress(
             contract_address=access_contract_address, contract_name=NINTH_CONTRACT
-        )
-        let register_fee = Uint256(REGISTER_FEE, 0)
+        );
+        let register_fee = Uint256(REGISTER_FEE, 0);
         let (res) = IERC20.transferFrom(
             contract_address=ninth_contract_address,
             sender=account,
             recipient=self,
             amount=register_fee,
-        )
-        assert res = TRUE
-        let (total) = FirstRelicCombat_register_fee.read(combat_id)
-        let (new_total) = uint256_checked_add(total, register_fee)
+        );
+        assert res = TRUE;
+        let (total) = FirstRelicCombat_register_fee.read(combat_id);
+        let (new_total) = SafeUint256.add(total, register_fee);
 
         let (koma_contract_address) = IAccessControl.getContractAddress(
             contract_address=access_contract_address, contract_name=KOMA_CONTRACT
-        )
+        );
         IERC721.transferFrom(
             contract_address=koma_contract_address, from_=account, to=self, tokenId=koma_token_id
-        )
-        FirstRelicCombat_combat_account_koma_tokens.write(combat_id, account, koma_token_id)
-        FirstRelicCombat_register_fee.write(combat_id, new_total)
-        return ()
-    end
+        );
+        FirstRelicCombat_combat_account_koma_tokens.write(combat_id, account, koma_token_id);
+        FirstRelicCombat_register_fee.write(combat_id, new_total);
+        return ();
+    }
 
     func get_combat_account_koma_token{
-        syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr
-    }(combat_id : felt, account : felt) -> (koma_token_id : Uint256):
-        let (koma_token_id) = FirstRelicCombat_combat_account_koma_tokens.read(combat_id, account)
-        return (koma_token_id)
-    end
-end
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(combat_id: felt, account: felt) -> (koma_token_id: Uint256) {
+        let (koma_token_id) = FirstRelicCombat_combat_account_koma_tokens.read(combat_id, account);
+        return (koma_token_id,);
+    }
+}
