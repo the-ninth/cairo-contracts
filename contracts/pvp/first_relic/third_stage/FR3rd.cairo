@@ -39,16 +39,42 @@ from contracts.pvp.first_relic.third_stage.FR3rdManagerLibrary import (
 
 from contracts.pvp.first_relic.third_stage.base.FR3rdBaseLibrary import FR3rd_base_get_combat
 
-@constructor
-func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(){
-    return ();
-}
-
 @external
 func initialize{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(owner: felt){
     Ownable.initializer(owner);
     Proxy.initializer(owner);
     return ();
+}
+
+
+// proxy
+
+@external
+func setAdmin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(admin: felt) -> () {
+    Proxy.assert_only_admin();
+    Proxy._set_admin(admin);
+    return ();
+}
+
+@external
+func upgrade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    new_implementation: felt
+) {
+    Proxy.assert_only_admin();
+    Proxy._set_implementation_hash(new_implementation);
+    return ();
+}
+
+@view
+func getImplementationHash{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+    implementation: felt
+) {
+    return Proxy.get_implementation_hash();
+}
+
+@view
+func getAdmin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (admin: felt) {
+    return Proxy.get_admin();
 }
 
 @view

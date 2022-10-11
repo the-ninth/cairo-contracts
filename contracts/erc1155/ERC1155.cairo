@@ -6,15 +6,7 @@ from starkware.cairo.common.uint256 import Uint256
 
 from starkware.starknet.common.syscalls import get_caller_address
 
-from contracts.erc1155.library import (
-    ERC1155_balanceOf,
-    ERC1155_balanceOfBatch,
-    ERC1155_isApprovedForAll,
-    ERC1155_setApprovalForAll,
-    ERC1155_safeTransferFrom,
-    ERC1155_safeBatchTransferFrom,
-    ERC1155_mint,
-)
+from contracts.erc1155.library import ERC1155
 
 @constructor
 func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
@@ -25,7 +17,7 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 func balanceOf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt, id: felt
 ) -> (balance: Uint256) {
-    let (balance) = ERC1155_balanceOf(account, id);
+    let (balance) = ERC1155.balanceOf(account, id);
     return (balance,);
 }
 
@@ -33,7 +25,7 @@ func balanceOf{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func balanceOfBatch{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     accounts_len: felt, accounts: felt*, ids_len: felt, ids: felt*
 ) -> (amounts_len: felt, amounts: Uint256*) {
-    let (amounts_len, amounts) = ERC1155_balanceOfBatch(accounts_len, accounts, ids_len, ids);
+    let (amounts_len, amounts) = ERC1155.balanceOfBatch(accounts_len, accounts, ids_len, ids);
     return (amounts_len, amounts);
 }
 
@@ -41,7 +33,7 @@ func balanceOfBatch{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_
 func isApprovedForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     account: felt, operator: felt
 ) -> (approved: felt) {
-    let (approved) = ERC1155_isApprovedForAll(account, operator);
+    let (approved) = ERC1155.isApprovedForAll(account, operator);
     return (approved,);
 }
 
@@ -50,7 +42,7 @@ func setApprovalForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     operator: felt, approved: felt
 ) {
     let (caller) = get_caller_address();
-    ERC1155_setApprovalForAll(caller, operator, approved);
+    ERC1155.setApprovalForAll(caller, operator, approved);
     return ();
 }
 
@@ -61,11 +53,11 @@ func safeTransferFrom{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
     alloc_locals;
 
     let (caller) = get_caller_address();
-    let (is_approved) = ERC1155_isApprovedForAll(from_, caller);
+    let (is_approved) = ERC1155.isApprovedForAll(from_, caller);
     with_attr error_message("ERC1155: either is not approved or the caller is the zero address") {
         assert_not_zero(caller * is_approved);
     }
-    ERC1155_safeTransferFrom(from_, to, id, amount, data);
+    ERC1155.safeTransferFrom(from_, to, id, amount, data);
     return ();
 }
 
@@ -82,11 +74,11 @@ func safeBatchTransferFrom{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
     alloc_locals;
 
     let (caller) = get_caller_address();
-    let (is_approved) = ERC1155_isApprovedForAll(from_, caller);
+    let (is_approved) = ERC1155.isApprovedForAll(from_, caller);
     with_attr error_message("ERC1155: either is not approved or the caller is the zero address") {
         assert_not_zero(caller * is_approved);
     }
-    ERC1155_safeBatchTransferFrom(from_, to, ids_len, ids, amounts_len, amounts, data);
+    ERC1155.safeBatchTransferFrom(from_, to, ids_len, ids, amounts_len, amounts, data);
     return ();
 }
 
@@ -95,6 +87,6 @@ func safeBatchTransferFrom{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range
 func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     to: felt, id: felt, amount: Uint256, data: felt
 ) {
-    ERC1155_mint(to, id, amount, data);
+    ERC1155.mint(to, id, amount, data);
     return ();
 }
