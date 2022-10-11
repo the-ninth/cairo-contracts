@@ -49,29 +49,29 @@ const KOMA_CONTRACT = 'KomaContract';  // 0x4b6f6d61436f6e7472616374
 func AccessControl_role_accounts(role: felt, account: felt) -> (res: felt) {
 }
 
-func AccessControl_hasRole{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    role: felt, account: felt
-) -> (res: felt) {
-    let (res) = AccessControl_role_accounts.read(role, account);
-    return (res,);
-}
+namespace AccessControl {
+    func hasRole{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+        role: felt, account: felt
+    ) -> (res: felt) {
+        let (res) = AccessControl_role_accounts.read(role, account);
+        return (res,);
+    }
 
-func AccessControl_grantRole{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    role: felt, account: felt
-) {
-    AccessControl_role_accounts.write(role, account, 1);
-    return ();
-}
+    func grantRole{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+        role: felt, account: felt
+    ) {
+        AccessControl_role_accounts.write(role, account, 1);
+        return ();
+    }
 
-//
-// Guards
-//
+    //
+    // Guards
+    //
 
-func AccessControl_only_super_admin{
-    pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr
-}() {
-    let (caller) = get_caller_address();
-    let (res) = AccessControl_hasRole(ROLE_SUPER_ADMIN, caller);
-    assert res = 1;
-    return ();
+    func only_super_admin{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}() {
+        let (caller) = get_caller_address();
+        let (res) = AccessControl.hasRole(ROLE_SUPER_ADMIN, caller);
+        assert res = 1;
+        return ();
+    }
 }

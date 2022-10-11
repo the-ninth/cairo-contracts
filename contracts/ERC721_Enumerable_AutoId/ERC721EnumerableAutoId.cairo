@@ -18,12 +18,7 @@ from openzeppelin.introspection.erc165.library import ERC165
 from openzeppelin.token.erc20.IERC20 import IERC20
 from openzeppelin.token.erc721.IERC721 import IERC721
 
-from contracts.ERC721_Enumerable_AutoId.library import (
-    ERC721_Enumerable_AutoId_mint,
-    ERC721_Enumerable_AutoId_mint_multi,
-    ERC721_Enumerable_AutoId_tokenURI,
-    ERC721_Enumerable_AutoId_set_tokenURI,
-)
+from contracts.ERC721_Enumerable_AutoId.library import ERC721_Enumerable_AutoId
 
 //
 // Constructor
@@ -117,7 +112,7 @@ func isApprovedForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 func tokenURI{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     tokenId: Uint256
 ) -> (tokenURI_len: felt, tokenURI: felt*) {
-    let (tokenURI_len, tokenURI) = ERC721_Enumerable_AutoId_tokenURI(tokenId);
+    let (tokenURI_len, tokenURI) = ERC721_Enumerable_AutoId.tokenURI(tokenId);
     return (tokenURI_len, tokenURI);
 }
 
@@ -169,7 +164,7 @@ func setTokenURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr
     tokenURI_len: felt, tokenURI: felt*
 ) {
     Ownable.assert_only_owner();
-    ERC721_Enumerable_AutoId_set_tokenURI(tokenURI_len, tokenURI);
+    ERC721_Enumerable_AutoId.set_tokenURI(tokenURI_len, tokenURI);
     return ();
 }
 
@@ -178,7 +173,7 @@ func mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(to: f
     tokenId: Uint256
 ) {
     Ownable.assert_only_owner();
-    let (tokenId) = ERC721_Enumerable_AutoId_mint(to);
+    let (tokenId) = ERC721_Enumerable_AutoId.mint(to);
     return (tokenId,);
 }
 
@@ -187,7 +182,7 @@ func mintMulti{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
     to_list_len: felt, to_list: felt*
 ) -> (token_ids_len: felt, token_ids: Uint256*) {
     Ownable.assert_only_owner();
-    let (token_ids_len, token_ids) = ERC721_Enumerable_AutoId_mint_multi(to_list_len, to_list);
+    let (token_ids_len, token_ids) = ERC721_Enumerable_AutoId.mint_multi(to_list_len, to_list);
     return (token_ids_len, token_ids);
 }
 
@@ -205,6 +200,6 @@ func setOwner{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(o
 func _mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(to: felt) -> (
     tokenId: Uint256
 ) {
-    let (tokenId) = ERC721_Enumerable_AutoId_mint(to);
+    let (tokenId) = ERC721_Enumerable_AutoId.mint(to);
     return (tokenId,);
 }

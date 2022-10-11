@@ -39,49 +39,51 @@ func ERC721_Enumerable_AutoId_token_uri_len() -> (len: felt) {
 func ERC721_Enumerable_AutoId_token_uri_by_index(index: felt) -> (res: felt) {
 }
 
-func ERC721_Enumerable_AutoId_mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    to: felt
-) -> (token_id: Uint256) {
-    alloc_locals;
+namespace ERC721_Enumerable_AutoId {
+    func mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(to: felt) -> (
+        token_id: Uint256
+    ) {
+        alloc_locals;
 
-    let (last_token_id: Uint256) = ERC721_Enumerable_AutoId_counter.read();
-    let (token_id: Uint256, is_overflow) = uint256_add(last_token_id, Uint256(low=1, high=0));
-    assert is_overflow = 0;
-    ERC721_Enumerable_AutoId_counter.write(token_id);
-    ERC721Enumerable._mint(to, token_id);
-    return (token_id,);
-}
-
-func ERC721_Enumerable_AutoId_mint_multi{
-    pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr
-}(to_list_len: felt, to_list: felt*) -> (token_ids_len: felt, token_ids: Uint256*) {
-    alloc_locals;
-
-    assert_lt_felt(0, to_list_len);
-    let (token_ids: Uint256*) = alloc();
-    _mint_multi(to_list_len, to_list, token_ids);
-    return (to_list_len, token_ids);
-}
-
-func ERC721_Enumerable_AutoId_tokenURI{
-    pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr
-}(tokenId: Uint256) -> (tokenURI_len: felt, tokenURI: felt*) {
-    let (owner) = ERC721.owner_of(tokenId);
-    with_attr error_message("query for nonexistent token") {
-        assert_not_zero(owner);
+        let (last_token_id: Uint256) = ERC721_Enumerable_AutoId_counter.read();
+        let (token_id: Uint256, is_overflow) = uint256_add(last_token_id, Uint256(low=1, high=0));
+        assert is_overflow = 0;
+        ERC721_Enumerable_AutoId_counter.write(token_id);
+        ERC721Enumerable._mint(to, token_id);
+        return (token_id,);
     }
-    let (len) = ERC721_Enumerable_AutoId_token_uri_len.read();
-    let (tokenURI: felt*) = alloc();
-    let (tokenURI_len, tokenURI) = _get_tokenURI(0, len, tokenURI);
-    return (tokenURI_len, tokenURI);
-}
 
-func ERC721_Enumerable_AutoId_set_tokenURI{
-    pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr
-}(tokenURI_len: felt, tokenURI: felt*) -> () {
-    ERC721_Enumerable_AutoId_token_uri_len.write(tokenURI_len);
-    _set_tokenURI(0, tokenURI_len, tokenURI);
-    return ();
+    func mint_multi{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+        to_list_len: felt, to_list: felt*
+    ) -> (token_ids_len: felt, token_ids: Uint256*) {
+        alloc_locals;
+
+        assert_lt_felt(0, to_list_len);
+        let (token_ids: Uint256*) = alloc();
+        _mint_multi(to_list_len, to_list, token_ids);
+        return (to_list_len, token_ids);
+    }
+
+    func tokenURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+        tokenId: Uint256
+    ) -> (tokenURI_len: felt, tokenURI: felt*) {
+        let (owner) = ERC721.owner_of(tokenId);
+        with_attr error_message("query for nonexistent token") {
+            assert_not_zero(owner);
+        }
+        let (len) = ERC721_Enumerable_AutoId_token_uri_len.read();
+        let (tokenURI: felt*) = alloc();
+        let (tokenURI_len, tokenURI) = _get_tokenURI(0, len, tokenURI);
+        return (tokenURI_len, tokenURI);
+    }
+
+    func set_tokenURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+        tokenURI_len: felt, tokenURI: felt*
+    ) -> () {
+        ERC721_Enumerable_AutoId_token_uri_len.write(tokenURI_len);
+        _set_tokenURI(0, tokenURI_len, tokenURI);
+        return ();
+    }
 }
 
 func _get_tokenURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
@@ -112,7 +114,7 @@ func _mint_multi{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr
     if (to_list_len == 0) {
         return ();
     }
-    let (tokenId) = ERC721_Enumerable_AutoId_mint(to_list[0]);
+    let (tokenId) = ERC721_Enumerable_AutoId.mint(to_list[0]);
     assert token_ids[0] = tokenId;
     _mint_multi(to_list_len - 1, to_list + 1, token_ids + 2);
     return ();

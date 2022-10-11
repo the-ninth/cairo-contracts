@@ -3,20 +3,13 @@
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.starknet.common.syscalls import get_caller_address
 
-from contracts.access.library import (
-    AccessControl_role_accounts,
-    AccessControl_hasRole,
-    AccessControl_grantRole,
-    AccessControl_only_super_admin,
-    ROLE_SUPER_ADMIN,
-)
+from contracts.access.library import AccessControl, ROLE_SUPER_ADMIN
 
 @constructor
 func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     super_admin: felt
 ) {
-    AccessControl_grantRole(ROLE_SUPER_ADMIN, super_admin);
-    // AccessControl_role_accounts.write(ROLE_SUPER_ADMIN, super_admin, 1)
+    AccessControl.grantRole(ROLE_SUPER_ADMIN, super_admin);
     return ();
 }
 
@@ -28,7 +21,7 @@ func AccessControl_contract_address(contract_name: felt) -> (contract_address: f
 func hasRole{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     role: felt, account: felt
 ) -> (res: felt) {
-    let (res) = AccessControl_hasRole(role, account);
+    let (res) = AccessControl.hasRole(role, account);
     return (res,);
 }
 
@@ -44,7 +37,7 @@ func getContractAddress{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 func setContractAddress{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     contract_name: felt, contract_address: felt
 ) {
-    AccessControl_only_super_admin();
+    AccessControl.only_super_admin();
     AccessControl_contract_address.write(contract_name, contract_address);
     return ();
 }
@@ -53,8 +46,8 @@ func setContractAddress{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
 func grantRole{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     role: felt, account: felt
 ) {
-    AccessControl_only_super_admin();
-    AccessControl_grantRole(role, account);
+    AccessControl.only_super_admin();
+    AccessControl.grantRole(role, account);
     return ();
 }
 
@@ -62,7 +55,7 @@ func grantRole{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func onlyRole{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     role: felt, account: felt
 ) {
-    let (res) = AccessControl_hasRole(role, account);
+    let (res) = AccessControl.hasRole(role, account);
     assert res = 1;
     return ();
 }
