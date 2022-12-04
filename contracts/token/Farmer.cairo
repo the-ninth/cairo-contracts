@@ -16,7 +16,7 @@ from openzeppelin.introspection.erc165.library import ERC165
 from openzeppelin.token.erc20.IERC20 import IERC20
 from openzeppelin.token.erc721.IERC721 import IERC721
 
-from contracts.ERC721_Enumerable_AutoId.library import ERC721_Enumerable_AutoId_mint
+from contracts.ERC721_Enumerable_AutoId.library import ERC721_Enumerable_AutoId
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
 from contracts.access.library import ROLE_FARMER_MINTER, FARMER_CONTRACT
@@ -232,6 +232,6 @@ func getToWork{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
 func _mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(to: felt) -> (
     tokenId: Uint256
 ) {
-    let (tokenId) = ERC721_Enumerable_AutoId_mint(to);
+    let (tokenId) = ERC721_Enumerable_AutoId.mint(to);
     return (tokenId,);
 }

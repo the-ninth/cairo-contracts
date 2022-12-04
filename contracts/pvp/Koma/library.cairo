@@ -10,7 +10,7 @@ from openzeppelin.security.safemath.library import SafeUint256
 from openzeppelin.token.erc721.library import ERC721
 from openzeppelin.token.erc721.enumerable.library import ERC721Enumerable
 
-from contracts.ERC721_Enumerable_AutoId.library import ERC721_Enumerable_AutoId_mint
+from contracts.ERC721_Enumerable_AutoId.library import ERC721_Enumerable_AutoId
 
 from contracts.util.math import felt_lt
 
@@ -82,7 +82,7 @@ namespace KomaLibrary {
             assert_not_zero(koma_creature.creature_id);
         }
 
-        let (token_id) = ERC721_Enumerable_AutoId_mint(to);
+        let (token_id) = ERC721_Enumerable_AutoId.mint(to);
         Koma_komas_creature_id.write(token_id, koma_creature_id);
         return (token_id,);
     }
