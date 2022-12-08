@@ -31,6 +31,7 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     ERC721.initializer('Ninth Koma', 'NKOMA');
     ERC721Enumerable.initializer();
     Ownable.initializer(owner);
+    Proxy.initializer(owner);
     return ();
 }
 
