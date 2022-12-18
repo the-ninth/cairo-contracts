@@ -90,6 +90,7 @@ from contracts.pvp.first_relic.FRLazyUpdate import (
 )
 from contracts.pvp.first_relic.IFirstRelicCombat import PlayerDeath
 from contracts.pvp.first_relic.third_stage.interfaces.IFR3rd import IFR3rd
+from contracts.proxy.two_step_upgrade.library import TwoStepUpgradeProxy
 
 const RANDOM_TYPE_COMBAT_INIT = 1;
 
@@ -101,21 +102,38 @@ func random_request_type(request_id: felt) -> (type: felt) {
 func random_request_combat_init(request_id: felt) -> (combat_id: felt) {
 }
 
-@constructor
-func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    access_contract_: felt
-) {
-    FirstRelicCombat_access_contract.write(access_contract_);
-    return ();
-}
+@external
+func initialize{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }(
+        access_contract_: felt
+    ):
+    access_contract.write(access_contract_)
+    TwoStepUpgradeProxy.constructor()
+    return ()
+end
 
 @view
-func getCombatCount{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
-    count: felt
-) {
-    let (count) = FirstRelicCombat_get_combat_count();
-    return (count,);
-}
+func accessContract{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (access_contract_address: felt):
+    let (access_contract_address) = access_contract.read()
+    return (access_contract_address)
+end
+
+@view
+func getCombatCount{
+        syscall_ptr : felt*, 
+        pedersen_ptr : HashBuiltin*,
+        range_check_ptr
+    }() -> (count: felt):
+    let (count) = FirstRelicCombat_get_combat_count()
+    return (count,)
+end
 
 @view
 func getCombat{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
