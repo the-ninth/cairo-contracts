@@ -1,1 +1,1 @@
-# Guild Contract, save guild information
+// Guild Contract, save guild information

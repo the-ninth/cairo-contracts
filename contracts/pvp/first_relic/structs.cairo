@@ -1,137 +1,136 @@
 %lang starknet
 
-const COMBAT_STATUS_NON_EXIST = 0
-const COMBAT_STATUS_REGISTERING = 1
-const COMBAT_STATUS_PREPARING = 2
-const COMBAT_STATUS_FIRST_STAGE = 3
-const COMBAT_STATUS_SECOND_STAGE = 4
-const COMBAT_STATUS_THIRD_STAGE = 5
-const COMBAT_STATUS_END = 6
+const COMBAT_STATUS_NON_EXIST = 0;
+const COMBAT_STATUS_REGISTERING = 1;
+const COMBAT_STATUS_PREPARING = 2;
+const COMBAT_STATUS_FIRST_STAGE = 3;
+const COMBAT_STATUS_SECOND_STAGE = 4;
+const COMBAT_STATUS_THIRD_STAGE = 5;
+const COMBAT_STATUS_END = 6;
 
-const KOMA_STATUS_STATIC = 1
-const KOMA_STATUS_MOVING = 2
-const KOMA_STATUS_MINING = 3
-const KOMA_STATUS_THIRD_STAGE = 4
-const KOMA_STATUS_DEAD = 5
+const KOMA_STATUS_STATIC = 1;
+const KOMA_STATUS_MOVING = 2;
+const KOMA_STATUS_MINING = 3;
+const KOMA_STATUS_THIRD_STAGE = 4;
+const KOMA_STATUS_DEAD = 5;
 
-struct Combat:
-    member prepare_time: felt
-    member first_stage_time: felt
-    member second_stage_time: felt
-    member third_stage_time: felt
-    member end_time: felt
-    member expire_time: felt
-    member status: felt
-end
+struct Combat {
+    prepare_time: felt,
+    first_stage_time: felt,
+    second_stage_time: felt,
+    third_stage_time: felt,
+    end_time: felt,
+    expire_time: felt,
+    status: felt,
+}
 
-struct Coordinate:
-    member x: felt
-    member y: felt
-end
+struct Coordinate {
+    x: felt,
+    y: felt,
+}
 
-struct Koma:
-    member account: felt
-    member coordinate: Coordinate
-    member status: felt
-    member health: felt
-    member max_health: felt
-    member agility: felt
-    member move_speed: felt
-    member props_weight: felt
-    member props_max_weight: felt
-    member workers_count: felt
-    member mining_workers_count: felt
-    member drones_count: felt
-    member action_radius: felt
-    member element: felt
-    member ore_amount: felt
-    member atk: felt
-    member defense: felt
-    member worker_mining_speed: felt
-end
+struct Koma {
+    account: felt,
+    coordinate: Coordinate,
+    status: felt,
+    health: felt,
+    max_health: felt,
+    agility: felt,
+    move_speed: felt,
+    props_weight: felt,
+    props_max_weight: felt,
+    workers_count: felt,
+    mining_workers_count: felt,
+    drones_count: felt,
+    action_radius: felt,
+    element: felt,
+    ore_amount: felt,
+    atk: felt,
+    defense: felt,
+    worker_mining_speed: felt,
+}
 
-struct KomaEquip:
-    member weapon: felt
-    member armor: felt
-    member agility: felt
-    member speed: felt
-end
+struct KomaEquip {
+    weapon: felt,
+    armor: felt,
+    agility: felt,
+    speed: felt,
+}
 
-struct Chest:
-    member coordinate: Coordinate
-    member opener: felt
-    member option_selected: felt # based on 1
-    member id: felt
-end
+struct Chest {
+    coordinate: Coordinate,
+    opener: felt,
+    option_selected: felt,  // based on 1
+    id: felt,
+}
 
-struct Prop:
-    member prop_id: felt
-    member prop_creature_id: felt
-    member used_timetamp: felt
-    member index_in_koma_props: felt
-end
+struct Prop {
+    prop_id: felt,
+    prop_creature_id: felt,
+    used_timetamp: felt,
+    index_in_koma_props: felt,
+}
 
-struct PropEffect:
-    member prop_creature_id: felt
-    member index_in_koma_effects: felt
-    member used_timetamp: felt
-end
+struct PropEffect {
+    prop_creature_id: felt,
+    index_in_koma_effects: felt,
+    used_timetamp: felt,
+}
 
-struct Ore:
-    member coordinate: Coordinate
-    member total_supply: felt
-    member mined_supply: felt
-    member mining_workers_count: felt
-    member start_time: felt
-    member empty_time: felt
-end
+struct Ore {
+    coordinate: Coordinate,
+    total_supply: felt,
+    current_supply: felt,
+    collectable_supply: felt,
+    mining_account: felt,
+    mining_workers_count: felt,
+    mining_speed: felt,  // how much ore mined per second by all workers on this ore
+    structure_hp: felt,
+    structure_max_hp: felt,
+    start_time: felt,
+    empty_time: felt,
+}
 
-struct Boss:
-    member health: felt
-    member defense: felt
-    member agility: felt
-    member multi_targets: felt
-    member element: felt
-end
+struct Boss {
+    health: felt,
+    defense: felt,
+    agility: felt,
+    multi_targets: felt,
+    element: felt,
+}
 
-struct ThirdStageAction:
-    member type: felt
-    member target: felt # 0 for boss, others for players
-    member round: felt
-    member salt: felt
-end
+struct ThirdStageAction {
+    type: felt,
+    target: felt,  // 0 for boss, others for players
+    round: felt,
+    salt: felt,
+}
 
-struct Movment:
-    member from_: Coordinate
-    member to: Coordinate
-    member start_time: felt # timestamp starting to move
-    member reach_time: felt # timestamp reaching the target location
-end
+struct Movment {
+    from_: Coordinate,
+    to: Coordinate,
+    start_time: felt,  // timestamp starting to move
+    reach_time: felt,  // timestamp reaching the target location
+}
 
-struct KomaMiningOre:
-    member coordinate: Coordinate
-    member mining_workers_count: felt
-    member start_time: felt
-end
+struct KomaEquipments {
+    account: felt,
+    engine: Prop,
+    shoe: Prop,
+    weapon: Prop,
+    armor: Prop,
+}
 
-struct KomaEquipments:
-    member account: felt
-    member engine: Prop
-    member shoe: Prop
-    member weapon: Prop
-    member armor: Prop
-end
+struct RelicGate {
+    coordinate: Coordinate,
+    number: felt,
+    require_creature_id: felt,
+    account: felt,
+}
 
-struct RelicGate:
-    member coordinate: Coordinate
-    member number: felt
-    member require_creature_id: felt
-    member account: felt
-end
-
-struct CoordinateRange:
-    member x0: felt
-    member x1: felt
-    member y0: felt
-    member y1: felt
-end
+struct CoordinateRange {
+    x0: felt,
+    x1: felt,
+    y0: felt,
+    y1: felt,
+}

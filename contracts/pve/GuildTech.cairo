@@ -1,1 +1,1 @@
-# Guild Tech Contract, record guild technical tree
+// Guild Tech Contract, record guild technical tree

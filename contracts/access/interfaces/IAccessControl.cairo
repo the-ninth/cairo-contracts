@@ -1,42 +1,13 @@
 %lang starknet
 
 @contract_interface
-namespace IAccessControl:
+namespace IAccessControl {
+    func hasRole(role: felt, account: felt) -> (res: felt) {
+    }
 
-    func hasRole(role: felt, account: felt) -> (res: felt):
-    end
+    func onlyRole(role: felt, account: felt) {
+    }
 
-    func onlyRole(role: felt, account: felt):
-    end
-
-    func ninthContract() -> (contract: felt):
-    end
-
-    func noahContract() -> (contract: felt):
-    end
-
-    func stoneContract() -> (contract: felt):
-    end
-
-    func farmerContract() -> (contract: felt):
-    end
-
-    func landContract() -> (contract: felt):
-    end
-
-    func randomProducerContract() -> (contract: felt):
-    end
-
-    func frCombatRegisterContract() -> (contract: felt):
-    end
-
-    func frCombatContract() -> (contract: felt):
-    end
-
-    func delegateAccountRegistryContract() -> (contract: felt):
-    end
-
-    func fr3RdBossContract() -> (contract: felt):
-    end
-
-end
+    func getContractAddress(contract_name: felt) -> (contract_address: felt) {
+    }
+}
