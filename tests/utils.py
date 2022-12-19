@@ -1,14 +1,13 @@
 """Utilities for testing Cairo contracts."""
 
+import os
 from pathlib import Path
-import math
-from starkware.cairo.common.hash_state import compute_hash_on_elements
-from starkware.crypto.signature.signature import private_to_stark_key, sign
 from starkware.starknet.public.abi import get_selector_from_name
+from starkware.starknet.business_logic.execution.objects import OrderedEvent
 from starkware.starknet.compiler.compile import compile_starknet_files
-from starkware.starkware_utils.error_handling import StarkException
 from starkware.starknet.testing.starknet import StarknetContract
-from starkware.starknet.business_logic.execution.objects import Event
+from starkware.starknet.testing.starknet import Starknet
+
 
 
 MAX_UINT256 = (2**128 - 1, 2**128 - 1)
@@ -16,208 +15,127 @@ INVALID_UINT256 = (MAX_UINT256[0] + 1, MAX_UINT256[1])
 ZERO_ADDRESS = 0
 TRUE = 1
 FALSE = 0
-
-TRANSACTION_VERSION = 0
-
+IACCOUNT_ID = 0xa66bd575
 
 _root = Path(__file__).parent.parent
 
+
+def get_cairo_path():
+    CAIRO_PATH = os.getenv('CAIRO_PATH')
+    cairo_path = []
+
+    if CAIRO_PATH is not None:
+        cairo_path = [p for p in CAIRO_PATH.split(":")]
+
+    return cairo_path
 
 def contract_path(name):
     if name.startswith("tests/"):
         return str(_root / name)
     elif name.startswith("openzeppelin/"):
-        return "/home/john/cairo_venv/lib/python3.7/site-packages/" + name
+        return "/home/lighthouse/the-ninth/cairo-contracts/.venv/lib/python3.9/site-packages/" + name
     else:
         return str(_root / name)
 
 
-def str_to_felt(text):
-    b_text = bytes(text, "ascii")
-    return int.from_bytes(b_text, "big")
+def assert_event_emitted(tx_exec_info, from_address, name, data, order=0):
+    """Assert one single event is fired with correct data."""
+    assert_events_emitted(tx_exec_info, [(order, from_address, name, data)])
 
 
-def felt_to_str(felt):
-    b_felt = felt.to_bytes(31, "big")
-    return b_felt.decode()
+def assert_events_emitted(tx_exec_info, events):
+    """Assert events are fired with correct data."""
+    for event in events:
+        order, from_address, name, data = event
+        event_obj = OrderedEvent(
+            order=order,
+            keys=[get_selector_from_name(name)],
+            data=data,
+        )
+
+        base = tx_exec_info.call_info.internal_calls[0]
+        if event_obj in base.events and from_address == base.contract_address:
+            return
+
+        try:
+            base2 = base.internal_calls[0]
+            if event_obj in base2.events and from_address == base2.contract_address:
+                return
+        except IndexError:
+            pass
+
+        raise BaseException("Event not fired or not fired correctly")
 
 
-def assert_event_emitted(tx_exec_info, from_address, name, data):
-    assert Event(
-        from_address=from_address,
-        keys=[get_selector_from_name(name)],
-        data=data,
-    ) in tx_exec_info.raw_events
+def _get_path_from_name(name):
+    """Return the contract path by contract name."""
+    dirs = ["src", "tests/mocks"]
+    for dir in dirs:
+        for (dirpath, _, filenames) in os.walk(dir):
+            for file in filenames:
+                if file == f"{name}.cairo":
+                    return os.path.join(dirpath, file)
+
+    raise FileNotFoundError(f"Cannot find '{name}'.")
 
 
-def uint(a):
-    return(a, 0)
+def get_contract_class(contract, is_path=1):
+    """Return the contract class from the contract name or path"""
+    if is_path:
+        path = contract_path(contract)
+    else:
+        path = _get_path_from_name(contract)
 
-
-def to_uint(a):
-    """Takes in value, returns uint256-ish tuple."""
-    return (a & ((1 << 128) - 1), a >> 128)
-
-
-def from_uint(uint):
-    """Takes in uint256-ish tuple, returns value."""
-    return uint[0] + (uint[1] << 128)
-
-
-def add_uint(a, b):
-    """Returns the sum of two uint256-ish tuples."""
-    a = from_uint(a)
-    b = from_uint(b)
-    c = a + b
-    return to_uint(c)
-
-
-def sub_uint(a, b):
-    """Returns the difference of two uint256-ish tuples."""
-    a = from_uint(a)
-    b = from_uint(b)
-    c = a - b
-    return to_uint(c)
-
-
-def mul_uint(a, b):
-    """Returns the product of two uint256-ish tuples."""
-    a = from_uint(a)
-    b = from_uint(b)
-    c = a * b
-    return to_uint(c)
-
-
-def div_rem_uint(a, b):
-    """Returns the quotient and remainder of two uint256-ish tuples."""
-    a = from_uint(a)
-    b = from_uint(b)
-    c = math.trunc(a / b)
-    m = a % b
-    return (to_uint(c), to_uint(m))
-
-
-async def assert_revert(fun, reverted_with=None):
-    try:
-        await fun
-        assert False
-    except StarkException as err:
-        _, error = err.args
-        if reverted_with is not None:
-            assert reverted_with in error['message']
-
-
-def assert_event_emitted(tx_exec_info, from_address, name, data):
-    assert Event(
-        from_address=from_address,
-        keys=[get_selector_from_name(name)],
-        data=data,
-    ) in tx_exec_info.raw_events
-
-
-def get_contract_def(path):
-    """Returns the contract definition from the contract path"""
-    path = contract_path(path)
-    contract_def = compile_starknet_files(
+    print(path)
+    contract_class = compile_starknet_files(
         files=[path],
-        debug_info=True
+        debug_info=True,
+        cairo_path=get_cairo_path()
     )
-    return contract_def
+    return contract_class
 
 
-def cached_contract(state, definition, deployed):
-    """Returns the cached contract"""
+def cached_contract(state, _class, deployed):
+    """Return the cached contract"""
     contract = StarknetContract(
         state=state,
-        abi=definition.abi,
+        abi=_class.abi,
         contract_address=deployed.contract_address,
-        deploy_execution_info=deployed.deploy_execution_info
+        deploy_call_info=deployed.deploy_call_info
     )
     return contract
 
 
-class Signer():
+class State:
     """
-    Utility for sending signed transactions to an Account on Starknet.
+    Utility helper for Account class to initialize and return StarkNet state.
+    Example
+    ---------
+    Initalize StarkNet state
+    >>> starknet = await State.init()
+    """
+    async def init():
+        global starknet
+        starknet = await Starknet.empty()
+        return starknet
 
+
+class Account:
+    """
+    Utility for deploying Account contract.
     Parameters
     ----------
-
-    private_key : int
-
+    public_key : int
     Examples
-    ---------
-    Constructing a Signer object
-
-    >>> signer = Signer(1234)
-
-    Sending a transaction
-
-    >>> await signer.send_transaction(account,
-                                      account.contract_address,
-                                      'set_public_key',
-                                      [other.public_key]
-                                     )
-
+    ----------
+    >>> starknet = await State.init()
+    >>> account = await Account.deploy(public_key)
     """
+    get_class = get_contract_class("/home/lighthouse/the-ninth/cairo-contracts/.venv/lib/python3.9/site-packages/openzeppelin/account/presets/Account.cairo",TRUE)
 
-    def __init__(self, private_key):
-        self.private_key = private_key
-        self.public_key = private_to_stark_key(private_key)
-
-    def sign(self, message_hash):
-        return sign(msg_hash=message_hash, priv_key=self.private_key)
-
-    async def send_transaction(self, account, to, selector_name, calldata, nonce=None, max_fee=0):
-        return await self.send_transactions(account, [(to, selector_name, calldata)], nonce, max_fee)
-
-    async def send_transactions(self, account, calls, nonce=None, max_fee=0):
-        if nonce is None:
-            execution_info = await account.get_nonce().call()
-            nonce, = execution_info.result
-
-        calls_with_selector = [
-            (call[0], get_selector_from_name(call[1]), call[2]) for call in calls]
-        (call_array, calldata) = from_call_to_call_array(calls)
-
-        message_hash = hash_multicall(
-            account.contract_address, calls_with_selector, nonce, max_fee)
-        sig_r, sig_s = self.sign(message_hash)
-
-        return await account.__execute__(call_array, calldata, nonce).invoke(signature=[sig_r, sig_s])
-
-
-def from_call_to_call_array(calls):
-    call_array = []
-    calldata = []
-    for i, call in enumerate(calls):
-        assert len(call) == 3, "Invalid call parameters"
-        entry = (call[0], get_selector_from_name(
-            call[1]), len(calldata), len(call[2]))
-        call_array.append(entry)
-        calldata.extend(call[2])
-    return (call_array, calldata)
-
-
-def hash_multicall(sender, calls, nonce, max_fee):
-    hash_array = []
-    for call in calls:
-        call_elements = [call[0], call[1], compute_hash_on_elements(call[2])]
-        hash_array.append(compute_hash_on_elements(call_elements))
-
-    message = [
-        str_to_felt('StarkNet Transaction'),
-        sender,
-        compute_hash_on_elements(hash_array),
-        nonce,
-        max_fee,
-        TRANSACTION_VERSION
-    ]
-    return compute_hash_on_elements(message)
-
-def uint_list_to_felt_list(uint_list):
-    felt_list = []
-    for num in uint_list:
-        felt_list.append(num[0])
-        felt_list.append(num[1])
-    return felt_list
+    async def deploy(public_key):
+        account = await starknet.deploy(
+            contract_class=Account.get_class,
+            constructor_calldata=[public_key]
+        )
+        return account
