@@ -18,3 +18,4 @@ goerli.accounts.json
 goerli.deployments.txt
 node.json
 .VSCodeCounter
+cache/

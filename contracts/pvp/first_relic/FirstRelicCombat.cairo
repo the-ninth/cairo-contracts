@@ -8,23 +8,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.starknet.common.syscalls import get_caller_address
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
-from contracts.access.library import (
-    ROLE_FRCOMBAT_CREATOR,
-    RANDOM_PRODUCER_CONTRACT,
-    DELEGATE_ACCOUNT_REGISTRY_CONTRACT,
-)
-
-from contracts.delegate_account.interfaces.IDelegateAccountRegistry import IDelegateAccountRegistry
-from contracts.delegate_account.actions import (
-    ACTION_FR_COMBAT_MOVE,
-    ACTION_FR_COMBAT_MINE_ORE,
-    ACTION_FR_COMBAT_RECALL_WORKERS,
-    ACTION_FR_COMBAT_PRODUCE_BOT,
-    ACTION_FR_COMBAT_ATTACK,
-    ACTION_FR_COMBAT_CHEST,
-    ACTION_FR_COMBAT_USE_PROP,
-    ACTION_FR_COMBAT_ENTER_GATE,
-)
+from contracts.access.library import ROLE_FRCOMBAT_CREATOR, RANDOM_PRODUCER_CONTRACT
 
 from contracts.random.IRandomProducer import IRandomProducer
 
@@ -102,38 +86,38 @@ func random_request_type(request_id: felt) -> (type: felt) {
 func random_request_combat_init(request_id: felt) -> (combat_id: felt) {
 }
 
+@storage_var
+func initialized() -> (res: felt) {
+}
+
 @external
-func initialize{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }(
-        access_contract_: felt
-    ):
-    access_contract.write(access_contract_)
-    TwoStepUpgradeProxy.constructor()
-    return ()
-end
+func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    access_contract_: felt
+) {
+    let (inited) = initialized.read();
+    with_attr error_message("contract initialized") {
+        assert inited = FALSE;
+    }
+    initialized.write(TRUE);
+    FirstRelicCombat_access_contract.write(access_contract_);
+    return ();
+}
 
 @view
-func accessContract{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (access_contract_address: felt):
-    let (access_contract_address) = access_contract.read()
-    return (access_contract_address)
-end
+func accessContract{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+    access_contract_address: felt
+) {
+    let (access_contract_address) = FirstRelicCombat_access_contract.read();
+    return (access_contract_address,);
+}
 
 @view
-func getCombatCount{
-        syscall_ptr : felt*, 
-        pedersen_ptr : HashBuiltin*,
-        range_check_ptr
-    }() -> (count: felt):
-    let (count) = FirstRelicCombat_get_combat_count()
-    return (count,)
-end
+func getCombatCount{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+    count: felt
+) {
+    let (count) = FirstRelicCombat_get_combat_count();
+    return (count,);
+}
 
 @view
 func getCombat{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -344,7 +328,7 @@ func register{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func move{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, account: felt, to: Coordinate
 ) {
-    authorized_call(account, ACTION_FR_COMBAT_MOVE);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_move(combat_id, account);
 
@@ -357,7 +341,7 @@ func move{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func mineOre{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, account: felt, target: Coordinate, workers_count: felt
 ) {
-    authorized_call(account, ACTION_FR_COMBAT_MINE_ORE);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
     LazyUpdate_update_ore(combat_id, target);
@@ -371,7 +355,7 @@ func mineOre{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func recallWorkers{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, account: felt, target: Coordinate, workers_count: felt
 ) {
-    authorized_call(account, ACTION_FR_COMBAT_RECALL_WORKERS);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
     LazyUpdate_update_ore(combat_id, target);
@@ -384,7 +368,7 @@ func recallWorkers{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 func produceBot{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, account: felt, bot_type: felt, quantity: felt
 ) {
-    authorized_call(account, ACTION_FR_COMBAT_PRODUCE_BOT);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
 
@@ -399,7 +383,7 @@ func collectOre{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 ) {
     alloc_locals;
 
-    authorized_call(account, ACTION_FR_COMBAT_MINE_ORE);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
 
@@ -413,7 +397,7 @@ func attackOre{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) {
     alloc_locals;
 
-    authorized_call(account, ACTION_FR_COMBAT_MINE_ORE);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
 
@@ -427,7 +411,7 @@ func attack{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 ) {
     alloc_locals;
 
-    authorized_call(account, ACTION_FR_COMBAT_ATTACK);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
 
@@ -451,7 +435,7 @@ func attack{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func openChest{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, account: felt, target: Coordinate
 ) {
-    authorized_call(account, ACTION_FR_COMBAT_CHEST);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
 
@@ -464,7 +448,7 @@ func openChest{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func selectChestOption{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, account: felt, target: Coordinate, option: felt
 ) {
-    authorized_call(account, ACTION_FR_COMBAT_CHEST);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
 
@@ -477,7 +461,7 @@ func selectChestOption{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
 func useProp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, account: felt, prop_id: felt
 ) {
-    authorized_call(account, ACTION_FR_COMBAT_USE_PROP);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
 
@@ -490,7 +474,7 @@ func useProp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 func equipProp{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, account: felt, prop_id: felt
 ) {
-    authorized_call(account, ACTION_FR_COMBAT_USE_PROP);
+    authorized_call(account);
     LazyUpdate_update_combat_status(combat_id);
     player_can_action(combat_id, account);
 
@@ -526,27 +510,12 @@ func fulfillRandom{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
 //
 
 func authorized_call{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    account: felt, action: felt
+    account: felt
 ) {
     let (caller) = get_caller_address();
-    if (caller == account) {
-        return ();
-    }
-
-    let (access_contract_address) = FirstRelicCombat_access_contract.read();
-    let (delegate_registry_contract_address) = IAccessControl.getContractAddress(
-        contract_address=access_contract_address, contract_name=DELEGATE_ACCOUNT_REGISTRY_CONTRACT
-    );
-    let (res) = IDelegateAccountRegistry.authorized(
-        contract_address=delegate_registry_contract_address,
-        account=account,
-        delegate_account=caller,
-        action=action,
-    );
     with_attr error_message("FirstRelicCombat: unauthorized call") {
-        assert res = TRUE;
+        assert caller = account;
     }
-
     return ();
 }
 

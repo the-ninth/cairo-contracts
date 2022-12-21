@@ -27,28 +27,17 @@ namespace ManageLibrary {
     ) {
         let (self) = get_contract_address();
         let (access_contract_address) = FirstRelicCombat_access_contract.read();
-        let (ninth_contract_address) = IAccessControl.getContractAddress(
-            contract_address=access_contract_address, contract_name=NINTH_CONTRACT
-        );
-        let register_fee = Uint256(REGISTER_FEE, 0);
-        let (res) = IERC20.transferFrom(
-            contract_address=ninth_contract_address,
-            sender=account,
-            recipient=self,
-            amount=register_fee,
-        );
-        assert res = TRUE;
-        let (total) = FirstRelicCombat_register_fee.read(combat_id);
-        let (new_total) = SafeUint256.add(total, register_fee);
 
         let (koma_contract_address) = IAccessControl.getContractAddress(
             contract_address=access_contract_address, contract_name=KOMA_CONTRACT
         );
-        IERC721.transferFrom(
-            contract_address=koma_contract_address, from_=account, to=self, tokenId=koma_token_id
+        let (tokenOwner) = IERC721.ownerOf(
+            contract_address=koma_contract_address, tokenId=koma_token_id
         );
+        with_attr error_message("invalid koma token") {
+            assert tokenOwner = account;
+        }
         FirstRelicCombat_combat_account_koma_tokens.write(combat_id, account, koma_token_id);
-        FirstRelicCombat_register_fee.write(combat_id, new_total);
         return ();
     }
 
