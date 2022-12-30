@@ -12,7 +12,7 @@ from contracts.access.library import ROLE_FRCOMBAT_CREATOR, RANDOM_PRODUCER_CONT
 
 from contracts.random.IRandomProducer import IRandomProducer
 
-from contracts.pvp.first_relic.constants import MAX_PLAYERS, CHEST_PER_PLAYER, ORE_PER_PLAYER
+from contracts.pvp.first_relic.constants import CHEST_PER_PLAYER, ORE_PER_PLAYER
 from contracts.pvp.first_relic.structs import (
     Combat,
     Chest,
@@ -288,11 +288,13 @@ func getCombatAccountKomaId{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, rang
 }
 
 @external
-func newCombat{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(combat_id) -> () {
+func newCombat{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    combat_id, max_players
+) -> () {
     let (access_contract_address) = FirstRelicCombat_access_contract.read();
     let (caller) = get_caller_address();
     IAccessControl.onlyRole(access_contract_address, ROLE_FRCOMBAT_CREATOR, caller);
-    FirstRelicCombat_new_combat(combat_id);
+    FirstRelicCombat_new_combat(combat_id, max_players);
     return ();
 }
 
@@ -303,14 +305,18 @@ func register{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     alloc_locals;
 
     let (account) = get_caller_address();
+    let (registered) = ManageLibrary.check_combat_account_registered(combat_id, account);
+    if (registered == TRUE) {
+        return ();
+    }
     ManageLibrary.register(combat_id, account, koma_token_id);
     let (next_seed) = FirstRelicCombat_init_player(combat_id, account);
-    // generate chests and ores
-    let (next_seed) = FirstRelicCombat_init_chests(combat_id, CHEST_PER_PLAYER, next_seed);
+    // generate ores
     FirstRelicCombat_init_ores(combat_id, ORE_PER_PLAYER, next_seed);
     // ready to launch
     let (count) = FirstRelicCombat_get_players_count(combat_id);
-    if (count == MAX_PLAYERS) {
+    let (combat) = FirstRelicCombat_get_combat(combat_id);
+    if (count == combat.max_players) {
         FirstRelicCombat_prepare_combat(combat_id);
         tempvar syscall_ptr = syscall_ptr;
         tempvar pedersen_ptr = pedersen_ptr;

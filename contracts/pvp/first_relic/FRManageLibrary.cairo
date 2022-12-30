@@ -3,7 +3,7 @@
 from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
 from starkware.cairo.common.math import assert_not_zero
-from starkware.cairo.common.uint256 import Uint256, uint256_add
+from starkware.cairo.common.uint256 import Uint256, uint256_add, uint256_lt
 
 from starkware.starknet.common.syscalls import get_caller_address, get_contract_address
 
@@ -46,5 +46,13 @@ namespace ManageLibrary {
     }(combat_id: felt, account: felt) -> (koma_token_id: Uint256) {
         let (koma_token_id) = FirstRelicCombat_combat_account_koma_tokens.read(combat_id, account);
         return (koma_token_id,);
+    }
+
+    func check_combat_account_registered{
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(combat_id: felt, account: felt) -> (registered: felt) {
+        let (koma_token_id) = FirstRelicCombat_combat_account_koma_tokens.read(combat_id, account);
+        let (registered) = uint256_lt(Uint256(0, 0), koma_token_id);
+        return (registered,);
     }
 }

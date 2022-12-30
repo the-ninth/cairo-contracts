@@ -21,6 +21,7 @@ struct Combat {
     third_stage_time: felt,
     end_time: felt,
     expire_time: felt,
+    max_players: felt,
     status: felt,
 }
 

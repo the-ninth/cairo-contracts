@@ -13,7 +13,6 @@ const MAP_INNER_AREA_WIDTH = 10;
 const MAP_INNER_AREA_HEIGHT = 10;
 const CHEST_PER_PLAYER = 3;
 const ORE_PER_PLAYER = 3;
-const MAX_PLAYERS = 2;
 const PREPARE_TIME = 60;  // how much time for preparation time
 const FIRST_STAGE_DURATION = 900;
 const SECOND_STAGE_DURATION = 300;

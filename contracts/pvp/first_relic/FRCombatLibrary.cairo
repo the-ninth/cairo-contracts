@@ -32,8 +32,7 @@ from contracts.pvp.first_relic.structs import (
     COMBAT_STATUS_FIRST_STAGE,
     COMBAT_STATUS_SECOND_STAGE,
     COMBAT_STATUS_THIRD_STAGE,
-    COMBAT_STATUS_END
-,
+    COMBAT_STATUS_END,
     KOMA_STATUS_DEAD,
     KOMA_STATUS_THIRD_STAGE,
 )
@@ -193,13 +192,15 @@ func FirstRelicCombat_attack{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, ran
 }
 
 func FirstRelicCombat_new_combat{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    combat_id: felt
+    combat_id: felt, max_players: felt
 ) -> () {
     let (combat) = FirstRelicCombat_combats.read(combat_id);
     with_attr error_message("combat exists") {
         assert combat.status = COMBAT_STATUS_NON_EXIST;
     }
-    let combat = Combat(0, 0, 0, 0, 0, 0, status=COMBAT_STATUS_REGISTERING);
+    let combat = Combat(
+        0, 0, 0, 0, 0, 0, max_players=max_players, status=COMBAT_STATUS_REGISTERING
+    );
     FirstRelicCombat_combats.write(combat_id, combat);
     return ();
 }
@@ -227,7 +228,14 @@ func FirstRelicCombat_prepare_combat{
     }
     let (block_timestamp) = get_block_timestamp();
     let combat_updated: Combat = Combat(
-        block_timestamp, block_timestamp + PREPARE_TIME, 0, 0, 0, 0, COMBAT_STATUS_PREPARING
+        block_timestamp,
+        block_timestamp + PREPARE_TIME,
+        0,
+        0,
+        0,
+        0,
+        combat.max_players,
+        COMBAT_STATUS_PREPARING,
     );
     FirstRelicCombat_combats.write(combat_id, combat_updated);
     return ();
@@ -247,6 +255,7 @@ func FirstRelicCombat_change_to_first_stage{
         third_stage_time=combat.third_stage_time,
         end_time=combat.end_time,
         expire_time=combat.expire_time,
+        max_players=combat.max_players,
         status=COMBAT_STATUS_FIRST_STAGE,
     );
     FirstRelicCombat_combats.write(combat_id, new_combat);
@@ -268,6 +277,7 @@ func FirstRelicCombat_change_to_second_stage{
         third_stage_time=combat.second_stage_time + SECOND_STAGE_DURATION,
         end_time=combat.end_time,
         expire_time=combat.expire_time,
+        max_players=combat.max_players,
         status=COMBAT_STATUS_SECOND_STAGE,
     );
     FirstRelicCombat_combats.write(combat_id, new_combat);
@@ -297,8 +307,8 @@ func FirstRelicCombat_change_to_third_stage{
             third_stage_time=combat.third_stage_time,
             end_time=combat.end_time,
             expire_time=combat.expire_time,
-            status=COMBAT_STATUS_END
-,
+            max_players=combat.max_players,
+            status=COMBAT_STATUS_END,
         );
         FirstRelicCombat_combats.write(combat_id, new_combat);
     } else {
@@ -309,6 +319,7 @@ func FirstRelicCombat_change_to_third_stage{
             third_stage_time=combat.third_stage_time,
             end_time=combat.end_time,
             expire_time=combat.expire_time,
+            max_players=combat.max_players,
             status=COMBAT_STATUS_THIRD_STAGE,
         );
         FirstRelicCombat_combats.write(combat_id, new_combat);
@@ -509,12 +520,11 @@ func _get_chests{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 //         return (0)
 //     end
 
-//     let (block_timestamp) = get_block_timestamp()
+// let (block_timestamp) = get_block_timestamp()
 //     let (end_time) = min(block_timestamp, ore_empty_time)
 //     let retreive_amount = (end_time - mining_ore.start_time) * mining_ore.mining_workers_count * mining_ore.worker_mining_speed
 //     return (retreive_amount)
 // end
-
 
 // recursively get ore struct array
 // func _get_koma_mining_ores{
@@ -526,7 +536,6 @@ func _get_chests{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 //         return ()
 //     end
 
-
 // let (coordinate) = FirstRelicCombat_koma_mining_ore_coordinates_by_index.read(combat_id, account, index)
 //     let (mining_ore) = FirstRelicCombat_koma_mining_ores.read(combat_id, account, coordinate)
 //     assert data[index] = mining_ore
@@ -534,7 +543,6 @@ func _get_chests{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 
 // return ()
 // end
-
 
 func _init_relic_gates{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id: felt, number: felt, key_ids_len: felt, key_ids: felt*, seed: felt
