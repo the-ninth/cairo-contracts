@@ -279,14 +279,6 @@ func getAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     return (komas_len, komas, chests_len, chests, ores_len, ores);
 }
 
-@view
-func getCombatAccountKomaId{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    combat_id: felt, account: felt
-) -> (koma_token_id: Uint256) {
-    let (koma_token_id) = ManageLibrary.get_combat_account_koma_token(combat_id, account);
-    return (koma_token_id,);
-}
-
 @external
 func newCombat{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     combat_id, max_players
@@ -300,7 +292,7 @@ func newCombat{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 
 @external
 func register{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    combat_id: felt, koma_token_id: Uint256
+    combat_id: felt, koma_creature_id: felt
 ) -> () {
     alloc_locals;
 
@@ -309,24 +301,10 @@ func register{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     if (registered == TRUE) {
         return ();
     }
-    ManageLibrary.register(combat_id, account, koma_token_id);
+    ManageLibrary.register(combat_id, account, koma_creature_id);
     let (next_seed) = FirstRelicCombat_init_player(combat_id, account);
     // generate ores
     FirstRelicCombat_init_ores(combat_id, ORE_PER_PLAYER, next_seed);
-    // ready to launch
-    let (count) = FirstRelicCombat_get_players_count(combat_id);
-    let (combat) = FirstRelicCombat_get_combat(combat_id);
-    if (count == combat.max_players) {
-        FirstRelicCombat_prepare_combat(combat_id);
-        tempvar syscall_ptr = syscall_ptr;
-        tempvar pedersen_ptr = pedersen_ptr;
-        tempvar range_check_ptr = range_check_ptr;
-    } else {
-        tempvar syscall_ptr = syscall_ptr;
-        tempvar pedersen_ptr = pedersen_ptr;
-        tempvar range_check_ptr = range_check_ptr;
-    }
-
     return ();
 }
 

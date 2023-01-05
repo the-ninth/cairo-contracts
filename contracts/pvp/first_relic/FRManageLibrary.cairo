@@ -19,40 +19,26 @@ from contracts.pvp.first_relic.storages import (
     FirstRelicCombat_access_contract,
     FirstRelicCombat_combat_account_koma_tokens,
     FirstRelicCombat_register_fee,
+    FirstRelicCombat_combat_account_koma_creatures,
 )
+
+from contracts.util.math import felt_lt
 
 namespace ManageLibrary {
     func register{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        combat_id: felt, account: felt, koma_token_id: Uint256
+        combat_id: felt, account: felt, koma_creature_id: felt
     ) {
-        let (self) = get_contract_address();
-        let (access_contract_address) = FirstRelicCombat_access_contract.read();
-
-        let (koma_contract_address) = IAccessControl.getContractAddress(
-            contract_address=access_contract_address, contract_name=KOMA_CONTRACT
-        );
-        let (tokenOwner) = IERC721.ownerOf(
-            contract_address=koma_contract_address, tokenId=koma_token_id
-        );
-        with_attr error_message("invalid koma token") {
-            assert tokenOwner = account;
-        }
-        FirstRelicCombat_combat_account_koma_tokens.write(combat_id, account, koma_token_id);
+        FirstRelicCombat_combat_account_koma_creatures.write(combat_id, account, koma_creature_id);
         return ();
-    }
-
-    func get_combat_account_koma_token{
-        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-    }(combat_id: felt, account: felt) -> (koma_token_id: Uint256) {
-        let (koma_token_id) = FirstRelicCombat_combat_account_koma_tokens.read(combat_id, account);
-        return (koma_token_id,);
     }
 
     func check_combat_account_registered{
         syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     }(combat_id: felt, account: felt) -> (registered: felt) {
-        let (koma_token_id) = FirstRelicCombat_combat_account_koma_tokens.read(combat_id, account);
-        let (registered) = uint256_lt(Uint256(0, 0), koma_token_id);
+        let (koma_creature_id) = FirstRelicCombat_combat_account_koma_creatures.read(
+            combat_id, account
+        );
+        let (registered) = felt_lt(0, koma_creature_id);
         return (registered,);
     }
 }

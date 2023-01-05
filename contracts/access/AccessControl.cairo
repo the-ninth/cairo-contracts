@@ -1,14 +1,24 @@
 %lang starknet
 
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.starknet.common.syscalls import get_caller_address
 
 from contracts.access.library import AccessControl, ROLE_SUPER_ADMIN
 
-@constructor
-func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+@storage_var
+func initialized() -> (res: felt) {
+}
+
+@external
+func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     super_admin: felt
 ) {
+    let (inited) = initialized.read();
+    with_attr error_message("contract initialized") {
+        assert inited = FALSE;
+    }
+    initialized.write(TRUE);
     AccessControl.grantRole(ROLE_SUPER_ADMIN, super_admin);
     return ();
 }

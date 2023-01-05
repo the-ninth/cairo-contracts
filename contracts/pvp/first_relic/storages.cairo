@@ -31,6 +31,12 @@ func FirstRelicCombat_combat_account_koma_tokens(combat_id: felt, account: felt)
 }
 
 @storage_var
+func FirstRelicCombat_combat_account_koma_creatures(combat_id: felt, account: felt) -> (
+    koma_creature_id: felt
+) {
+}
+
+@storage_var
 func FirstRelicCombat_combat_counter() -> (count: felt) {
 }
 

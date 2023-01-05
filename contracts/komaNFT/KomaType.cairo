@@ -2,6 +2,7 @@
 
 %lang starknet
 
+from starkware.cairo.common.bool import TRUE, FALSE
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.uint256 import (
     Uint256,
@@ -24,46 +25,25 @@ from openzeppelin.introspection.erc165.library import ERC165
 from openzeppelin.token.erc721.library import ERC721
 from openzeppelin.token.erc721.enumerable.library import ERC721Enumerable
 from contracts.komaNFT.library import KomaType
-from openzeppelin.upgrades.library import Proxy
+
+@storage_var
+func initialized() -> (res: felt) {
+}
 
 @external
 func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(owner: felt) {
-    ERC721.initializer('Ninth Koma', 'NKOMA');
+    let (inited) = initialized.read();
+    with_attr error_message("contract initialized") {
+        assert inited = FALSE;
+    }
+    initialized.write(TRUE);
+    ERC721.initializer('Ninth Koma Alpha', 'NKOMA-ALPHA');
     ERC721Enumerable.initializer();
     Ownable.initializer(owner);
-    Proxy.initializer(owner);
     KomaType.set_op(1, owner);
     KomaType.set_open(1);
     KomaType.set_mint_limit(2);
     return ();
-}
-
-@external
-func setAdmin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(admin: felt) -> () {
-    Proxy.assert_only_admin();
-    Proxy._set_admin(admin);
-    return ();
-}
-
-@external
-func upgrade{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    new_implementation: felt
-) {
-    Proxy.assert_only_admin();
-    Proxy._set_implementation_hash(new_implementation);
-    return ();
-}
-
-@view
-func getImplementationHash{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
-    implementation: felt
-) {
-    return Proxy.get_implementation_hash();
-}
-
-@view
-func getAdmin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (admin: felt) {
-    return Proxy.get_admin();
 }
 
 @view
@@ -138,9 +118,9 @@ func isApprovedForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 @view
 func tokenURI{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     tokenId: Uint256
-) -> (tokenURI_len : felt,tokenURI: felt*) {
+) -> (tokenURI_len: felt, tokenURI: felt*) {
     let (_, remainder) = uint256_unsigned_div_rem(tokenId, Uint256(10000000, 0));
-    let (tokenURI_len : felt, tokenURI : felt*) = KomaType.get_koma_type_URI(remainder.low);
+    let (tokenURI_len: felt, tokenURI: felt*) = KomaType.get_koma_type_URI(remainder.low);
     return (tokenURI_len, tokenURI);
 }
 
@@ -176,18 +156,6 @@ func mint_limit{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}
 }
 
 @view
-func get_implementation_hash{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
-    implementation: felt
-) {
-    return Proxy.get_implementation_hash();
-}
-
-@view
-func get_admin{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (admin: felt) {
-    return Proxy.get_admin();
-}
-
-@view
 func get_user_koma_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     user: felt
 ) -> (komas_len: felt, komas: felt*) {
@@ -196,6 +164,16 @@ func get_user_koma_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_ch
     let (local komas: felt*) = alloc();
     _get_user_komas(user, komas, balance.low);
     return (balance.low, komas);
+}
+
+@view
+func check_user_koma_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    user: felt, creature_id: felt
+) -> (res: felt) {
+    alloc_locals;
+    let (balance: Uint256) = ERC721.balance_of(user);
+    let (res) = _check_user_koma_type(user, creature_id, balance.low);
+    return (res,);
 }
 
 @view
@@ -240,7 +218,7 @@ func mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(koma_
         assert is_lt = 1;
     }
     let (totalSupply: Uint256) = ERC721Enumerable.total_supply();
-    let (tokenId_, _) = uint256_add(totalSupply,Uint256(1, 0));
+    let (tokenId_, _) = uint256_add(totalSupply, Uint256(1, 0));
     let (tokenId_, _) = uint256_mul(tokenId_, Uint256(10000000, 0));
     let (tokenId, _) = uint256_add(tokenId_, Uint256(koma_creature_id, 0));
     ERC721Enumerable._mint(caller, tokenId);
@@ -253,7 +231,7 @@ func airdrop{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
 ) {
     KomaType.assert_op();
     let (totalSupply: Uint256) = ERC721Enumerable.total_supply();
-    let (tokenId_, _) = uint256_add(totalSupply,Uint256(1, 0));
+    let (tokenId_, _) = uint256_add(totalSupply, Uint256(1, 0));
     let (tokenId_, _) = uint256_mul(tokenId_, Uint256(10000000, 0));
     let (tokenId, _) = uint256_add(tokenId_, Uint256(koma_creature_id, 0));
     ERC721Enumerable._mint(to, tokenId);
@@ -335,8 +313,8 @@ func set_operator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
 }
 
 @external
-func setTokenBaseURI{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
-    base_uri_len : felt, base_uri : felt*
+func setTokenBaseURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+    base_uri_len: felt, base_uri: felt*
 ) -> () {
     Ownable.assert_only_owner();
     KomaType.set_koma_type_base_URI(base_uri_len, base_uri);
@@ -366,6 +344,22 @@ func _get_user_komas{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check
     return ();
 }
 
+func _check_user_koma_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    user: felt, creature_id: felt, left: felt
+) -> (res: felt) {
+    alloc_locals;
+    if (left == 0) {
+        return (FALSE,);
+    }
+    let (tokenId: Uint256) = ERC721Enumerable.token_of_owner_by_index(user, Uint256(left - 1, 0));
+    let (_, remainder) = uint256_unsigned_div_rem(tokenId, Uint256(10000000, 0));
+    if (remainder.low == creature_id) {
+        return (TRUE,);
+    }
+    _check_user_koma_type(user, creature_id, left=left - 1);
+    return (FALSE,);
+}
+
 func _add_wl_mint_loop{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     accounts: felt*, left
 ) -> () {
@@ -378,7 +372,7 @@ func _add_wl_mint_loop{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     let (block_timestamp) = get_block_timestamp();
     let (koma_creature_id) = KomaType.get_airdrop_type_num(block_timestamp + left);
     let (totalSupply: Uint256) = ERC721Enumerable.total_supply();
-    let (tokenId_, _) = uint256_add(totalSupply,Uint256(1, 0));
+    let (tokenId_, _) = uint256_add(totalSupply, Uint256(1, 0));
     let (tokenId_, _) = uint256_mul(tokenId_, Uint256(10000000, 0));
     let (tokenId, _) = uint256_add(tokenId_, Uint256(koma_creature_id, 0));
     ERC721Enumerable._mint(account, tokenId);
