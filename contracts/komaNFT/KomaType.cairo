@@ -32,6 +32,9 @@ func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
     ERC721Enumerable.initializer();
     Ownable.initializer(owner);
     Proxy.initializer(owner);
+    KomaType.set_op(1, owner);
+    KomaType.set_open(1);
+    KomaType.set_mint_limit(2);
     return ();
 }
 
@@ -135,9 +138,10 @@ func isApprovedForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 @view
 func tokenURI{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     tokenId: Uint256
-) -> (tokenURI: felt) {
-    let (tokenURI: felt) = ERC721.token_uri(tokenId);
-    return (tokenURI=tokenURI);
+) -> (tokenURI_len : felt,tokenURI: felt*) {
+    let (_, remainder) = uint256_unsigned_div_rem(tokenId, Uint256(10000000, 0));
+    let (tokenURI_len : felt, tokenURI : felt*) = KomaType.get_koma_type_URI(remainder.low);
+    return (tokenURI_len, tokenURI);
 }
 
 @view
@@ -223,6 +227,11 @@ func mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(koma_
     alloc_locals;
     KomaType.assert_mintable();
     KomaType.assert_wl();
+    let (count) = KomaType.air_drop_len();
+    let (is_legal) = KomaType.check_koma_creature_id_loop(koma_creature_id, count);
+    with_attr error_message("mint:koma_creature_id err") {
+        assert is_legal = 1;
+    }
     let (caller) = get_caller_address();
     let (balance) = ERC721.balance_of(caller);
     let (limit) = KomaType.mint_limit();
@@ -231,7 +240,8 @@ func mint{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(koma_
         assert is_lt = 1;
     }
     let (totalSupply: Uint256) = ERC721Enumerable.total_supply();
-    let (tokenId_, _) = uint256_mul(totalSupply, Uint256(10000000, 0));
+    let (tokenId_, _) = uint256_add(totalSupply,Uint256(1, 0));
+    let (tokenId_, _) = uint256_mul(tokenId_, Uint256(10000000, 0));
     let (tokenId, _) = uint256_add(tokenId_, Uint256(koma_creature_id, 0));
     ERC721Enumerable._mint(caller, tokenId);
     return ();
@@ -243,7 +253,8 @@ func airdrop{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
 ) {
     KomaType.assert_op();
     let (totalSupply: Uint256) = ERC721Enumerable.total_supply();
-    let (tokenId_, _) = uint256_mul(totalSupply, Uint256(10000000, 0));
+    let (tokenId_, _) = uint256_add(totalSupply,Uint256(1, 0));
+    let (tokenId_, _) = uint256_mul(tokenId_, Uint256(10000000, 0));
     let (tokenId, _) = uint256_add(tokenId_, Uint256(koma_creature_id, 0));
     ERC721Enumerable._mint(to, tokenId);
     return ();
@@ -257,29 +268,11 @@ func burn{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(token
 }
 
 @external
-func setTokenURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    tokenId: Uint256, tokenURI: felt
-) {
-    Ownable.assert_only_owner();
-    ERC721._set_token_uri(tokenId, tokenURI);
-    return ();
-}
-
-@external
 func setKomaURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    koma_creature_id: felt, token_uri: felt
+    koma_creature_id: felt, tokenURI: felt
 ) {
-    Ownable.assert_only_owner();
-    KomaType.set_koma_type_URI(koma_creature_id, token_uri);
-    return ();
-}
-
-@external
-func setTokenBaseURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    base_uri_len: felt, base_uri: felt*
-) {
-    Ownable.assert_only_owner();
-    KomaType.set_koma_type_base_URI(base_uri_len, base_uri);
+    KomaType.assert_op();
+    KomaType.set_koma_type_URI(koma_creature_id, tokenURI);
     return ();
 }
 
@@ -342,11 +335,20 @@ func set_operator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
 }
 
 @external
+func setTokenBaseURI{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
+    base_uri_len : felt, base_uri : felt*
+) -> () {
+    Ownable.assert_only_owner();
+    KomaType.set_koma_type_base_URI(base_uri_len, base_uri);
+    return ();
+}
+
+@external
 func add_airdrop_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    index: felt, koma_creature_id: felt
+    koma_creature_id: felt
 ) -> () {
     KomaType.assert_op();
-    KomaType.add_airdrop_type(index, koma_creature_id);
+    KomaType.add_airdrop_type(koma_creature_id);
     return ();
 }
 
@@ -376,7 +378,8 @@ func _add_wl_mint_loop{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     let (block_timestamp) = get_block_timestamp();
     let (koma_creature_id) = KomaType.get_airdrop_type_num(block_timestamp + left);
     let (totalSupply: Uint256) = ERC721Enumerable.total_supply();
-    let (tokenId_, _) = uint256_mul(totalSupply, Uint256(10000000, 0));
+    let (tokenId_, _) = uint256_add(totalSupply,Uint256(1, 0));
+    let (tokenId_, _) = uint256_mul(tokenId_, Uint256(10000000, 0));
     let (tokenId, _) = uint256_add(tokenId_, Uint256(koma_creature_id, 0));
     ERC721Enumerable._mint(account, tokenId);
     _add_wl_mint_loop(accounts + 1, left - 1);

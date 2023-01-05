@@ -5,7 +5,7 @@
 from starkware.starknet.common.syscalls import get_caller_address
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.math import assert_not_zero, assert_lt, unsigned_div_rem
-from starkware.cairo.common.bool import FALSE
+from starkware.cairo.common.bool import FALSE,TRUE
 from starkware.cairo.common.uint256 import Uint256, uint256_check, uint256_eq, uint256_not
 from starkware.cairo.common.alloc import alloc
 
@@ -49,6 +49,12 @@ func Mint_Limit() -> (len: felt) {
 }
 
 namespace KomaType {
+
+    func air_drop_len{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (len: felt) {
+        let (len) = Air_Drop_Len.read();
+        return (len=len);
+    }
+
     func set_op{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
         target_status: felt, account: felt
     ) -> () {
@@ -232,12 +238,27 @@ namespace KomaType {
     }
 
     func add_airdrop_type{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        index: felt, koma_creature_id: felt
+        koma_creature_id: felt
     ) -> () {
         alloc_locals;
         let (len) = Air_Drop_Len.read();
         Air_Drop_Len.write(len + 1);
         Air_Drop_Type.write(len + 1, koma_creature_id);
         return ();
+    }
+
+    func check_koma_creature_id_loop{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        koma_creature_id: felt,count
+    ) -> (result: felt) {
+        alloc_locals;
+        if (count == 0) {
+            return (result = FALSE);
+        }
+        let (_koma_creature_id) = Air_Drop_Type.read(count);
+        if (_koma_creature_id == koma_creature_id) {
+            return (result = TRUE);
+        }
+        
+        return check_koma_creature_id_loop(koma_creature_id,count-1);
     }
 }
