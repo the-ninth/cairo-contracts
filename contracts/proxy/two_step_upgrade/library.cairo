@@ -90,6 +90,7 @@ namespace TwoStepUpgradeProxy {
         with_attr error_message("invalid confirming address") {
             assert confirming_address = new_implementation;
         }
+        TwoStepUpgradeProxy_confirming_implementation_address.write(0);
         TwoStepUpgradeProxy_implementation_address.write(new_implementation);
         Upgraded.emit(new_implementation);
         return ();

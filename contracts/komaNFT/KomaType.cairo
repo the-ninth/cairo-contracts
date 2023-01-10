@@ -119,8 +119,8 @@ func isApprovedForAll{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 func tokenURI{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     tokenId: Uint256
 ) -> (tokenURI_len: felt, tokenURI: felt*) {
-    let (_, remainder) = uint256_unsigned_div_rem(tokenId, Uint256(10000000, 0));
-    let (tokenURI_len: felt, tokenURI: felt*) = KomaType.get_koma_type_URI(remainder.low);
+    ERC721.owner_of(tokenId);
+    let (tokenURI_len: felt, tokenURI: felt*) = KomaType.get_token_uri(tokenId);
     return (tokenURI_len, tokenURI);
 }
 
@@ -246,15 +246,6 @@ func burn{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(token
 }
 
 @external
-func setKomaURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    koma_creature_id: felt, tokenURI: felt
-) {
-    KomaType.assert_op();
-    KomaType.set_koma_type_URI(koma_creature_id, tokenURI);
-    return ();
-}
-
-@external
 func transferOwnership{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     newOwner: felt
 ) {
@@ -313,11 +304,11 @@ func set_operator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_pt
 }
 
 @external
-func setTokenBaseURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
-    base_uri_len: felt, base_uri: felt*
-) -> () {
+func setKomaCreatureUri{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+    koma_creature_id: felt, token_uri_len: felt, token_uri: felt*
+) {
     Ownable.assert_only_owner();
-    KomaType.set_koma_type_base_URI(base_uri_len, base_uri);
+    KomaType.set_koma_creature_uri(koma_creature_id, token_uri_len, token_uri);
     return ();
 }
 

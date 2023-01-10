@@ -4,9 +4,15 @@
 
 from starkware.starknet.common.syscalls import get_caller_address
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.math import assert_not_zero, assert_lt, unsigned_div_rem
-from starkware.cairo.common.bool import FALSE,TRUE
-from starkware.cairo.common.uint256 import Uint256, uint256_check, uint256_eq, uint256_not
+from starkware.cairo.common.math import assert_not_zero, assert_lt, unsigned_div_rem, assert_le_felt
+from starkware.cairo.common.bool import FALSE, TRUE
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    uint256_check,
+    uint256_eq,
+    uint256_not,
+    uint256_unsigned_div_rem,
+)
 from starkware.cairo.common.alloc import alloc
 
 from openzeppelin.security.safemath.library import SafeUint256
@@ -48,9 +54,18 @@ func Air_Drop_Len() -> (len: felt) {
 func Mint_Limit() -> (len: felt) {
 }
 
-namespace KomaType {
+@storage_var
+func Koma_koma_creature_uri_len(koma_creature_id: felt) -> (len: felt) {
+}
 
-    func air_drop_len{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (len: felt) {
+@storage_var
+func Koma_koma_creature_uri_by_index(koma_creature_id: felt, index: felt) -> (uri: felt) {
+}
+
+namespace KomaType {
+    func air_drop_len{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
+        len: felt
+    ) {
         let (len) = Air_Drop_Len.read();
         return (len=len);
     }
@@ -159,64 +174,26 @@ namespace KomaType {
         return ();
     }
 
-    func set_koma_type_URI{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        koma_creature_id: felt, token_uri: felt
-    ) -> () {
-        Koma_Type_URI.write(koma_creature_id, token_uri);
-        return ();
-    }
-
-    func set_koma_type_base_URI{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        base_uri_len: felt, base_uri: felt*
-    ) -> () {
-        Koma_Type_Base_URI_len.write(base_uri_len);
-        _set_koma_type_base_URI_loop(base_uri, 1, base_uri_len);
-        return ();
-    }
-
-    func _set_koma_type_base_URI_loop{
-        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-    }(token_uri_array: felt*, count, max) -> () {
-        alloc_locals;
-        if (count == max + 1) {
-            return ();
-        }
-        let token_uri = token_uri_array[0];
-        Koma_Type_Base_URI.write(count, token_uri);
-        _set_koma_type_base_URI_loop(token_uri_array + 1, count + 1, max);
-        return ();
-    }
-
-    func get_koma_type_base_URI{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        ) -> (token_uri_len: felt, token_uri: felt*) {
-        alloc_locals;
-        let (local token_uri: felt*) = alloc();
-        let (token_uri_len: felt) = Koma_Type_Base_URI_len.read();
-        _get_koma_type_base_URI_loop(token_uri_len, token_uri, 1);
+    func get_token_uri{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+        token_id: Uint256
+    ) -> (token_uri_len: felt, token_uri: felt*) {
+        let (_, remainder) = uint256_unsigned_div_rem(token_id, Uint256(10000000, 0));
+        let (len) = Koma_koma_creature_uri_len.read(remainder.low);
+        let (token_uri: felt*) = alloc();
+        let (token_uri_len, token_uri) = _get_tokenURI(remainder.low, 0, len, token_uri);
         return (token_uri_len, token_uri);
     }
 
-    func _get_koma_type_base_URI_loop{
-        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
-    }(max_len: felt, token_uri_array: felt*, count) -> () {
-        alloc_locals;
-        if (count == max_len + 1) {
-            return ();
+    func set_koma_creature_uri{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+        koma_creature_id: felt, token_uri_len: felt, token_uri: felt*
+    ) {
+        with_attr error_message("invalid length") {
+            assert_le_felt(0, token_uri_len);
         }
-        let (token_uri) = Koma_Type_Base_URI.read(count);
-        assert [token_uri_array] = token_uri;
-        _get_koma_type_base_URI_loop(max_len, token_uri_array=token_uri_array + 1, count=count + 1);
-        return ();
-    }
 
-    func get_koma_type_URI{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        koma_creature_id: felt
-    ) -> (token_uri_len: felt, token_uri: felt*) {
-        alloc_locals;
-        let (token_uri_len: felt, token_uri: felt*) = get_koma_type_base_URI();
-        let (token_uri_: felt) = Koma_Type_URI.read(koma_creature_id);
-        assert [token_uri + token_uri_len] = token_uri_;
-        return (token_uri_len + 1, token_uri);
+        Koma_koma_creature_uri_len.write(koma_creature_id, token_uri_len);
+        _set_tokenURI(koma_creature_id, 0, token_uri_len, token_uri);
+        return ();
     }
 
     func get_airdrop_type_num{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -247,18 +224,42 @@ namespace KomaType {
         return ();
     }
 
-    func check_koma_creature_id_loop{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-        koma_creature_id: felt,count
-    ) -> (result: felt) {
+    func check_koma_creature_id_loop{
+        syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
+    }(koma_creature_id: felt, count) -> (result: felt) {
         alloc_locals;
         if (count == 0) {
-            return (result = FALSE);
+            return (result=FALSE);
         }
         let (_koma_creature_id) = Air_Drop_Type.read(count);
         if (_koma_creature_id == koma_creature_id) {
-            return (result = TRUE);
+            return (result=TRUE);
         }
-        
-        return check_koma_creature_id_loop(koma_creature_id,count-1);
+
+        return check_koma_creature_id_loop(koma_creature_id, count - 1);
     }
+}
+
+func _get_tokenURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+    koma_creature_id: felt, index: felt, len: felt, tokenURI: felt*
+) -> (tokenURI_len: felt, tokenURI: felt*) {
+    if (index == len) {
+        return (index, tokenURI);
+    }
+
+    let (uri) = Koma_koma_creature_uri_by_index.read(koma_creature_id, index);
+    assert tokenURI[index] = uri;
+    return _get_tokenURI(koma_creature_id, index + 1, len, tokenURI);
+}
+
+func _set_tokenURI{pedersen_ptr: HashBuiltin*, syscall_ptr: felt*, range_check_ptr}(
+    koma_creature_id: felt, index: felt, len: felt, tokenURI: felt*
+) -> () {
+    if (index == len) {
+        return ();
+    }
+
+    Koma_koma_creature_uri_by_index.write(koma_creature_id, index, tokenURI[index]);
+    _set_tokenURI(koma_creature_id, index + 1, len, tokenURI);
+    return ();
 }
