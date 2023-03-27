@@ -1,1 +1,0 @@
-// Guild Tech Contract, record guild technical tree

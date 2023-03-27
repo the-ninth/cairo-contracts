@@ -1,25 +1,38 @@
-# The Ninth cairo contracts
+[![License](https://img.shields.io/github/license/para-space/paraspace-core?color=green)](https://github.com/para-space/paraspace-core/blob/main/LICENSE)
 
-Contracts deployed on StarkNet
+[![Twitter URL](https://img.shields.io/twitter/follow/the_ninth?style=social)](https://twitter.com/ninth_gg)
+[![Telegram](https://img.shields.io/badge/Telegram-gray?logo=telegram)](https://t.me/TheNinthOfficial)
+[![Medium](https://img.shields.io/badge/Medium-gray?logo=medium)](https://medium.com/@the_ninth)
+[![Discord](https://img.shields.io/badge/Discord-gray?logo=discord)](https://discord.gg/8aehWQPFyE)
 
-## Compile
+# The Ninth
 
-Compile Cairo contracts. Compilation artifacts are written into the `artifacts/` directory.
-```sh
-nile compile # compiles all contracts under contracts/
-```
+[Website](https://ninth.gg/)
 
-## Deploy
+This repository contains the smart contracts source code, written in Cairo, for The Ninth. The repository uses python as development enviroment for compilation, testing and deployment tasks.
 
-```sh
-nile deploy contract --alias my_contract
+## What is The Ninth?
 
-🚀 Deploying contract
-🌕 artifacts/contract.json successfully deployed to 0x07ec10eb0758f7b1bc5aed0d5b4d30db0ab3c087eba85d60858be46c1a5e4680
-📦 Registering deployment as my_contract in localhost.deployments.txt
-```
+In year 2032, archaeologist Al has discovered a mysterious space relic called the Noah's Ark near the Himalayas. The space relic can open a gate to a different world which contains civilizations that are lost in myths and animals that are extinct in our world. After that, scientists and archaeologists have discovered 8 more gates to the new world all across the globe. They named this new world The Ninth...
+
+## Dev
+
+Create a virtual environment (with python 3.9):
+
+    python3.9 -m venv ~/cairo_venv
+    source ~/cairo_venv/bin/activate
+
+Nile:
+
+    pip install cairo-nile
+    https://github.com/OpenZeppelin/nile
+
+Directly:
+
+    pip install cairo-lang
 
 ## Test
-```sh
-pytest
-```
+
+pytest:
+
+    pytest tests/xxx.py
