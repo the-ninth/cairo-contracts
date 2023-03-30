@@ -48,19 +48,25 @@ func TwoStepUpgradeProxy_initialized() -> (initialized: felt) {
 
 namespace TwoStepUpgradeProxy {
     //
-    // Constructor
+    // Initializer
     //
 
-    func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        implementation_hash: felt, proxy_owner: felt, proxy_admin: felt, proxy_confirmer: felt
+    ) {
+        TwoStepUpgradeProxy_implementation_address.write(implementation_hash);
+        TwoStepUpgradeProxy_owner.write(proxy_owner);
+        TwoStepUpgradeProxy_admin.write(proxy_admin);
+        TwoStepUpgradeProxy_confirmer.write(proxy_confirmer);
+        return ();
+    }
+
+    func initialized{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
         let (initialized) = TwoStepUpgradeProxy_initialized.read();
-        with_attr error_message("Proxy: contract already initialized") {
+        with_attr error_message("TwoStepUpgradeProxy: contract already initialized") {
             assert initialized = FALSE;
         }
-
         TwoStepUpgradeProxy_initialized.write(TRUE);
-        // TwoStepUpgradeProxy_owner.write(proxy_owner)
-        // TwoStepUpgradeProxy_admin.write(proxy_admin)
-        // TwoStepUpgradeProxy_confirmer.write(proxy_confirmer)
         return ();
     }
 
