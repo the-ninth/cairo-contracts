@@ -22,6 +22,14 @@ func max{range_check_ptr}(a: felt, b: felt) -> (min: felt) {
     return (b,);
 }
 
+func sort_asc{range_check_ptr}(a: felt, b: felt) -> (lower: felt, higher: felt) {
+    let res = sign(a - b);
+    if (res == 1) {
+        return (b, a);
+    }
+    return (a, b);
+}
+
 // in or on oval check
 // x0, y0 oval origin point
 // x1, y1 point to check

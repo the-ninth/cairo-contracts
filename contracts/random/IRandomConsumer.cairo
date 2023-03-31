@@ -2,6 +2,6 @@
 
 @contract_interface
 namespace IRandomConsumer {
-    func fulfillRandom(request_id: felt, random: felt) {
+    func fulfillRandomness(request_id: felt, randomness: felt) {
     }
 }

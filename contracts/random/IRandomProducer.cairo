@@ -5,6 +5,6 @@ namespace IRandomProducer {
     func requestRandom() -> (request_id: felt) {
     }
 
-    func triggerFulfill(request_id: felt) {
+    func fulfill(request_id: felt, randomness: felt) {
     }
 }

@@ -1,29 +1,47 @@
 %lang starknet
 
+from starkware.cairo.common.bool import TRUE
 from starkware.cairo.common.cairo_builtins import HashBuiltin, SignatureBuiltin
-from starkware.cairo.common.hash_state import (
-    hash_init,
-    hash_finalize,
-    hash_update,
-    hash_update_single,
-)
 from starkware.cairo.common.math import assert_not_zero
 
 from starkware.starknet.common.syscalls import get_caller_address, get_block_number
 
 from contracts.random.IRandomConsumer import IRandomConsumer
 
-@storage_var
-func request_id_counter() -> (count: felt) {
+@event
+func RequestRandomness(request_id: felt, caller: felt) {
 }
 
-// random: felt, caller: felt, block_number: felt
+struct Request {
+    consumer: felt,
+    randomness: felt,
+    block_number: felt,
+}
+
 @storage_var
-func request_random_res(request_id: felt) -> (res: (felt, felt, felt)) {
+func RandomProducer_request_id_counter() -> (count: felt) {
+}
+
+@storage_var
+func RandomProducer_requests(request_id: felt) -> (request: Request) {
+}
+
+@storage_var
+func RandomProducer_owner() -> (owner: felt) {
+}
+
+@storage_var
+func RandomProducer_operator() -> (operator: felt) {
+}
+
+@storage_var
+func RandomProducer_consumers(consumer: felt) -> (res: felt) {
 }
 
 @constructor
-func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(owner, operator) {
+    RandomProducer_owner.write(owner);
+    RandomProducer_operator.write(operator);
     return ();
 }
 
@@ -31,50 +49,87 @@ func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr
 func requestRandom{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (
     request_id: felt
 ) {
-    let (count) = request_id_counter.read();
     let (caller) = get_caller_address();
-    let (block_number) = get_block_number();
-    let request_id = count + 1;
-    let hash_ptr = pedersen_ptr;
-    with hash_ptr {
-        let (hash_state_ptr) = hash_init();
-        let (hash_state_ptr) = hash_update_single(hash_state_ptr, request_id);
-        let (hash_state_ptr) = hash_update_single(hash_state_ptr, caller);
-        let (hash_state_ptr) = hash_update_single(hash_state_ptr, block_number);
-        let (res) = hash_finalize(hash_state_ptr);
+    let (valid) = RandomProducer_consumers.read(caller);
+    with_attr error_message("RandomProducer: invalid consumer") {
+        assert valid = TRUE;
     }
-
-    let pedersen_ptr = hash_ptr;
-
-    request_id_counter.write(request_id);
-    request_random_res.write(request_id, (res, caller, block_number));
+    let (count) = RandomProducer_request_id_counter.read();
+    let request_id = count + 1;
+    RandomProducer_request_id_counter.write(request_id);
+    let request = Request(consumer=caller, randomness=0, block_number=0);
+    RandomProducer_requests.write(request_id, request);
     return (request_id,);
 }
 
-// workaround for async random number fulfill
 @external
-func triggerFulfill{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    request_id: felt
+func fulfill{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    request_id: felt, randomness: felt
 ) {
-    let (caller) = get_caller_address();
-    let (res) = request_random_res.read(request_id);
-    with_attr error_message("RandomProducer: request id empty") {
-        assert_not_zero(res[2]);
+    assert_only_operator();
+    let (request) = RandomProducer_requests.read(request_id);
+    with_attr error_message("RandomProducer: request not exsit") {
+        assert_not_zero(request.consumer);
     }
-
-    with_attr error_message("RandomProducer: invalid caller") {
-        assert caller = res[1];
+    with_attr error_message("RandomProducer: request fulfilled") {
+        assert request.block_number = 0;
     }
+    let (block_number) = get_block_number();
+    let requestUpdated = Request(
+        consumer=request.consumer, randomness=randomness, block_number=block_number
+    );
+    RandomProducer_requests.write(request_id, requestUpdated);
+    IRandomConsumer.fulfillRandomness(
+        contract_address=request.consumer, request_id=request_id, randomness=randomness
+    );
+    return ();
+}
 
-    // todo: we may need to restrict that the trigger can only run once for every request id
-    IRandomConsumer.fulfillRandom(contract_address=caller, request_id=request_id, random=res[0]);
+@external
+func setOperator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(operator: felt) {
+    assert_only_owner();
+    RandomProducer_operator.write(operator);
+    return ();
+}
+
+@external
+func setOwner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(owner: felt) {
+    assert_only_owner();
+    RandomProducer_owner.write(owner);
+    return ();
+}
+
+@external
+func setConsumer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    consumer: felt, valid: felt
+) {
+    assert_only_owner();
+    RandomProducer_consumers.write(consumer, valid);
     return ();
 }
 
 @view
-func getRandomRequestRes{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+func getRandomnessRequest{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     request_id: felt
-) -> (random: felt, caller: felt, block_number: felt) {
-    let (res) = request_random_res.read(request_id);
-    return (random=res[0], caller=res[1], block_number=res[2]);
+) -> (request: Request) {
+    let (request) = RandomProducer_requests.read(request_id);
+    return (request,);
+}
+
+func assert_only_owner{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    let (caller) = get_caller_address();
+    let (owner) = RandomProducer_owner.read();
+    with_attr error_message("RandomProducer: invalid owner") {
+        assert caller = owner;
+    }
+    return ();
+}
+
+func assert_only_operator{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() {
+    let (caller) = get_caller_address();
+    let (operator) = RandomProducer_operator.read();
+    with_attr error_message("RandomProducer: invalid operator") {
+        assert caller = operator;
+    }
+    return ();
 }
