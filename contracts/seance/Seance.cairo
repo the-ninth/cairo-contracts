@@ -131,12 +131,6 @@ func pray{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
 }
 
 @external
-func reveal{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(pentagramNum, seed) {
-    Seance.reveal(pentagramNum, seed);
-    return ();
-}
-
-@external
 func fulfillRandomness{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     requestId, randomness
 ) {
