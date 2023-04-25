@@ -7,7 +7,7 @@ from starkware.cairo.common.uint256 import Uint256
 from starkware.starknet.common.syscalls import library_call, library_call_l1_handler
 
 from contracts.proxy.two_step_upgrade.library import TwoStepUpgradeProxy
-from contracts.seance.library import Seance, Pentagram, PentagramPrayer
+from contracts.seance.library import Seance, Pentagram, PentagramPrayer, EndReward
 
 @external
 func initializer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
@@ -147,6 +147,23 @@ func setRandomProducer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     return ();
 }
 
+@external
+func setEndReward{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    tokenAddress: felt, endReward: EndReward
+) {
+    Seance.assertOnlyOwner();
+    Seance.setEndReward(tokenAddress, endReward);
+    return ();
+}
+
+@external
+func claimEndReward{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    rewardToken: felt
+) {
+    Seance.claimEndReward(rewardToken);
+    return ();
+}
+
 @view
 func getPentagram{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
     pentagramNum
@@ -168,6 +185,22 @@ func getTokenOptionValues{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_
     tokenAddress
 ) -> (values_len: felt, values: Uint256*) {
     return Seance.getTokenOptionValues(tokenAddress);
+}
+
+@view
+func getAccountEndReward{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    account: felt, rewardToken: felt
+) -> (amount: Uint256) {
+    let (amount) = Seance.getAccountEndReward(account, rewardToken);
+    return (amount,);
+}
+
+@view
+func getEndReward{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    tokenAddress: felt
+) -> (endReward: EndReward) {
+    let (endReward) = Seance.getEndReward(tokenAddress);
+    return (endReward,);
 }
 
 @view

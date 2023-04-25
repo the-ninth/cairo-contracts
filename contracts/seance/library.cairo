@@ -11,7 +11,9 @@ from starkware.cairo.common.math import (
 )
 from starkware.cairo.common.uint256 import (
     Uint256,
+    uint256_add,
     uint256_eq,
+    uint256_lt,
     uint256_mul,
     uint256_unsigned_div_rem,
 )
@@ -26,6 +28,7 @@ from openzeppelin.token.erc20.IERC20 import IERC20
 
 from contracts.util.math import sort_asc
 from contracts.random.IRandomProducer import IRandomProducer
+from contracts.token.interfaces.IMintable import IMintable
 
 const ConflictOptionFail = 0;
 const ConflictOptionNewPentagram = 1;
@@ -77,6 +80,11 @@ struct PentagramPrayer {
     numberHigher: felt,
 }
 
+struct EndReward {
+    rewardToken: felt,
+    amount: Uint256,
+}
+
 @storage_var
 func Seance_owner() -> (operator: felt) {
 }
@@ -121,6 +129,14 @@ func Seance_pentagram_num_by_request_id(requestId: felt) -> (pentagramNum: felt)
 
 @storage_var
 func Seance_random_producer() -> (randomProducer: felt) {
+}
+
+@storage_var
+func Seance_end_reward(tokenAddress: felt) -> (endReward: EndReward) {
+}
+
+@storage_var
+func Seance_account_end_rewards(account: felt, rewardToken: felt) -> (amount: Uint256) {
 }
 
 namespace Seance {
@@ -238,10 +254,12 @@ namespace Seance {
         );
 
         local status: felt;
+        local requestId: felt;
         if (length == 4) {
             status = PentagramStatusDone;
             let (randomProducer) = Seance_random_producer.read();
-            let (requestId) = IRandomProducer.requestRandom(contract_address=randomProducer);
+            let (res) = IRandomProducer.requestRandom(contract_address=randomProducer);
+            requestId = res;
             with_attr error_message("request id is zero") {
                 assert_not_zero(requestId);
             }
@@ -252,6 +270,7 @@ namespace Seance {
             tempvar range_check_ptr = range_check_ptr;
         } else {
             status = PentagramStatusPlaying;
+            requestId = 0;
             tempvar syscall_ptr = syscall_ptr;
             tempvar pedersen_ptr = pedersen_ptr;
             tempvar range_check_ptr = range_check_ptr;
@@ -263,7 +282,7 @@ namespace Seance {
             value=pentagram.value,
             status=status,
             seed=pentagram.seed,
-            requestId=pentagram.requestId,
+            requestId=requestId,
             hitNumber=pentagram.hitNumber,
             hitPrayerPosition=pentagram.hitPrayerPosition,
             expireTime=blockTime + ExpireDuration,
@@ -300,12 +319,25 @@ namespace Seance {
             value=pentagram.value,
             status=PentagramStatusEnd,
             seed=seed,
-            requestId=Pentagram.requestId,
+            requestId=pentagram.requestId,
             hitNumber=hitNumber,
             hitPrayerPosition=hitPrayerPosition,
             expireTime=pentagram.expireTime,
         );
+        Seance_pentagrams.write(pentagramNum, pentagramUpdated);
         PentagramEnd.emit(pentagramNum, seed, hitNumber, hitPrayer);
+
+        let (endReward) = Seance_end_reward.read(pentagram.token);
+        if (endReward.rewardToken == 0) {
+            return ();
+        }
+        let (res) = uint256_eq(Uint256(0, 0), endReward.amount);
+        if (res == TRUE) {
+            return ();
+        }
+        let (totalReward) = Seance_account_end_rewards.read(hitPrayer, endReward.rewardToken);
+        let (totalRewardUpdated, _) = uint256_add(totalReward, endReward.amount);
+        Seance_account_end_rewards.write(hitPrayer, endReward.rewardToken, totalRewardUpdated);
         return ();
     }
 
@@ -323,6 +355,27 @@ namespace Seance {
             assert_not_zero(pentagramNum);
         }
         reveal(pentagramNum, randomness);
+        return ();
+    }
+
+    func setEndReward{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        tokenAddress: felt, endReward: EndReward
+    ) {
+        Seance_end_reward.write(tokenAddress, endReward);
+        return ();
+    }
+
+    func claimEndReward{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        rewardToken: felt
+    ) {
+        let (caller) = get_caller_address();
+        let (amount) = Seance_account_end_rewards.read(caller, rewardToken);
+        with_attr error_message("not enough balance") {
+            let (res) = uint256_lt(Uint256(0, 0), amount);
+            assert res = TRUE;
+        }
+        IMintable.mint(contract_address=rewardToken, to=caller, amount=amount);
+        Seance_account_end_rewards.write(caller, rewardToken, Uint256(0, 0));
         return ();
     }
 
@@ -352,6 +405,20 @@ namespace Seance {
         let (values_len) = Seance_token_option_values_length.read(tokenAddress);
         _getTokenOptionValuesLoop(tokenAddress, 0, values_len, values);
         return (values_len, values);
+    }
+
+    func getEndReward{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        tokenAddress: felt
+    ) -> (endReward: EndReward) {
+        let (endReward) = Seance_end_reward.read(tokenAddress);
+        return (endReward,);
+    }
+
+    func getAccountEndReward{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+        account: felt, rewardToken: felt
+    ) -> (amount: Uint256) {
+        let (amount) = Seance_account_end_rewards.read(account, rewardToken);
+        return (amount,);
     }
 
     func getRandomProducer{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}() -> (

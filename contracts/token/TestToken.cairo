@@ -9,22 +9,14 @@ from openzeppelin.token.erc20.library import ERC20
 from starkware.cairo.common.bool import TRUE
 
 from contracts.access.interfaces.IAccessControl import IAccessControl
-from contracts.access.library import ROLE_WOOD_MINTER
-
-//
-// Storage
-//
-
-@storage_var
-func Wood_access_contract() -> (addr: felt) {
-}
+from contracts.access.library import ROLE_NOAH_MINTER
 
 @constructor
 func constructor{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    access_contract: felt
+    name: felt, symbol: felt, decimals: felt, recipient: felt, amount: Uint256
 ) {
-    ERC20.initializer('Ninth Wood', 'NWOOD', 0);
-    Wood_access_contract.write(access_contract);
+    ERC20.initializer(name, symbol, decimals);
+    ERC20._mint(recipient, amount);
     return ();
 }
 
@@ -108,17 +100,4 @@ func decreaseAllowance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_che
     spender: felt, subtracted_value: Uint256
 ) -> (success: felt) {
     return ERC20.decrease_allowance(spender, subtracted_value);
-}
-
-@external
-func mint{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
-    to: felt, amount: Uint256
-) {
-    let (access_contract) = Wood_access_contract.read();
-    let (caller) = get_caller_address();
-    IAccessControl.onlyRole(
-        contract_address=access_contract, role=ROLE_WOOD_MINTER, account=caller
-    );
-    ERC20._mint(to, amount);
-    return ();
 }
